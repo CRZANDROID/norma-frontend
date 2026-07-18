@@ -42,6 +42,26 @@ src/
 | `/clientes` | Clientes |
 | `/fuentes` | Fuentes |
 
+## Ambientes
+
+| Ambiente | Uso | URL objetivo |
+|----------|-----|--------------|
+| `development` | Local | `http://localhost:5173` |
+| `staging` | Validación | TBD |
+| `production` | Clientes | TBD |
+
+Variables (`VITE_*` se embeben en build):
+
+| Variable | Descripción |
+|----------|-------------|
+| `VITE_API_URL` | URL del backend NestJS |
+| `VITE_SUPABASE_URL` | URL del proyecto Supabase |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Anon/publishable key (cliente) |
+
+Auth: Supabase Auth en el frontend; el access token se envía al backend como `Authorization: Bearer <token>`.
+
+Tablero: [NORMA — Piloto Arca](https://github.com/users/CRZANDROID/projects/1)
+
 ## Stack
 
 - React 19 + TypeScript

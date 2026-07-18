@@ -1,7 +1,15 @@
-import { NavLink, Outlet, Link } from 'react-router-dom'
-import { Bell, Building2, LayoutDashboard, Radio, LogIn } from 'lucide-react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import {
+  Bell,
+  Building2,
+  LayoutDashboard,
+  LogOut,
+  Radio,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { supabase } from '@/lib/supabase'
+import { useAuthStore } from '@/store/auth-store'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -11,12 +19,27 @@ const navItems = [
 ]
 
 export function AppLayout() {
+  const navigate = useNavigate()
+  const profile = useAuthStore((s) => s.profile)
+  const clear = useAuthStore((s) => s.clear)
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    clear()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <div className="flex min-h-screen bg-norma-bg text-norma-fg">
       <aside className="flex w-60 flex-col border-r border-norma-border bg-norma-surface">
         <div className="border-b border-norma-border px-5 py-5">
           <p className="text-lg font-semibold tracking-wide">NORMA</p>
           <p className="text-xs text-norma-muted">Panel operativo</p>
+          {profile ? (
+            <p className="mt-2 truncate text-xs text-norma-muted">
+              {profile.name} · {profile.role}
+            </p>
+          ) : null}
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 p-3">
@@ -38,11 +61,13 @@ export function AppLayout() {
         </nav>
 
         <div className="border-t border-norma-border p-3">
-          <Button variant="ghost" className="w-full justify-start" asChild>
-            <Link to="/login">
-              <LogIn className="size-4" />
-              Iniciar sesión
-            </Link>
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={() => void handleLogout()}
+          >
+            <LogOut className="size-4" />
+            Cerrar sesión
           </Button>
         </div>
       </aside>
