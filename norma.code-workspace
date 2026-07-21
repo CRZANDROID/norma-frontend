@@ -1,0 +1,31 @@
+{
+  "folders": [
+    {
+      "name": "norma-frontend",
+      "path": "."
+    },
+    {
+      "name": "norma-backend",
+      "path": "norma-backend"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/dist": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/pnpm-lock.yaml": true
+    },
+    "typescript.tsdk": "node_modules/typescript/lib"
+  },
+  "extensions": {
+    "recommendations": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "bradlc.vscode-tailwindcss"
+    ]
+  }
+}

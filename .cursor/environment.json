@@ -1,0 +1,23 @@
+{
+  "name": "NORMA Full Stack",
+  "install": "bash scripts/setup-workspace.sh && (cd norma-backend && pnpm install) && ([ -f package.json ] && pnpm install || true)",
+  "repositoryDependencies": [
+    "github.com/CRZANDROID/norma-backend"
+  ],
+  "ports": [
+    { "name": "frontend (Vite)", "port": 5173 },
+    { "name": "backend (NestJS)", "port": 3000 }
+  ],
+  "terminals": [
+    {
+      "name": "backend",
+      "command": "cd norma-backend && pnpm start:dev",
+      "description": "API NestJS de NORMA en http://localhost:3000"
+    },
+    {
+      "name": "frontend",
+      "command": "pnpm dev",
+      "description": "App React/Vite de NORMA en http://localhost:5173"
+    }
+  ]
+}
