@@ -4,8 +4,8 @@
 
 | Path | Repo |
 |------|------|
-| `.` (raíz) | [norma-frontend](https://github.com/CRZANDROID/norma-frontend) |
-| `norma-backend/` | [norma-backend](https://github.com/CRZANDROID/norma-backend) (clonado o bootstrap) |
+| `.` (raíz) | https://github.com/CRZANDROID/norma-frontend |
+| `norma-backend/` | https://github.com/CRZANDROID/norma-backend |
 
 Abre siempre `norma.code-workspace` para el multi-root.
 
@@ -23,8 +23,8 @@ pnpm install
 - Frontend Vite: `5173`
 - Backend NestJS: `3000`
 
-## Notas
+## Acceso al backend
 
-- `norma-backend/` está en `.gitignore` del frontend; es un git repo independiente.
-- Si el remoto aún no existe, el script usa `bootstrap/norma-backend/` y deja el `origin` apuntando a GitHub.
-- Tras crear `CRZANDROID/norma-backend` en GitHub, otorga acceso a Cursor y haz `git push -u origin main` desde `norma-backend/`.
+El remoto real es `CRZANDROID/norma-backend` (privado). Si `git clone` / `gh repo view` fallan con 404, falta otorgar el repo a la GitHub App de Cursor (*Repository access*).
+
+`norma-backend/` en disco está en `.gitignore` del frontend; es un git repo independiente.

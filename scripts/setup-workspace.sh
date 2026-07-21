@@ -20,9 +20,11 @@ copy_tree() {
 echo "==> NORMA workspace setup"
 echo "    frontend: $ROOT"
 echo "    backend:  $BACKEND_DIR"
+echo "    remote:   $BACKEND_REMOTE"
 
 if [[ -d "$BACKEND_DIR/.git" ]]; then
   echo "==> norma-backend ya está presente"
+  (cd "$BACKEND_DIR" && git remote -v | head -2 || true)
   exit 0
 fi
 
@@ -31,20 +33,21 @@ if [[ -d "$BACKEND_DIR" ]] && [[ ! -d "$BACKEND_DIR/.git" ]]; then
   exit 0
 fi
 
-clone_ok=0
-if git ls-remote "$BACKEND_REMOTE" HEAD &>/dev/null; then
-  echo "==> Clonando $BACKEND_REMOTE"
-  if git clone "$BACKEND_REMOTE" "$BACKEND_DIR"; then
-    clone_ok=1
-  fi
+echo "==> Intentando clonar $BACKEND_REMOTE"
+if git clone "$BACKEND_REMOTE" "$BACKEND_DIR"; then
+  echo "==> Clone OK"
+  echo "==> Workspace listo. Abre: norma.code-workspace"
+  exit 0
 fi
 
-if [[ "$clone_ok" -ne 1 ]]; then
-  echo "==> Remoto no disponible; bootstrap desde $BOOTSTRAP_DIR"
-  if [[ ! -d "$BOOTSTRAP_DIR" ]]; then
-    echo "ERROR: no hay bootstrap ni remoto para norma-backend" >&2
-    exit 1
-  fi
+echo ""
+echo "!! No se pudo clonar norma-backend (repo privado o sin acceso de la GitHub App de Cursor)."
+echo "   Otorga acceso: GitHub → Settings → Applications → Cursor → Repository access"
+echo "   → añade CRZANDROID/norma-backend"
+echo ""
+
+if [[ -d "$BOOTSTRAP_DIR" ]]; then
+  echo "==> Fallback temporal: bootstrap local desde $BOOTSTRAP_DIR"
   mkdir -p "$BACKEND_DIR"
   copy_tree "$BOOTSTRAP_DIR" "$BACKEND_DIR"
   (
@@ -52,8 +55,10 @@ if [[ "$clone_ok" -ne 1 ]]; then
     git init -b main
     git remote add origin "$BACKEND_REMOTE" 2>/dev/null || git remote set-url origin "$BACKEND_REMOTE"
   )
-  echo "==> Backend local listo. Cuando exista el repo en GitHub:"
-  echo "    cd norma-backend && git push -u origin main"
+  echo "==> Backend bootstrap listo (NO es el remoto real hasta que haya acceso)."
+else
+  echo "ERROR: sin acceso al remoto y sin bootstrap." >&2
+  exit 1
 fi
 
 echo "==> Workspace listo. Abre: norma.code-workspace"
