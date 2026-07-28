@@ -3,14 +3,10 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { fetchMe } from '@/features/auth/api/auth-api'
-import {
-  bypassProfile,
-  createBypassSession,
-} from '@/features/auth/lib/auth-bypass'
 import { mapAuthError } from '@/features/auth/lib/auth-errors'
 import { duration, easeOut } from '@/shared/lib/motion'
 import { supabase } from '@/shared/lib/supabase'
-import { authBypass, designPreview, useApiMock } from '@/shared/lib/utils'
+import { designPreview, useApiMock } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
@@ -54,15 +50,6 @@ export function LoginPage() {
     setSubmitting(true)
 
     try {
-      // TEMP: bypass local — mañana con VITE_AUTH_BYPASS=false usa el bloque real abajo.
-      if (authBypass) {
-        setSession(createBypassSession())
-        setProfile(bypassProfile)
-        navigate(from, { replace: true })
-        return
-      }
-
-      // Real auth (Supabase + Nest /auth/me) — no borrar.
       const { data, error: signInError } = await supabase.auth.signInWithPassword(
         {
           email: email.trim(),
@@ -107,7 +94,7 @@ export function LoginPage() {
     }
   }
 
-  const canSubmit = authBypass || (Boolean(email.trim()) && Boolean(password))
+  const canSubmit = Boolean(email.trim()) && Boolean(password)
   const motionOff = Boolean(reduceMotion)
   const stagger = (i: number) =>
     motionOff
@@ -212,7 +199,7 @@ export function LoginPage() {
                   type="email"
                   autoComplete="email"
                   autoFocus
-                  required={!authBypass}
+                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@empresa.com"
@@ -234,7 +221,7 @@ export function LoginPage() {
                     name="password"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
-                    required={!authBypass}
+                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Tu contraseña"
