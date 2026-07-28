@@ -43,12 +43,19 @@ export function Select({
   const [open, setOpen] = React.useState(false)
   const reduceMotion = useReducedMotion()
   const panel = reduceMotion ? selectPanelReduced : selectPanel
-  // Items unmount while closed; pass label so SelectValue isn't blank.
-  const selectedLabel = options.find((option) => option.value === value)?.label
+
+  // Items unmount while closed; only pass a stable label when value matches.
+  // Never feed Radix an empty string — it treats "" as placeholder and can
+  // loop setState via SelectValue / bubble <select> inside forms.
+  const selectedLabel = React.useMemo(
+    () => options.find((option) => option.value === value)?.label,
+    [options, value],
+  )
+  const radixValue = value === '' || selectedLabel === undefined ? undefined : value
 
   return (
     <SelectPrimitive.Root
-      value={value}
+      value={radixValue}
       onValueChange={onValueChange}
       open={open}
       onOpenChange={setOpen}
@@ -71,9 +78,14 @@ export function Select({
           className,
         )}
       >
-        <SelectPrimitive.Value placeholder={placeholder}>
-          {selectedLabel}
-        </SelectPrimitive.Value>
+        {/*
+          Pass children only when value matches an option. Omitting `children`
+          keeps Radix hasChildren === false (avoids SelectValue setState loops).
+        */}
+        <SelectPrimitive.Value
+          placeholder={placeholder}
+          {...(selectedLabel !== undefined ? { children: selectedLabel } : {})}
+        />
         <SelectPrimitive.Icon asChild>
           <motion.span
             className="inline-flex shrink-0 text-norma-subtle transition-colors duration-150 group-data-[state=open]:text-norma-accent"

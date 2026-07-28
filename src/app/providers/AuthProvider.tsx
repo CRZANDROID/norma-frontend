@@ -1,25 +1,17 @@
 import { useEffect, type ReactNode } from 'react'
-import { fetchMe } from '@/api/auth'
-import { designPreview, useApiMock } from '@/shared/lib/utils'
+import { fetchMe } from '@/features/auth/api/auth-api'
+import { bypassProfile } from '@/features/auth/lib/auth-bypass'
+import { authBypass, designPreview, useApiMock } from '@/shared/lib/utils'
 import { supabase } from '@/shared/lib/supabase'
 import { useAuthStore, type NormaProfile } from '@/store/auth-store'
 
-const mockProfile: NormaProfile = {
-  id: 'preview-admin',
-  authUserId: 'preview',
-  email: 'admin@norma.local',
-  name: 'Admin NORMA',
-  role: 'ADMIN',
-  memberships: [
-    {
-      clientId: 'client_arca',
-      clientName: 'Arca Continental',
-      clientSlug: 'arca-continental',
-      role: 'ADMIN',
-    },
-  ],
+async function resolveProfile(): Promise<NormaProfile | null> {
+  if (useApiMock) return bypassProfile
+  return fetchMe()
 }
 
+// TEMP: con VITE_AUTH_BYPASS=true no hay bootstrap Supabase; el login setea sesión local.
+// Mañana: VITE_AUTH_BYPASS=false (+ mock/preview false) restaura signIn + /auth/me.
 export function AuthProvider({ children }: { children: ReactNode }) {
   const setSession = useAuthStore((s) => s.setSession)
   const setProfile = useAuthStore((s) => s.setProfile)
@@ -29,8 +21,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true
 
     async function bootstrap() {
+      // designPreview: entra al panel sin /login. authBypass: muestra login y espera submit.
       if (designPreview) {
-        setProfile(mockProfile)
+        setProfile(bypassProfile)
+        setLoading(false)
+        return
+      }
+
+      if (authBypass) {
         setLoading(false)
         return
       }
@@ -42,14 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data.session) {
         try {
-          if (useApiMock) {
-            setProfile(mockProfile)
-          } else {
-            const profile = await fetchMe()
-            if (mounted) setProfile(profile)
-          }
+          const profile = await resolveProfile()
+          if (mounted) setProfile(profile)
         } catch {
-          if (mounted) setProfile(useApiMock ? mockProfile : null)
+          if (!mounted) return
+          setProfile(null)
+          // Sesión Supabase válida pero Nest rechaza (INACTIVE / 401): cerrar.
+          if (!useApiMock) {
+            await supabase.auth.signOut()
+            if (mounted) setSession(null)
+          }
         }
       }
 
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void bootstrap()
 
-    if (designPreview) {
+    if (designPreview || authBypass) {
       return () => {
         mounted = false
       }
@@ -66,7 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // LoginPage ya hidrata sesión/perfil; evitar carrera duplicada en SIGNED_IN.
+      if (event === 'SIGNED_IN' && useAuthStore.getState().profile) {
+        setSession(session)
+        setLoading(false)
+        return
+      }
+
       setSession(session)
 
       if (!session) {
@@ -76,14 +83,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        if (useApiMock) {
-          setProfile(mockProfile)
-        } else {
-          const profile = await fetchMe()
-          setProfile(profile)
-        }
+        const profile = await resolveProfile()
+        setProfile(profile)
       } catch {
-        setProfile(useApiMock ? mockProfile : null)
+        setProfile(null)
+        if (!useApiMock) {
+          await supabase.auth.signOut()
+          setSession(null)
+        }
       } finally {
         setLoading(false)
       }

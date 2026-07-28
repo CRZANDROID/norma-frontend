@@ -15,8 +15,12 @@ export function slugify(value: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
+/** TEMP: true = login sin Supabase/Nest. Mañana: VITE_AUTH_BYPASS=false */
+export const authBypass = import.meta.env.VITE_AUTH_BYPASS === 'true'
+
 export const useApiMock =
   import.meta.env.VITE_USE_API_MOCK === 'true' ||
-  import.meta.env.VITE_DESIGN_PREVIEW === 'true'
+  import.meta.env.VITE_DESIGN_PREVIEW === 'true' ||
+  authBypass
 
 export const designPreview = import.meta.env.VITE_DESIGN_PREVIEW === 'true'

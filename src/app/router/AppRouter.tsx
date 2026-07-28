@@ -4,7 +4,7 @@ import { Toaster } from 'sonner'
 import { AppLayout } from '@/app/layouts/AppLayout'
 import { AuthLayout } from '@/app/layouts/AuthLayout'
 import { ProtectedRoute } from '@/app/router/ProtectedRoute'
-import { LoginPage } from '@/pages/LoginPage'
+import { LoginPage } from '@/features/auth'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { AlertsPage } from '@/pages/AlertsPage'
 
@@ -17,6 +17,12 @@ const ClientsPage = lazy(() =>
 const SourcesPage = lazy(() =>
   import('@/features/sources/pages/SourcesPage').then((m) => ({
     default: m.SourcesPage,
+  })),
+)
+
+const UsersPage = lazy(() =>
+  import('@/features/users/pages/UsersPage').then((m) => ({
+    default: m.UsersPage,
   })),
 )
 
@@ -79,6 +85,22 @@ export function AppRouter() {
               element={
                 <Suspense fallback={<RouteFallback />}>
                   <SourcesPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/usuarios"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <UsersPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/usuarios/:userId"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <UsersPage />
                 </Suspense>
               }
             />

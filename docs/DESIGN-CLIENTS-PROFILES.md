@@ -353,8 +353,9 @@ Roles UI: ocultar mutaciones de cliente si `profile.role !== ADMIN`; perfiles vi
 9. Motion pass + `useReducedMotion`  
 10. Audit contra web-design-guidelines  
 
-**Fuera de esta entrega (en su momento):** Users admin, Findings, TanStack Query (hooks locales bastan para S3).  
-**Fuentes:** ver [DESIGN-SOURCES.md](./DESIGN-SOURCES.md).
+**Fuera de esta entrega (en su momento):** Findings, TanStack Query (hooks locales bastan para S3).  
+**Fuentes:** ver [DESIGN-SOURCES.md](./DESIGN-SOURCES.md).  
+**Usuarios:** ver [DESIGN-USERS.md](./DESIGN-USERS.md).
 
 ---
 

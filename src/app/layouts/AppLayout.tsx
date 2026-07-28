@@ -8,6 +8,7 @@ import {
   LogOut,
   Menu,
   Radio,
+  Users,
   X,
 } from 'lucide-react'
 import {
@@ -16,7 +17,7 @@ import {
   pageTransition,
   sectionKeyFromPath,
 } from '@/shared/lib/motion'
-import { cn, designPreview } from '@/shared/lib/utils'
+import { cn, authBypass, designPreview } from '@/shared/lib/utils'
 import { supabase } from '@/shared/lib/supabase'
 import { useAuthStore } from '@/store/auth-store'
 import { Button } from '@/shared/ui/button'
@@ -27,6 +28,7 @@ const navItems = [
   { to: '/alertas', label: 'Alertas', icon: Bell },
   { to: '/clientes', label: 'Clientes', icon: Building2 },
   { to: '/fuentes', label: 'Fuentes', icon: Radio },
+  { to: '/usuarios', label: 'Usuarios', icon: Users },
 ]
 
 export function AppLayout() {
@@ -39,7 +41,8 @@ export function AppLayout() {
   const sectionKey = sectionKeyFromPath(location.pathname)
 
   async function handleLogout() {
-    if (!designPreview) {
+    // TEMP: bypass/preview no tienen sesión Supabase real.
+    if (!designPreview && !authBypass) {
       await supabase.auth.signOut()
     }
     clear()

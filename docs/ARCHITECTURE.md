@@ -40,7 +40,7 @@ src/
     clients/
     sources/
     findings/               # futuro inbox / alertas
-    users/                  # futuro admin usuarios
+    users/                  # admin usuarios / roles / membresías
     <feature>/
       api/                  # llamadas Axios de ESTE dominio
       types/                # contratos de ESTE dominio
@@ -95,6 +95,7 @@ src/
 ```ts
 const ClientsPage = lazy(() => import('@/features/clients/pages/ClientsPage'))
 const SourcesPage = lazy(() => import('@/features/sources/pages/SourcesPage'))
+const UsersPage = lazy(() => import('@/features/users/pages/UsersPage'))
 ```
 
 Cada feature grande entra en su propio chunk. Obligatorio cuando haya >4 áreas de producto.
@@ -112,7 +113,7 @@ Cada feature grande entra en su propio chunk. Obligatorio cuando haya >4 áreas 
 1. Supabase = Auth (y Storage solo si Nest lo expone).
 2. NestJS = autoridad de datos y permisos.
 3. Toda pantalla: loading / empty / error / success.
-4. Deep links estables (`/clientes/:id?tab=perfiles`, `/fuentes/:sourceId`).
+4. Deep links estables (`/clientes/:id?tab=perfiles`, `/fuentes/:sourceId`, `/usuarios/:userId`).
 
 ## Env
 
