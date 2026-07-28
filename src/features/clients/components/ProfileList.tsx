@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import type { RegulatoryProfile } from '@/features/clients/types/client'
+import { mapApiError } from '@/shared/lib/api-error'
 import { clientsApi } from '@/features/clients/api/clients-api'
 import {
   ChipInput,
@@ -21,11 +22,15 @@ import { EmptyState } from '@/shared/ui/page'
 export function ProfileList({
   profiles,
   canEdit,
+  canToggleStatus,
   onChanged,
   onCreate,
 }: {
   profiles: RegulatoryProfile[]
+  /** Crear / editar — ADMIN | ANALYST */
   canEdit: boolean
+  /** Activar / desactivar — solo ADMIN (contrato Nest) */
+  canToggleStatus: boolean
   onChanged: () => void
   onCreate: () => void
 }) {
@@ -34,6 +39,7 @@ export function ProfileList({
   const [busy, setBusy] = useState(false)
 
   async function toggleStatus(profile: RegulatoryProfile) {
+    if (!canToggleStatus) return
     setBusy(true)
     try {
       if (profile.status === 'ACTIVE') {
@@ -46,7 +52,7 @@ export function ProfileList({
       setConfirmId(null)
       onChanged()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo completar.')
+      toast.error(mapApiError(err, 'No se pudo completar.'))
     } finally {
       setBusy(false)
     }
@@ -91,33 +97,37 @@ export function ProfileList({
                 </p>
               ) : null}
             </div>
-            {canEdit ? (
+            {canEdit || canToggleStatus ? (
               <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setEditing(profile)}
-                >
-                  Editar
-                </Button>
-                {profile.status === 'ACTIVE' ? (
+                {canEdit ? (
                   <Button
                     size="sm"
-                    variant="danger"
-                    onClick={() => setConfirmId(profile.id)}
+                    variant="outline"
+                    onClick={() => setEditing(profile)}
                   >
-                    Desactivar
+                    Editar
                   </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="signal"
-                    disabled={busy}
-                    onClick={() => void toggleStatus(profile)}
-                  >
-                    Activar
-                  </Button>
-                )}
+                ) : null}
+                {canToggleStatus ? (
+                  profile.status === 'ACTIVE' ? (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => setConfirmId(profile.id)}
+                    >
+                      Desactivar
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="signal"
+                      disabled={busy}
+                      onClick={() => void toggleStatus(profile)}
+                    >
+                      Activar
+                    </Button>
+                  )
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -256,7 +266,7 @@ export function ProfileFormDialog({
       onSaved()
       onOpenChange(false)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo guardar.')
+      toast.error(mapApiError(err, 'No se pudo guardar el perfil.'))
     } finally {
       setSubmitting(false)
     }

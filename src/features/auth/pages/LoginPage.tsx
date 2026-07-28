@@ -2,15 +2,11 @@ import { useId, useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
-import { fetchMe } from '@/features/auth/api/auth-api'
-import {
-  bypassProfile,
-  createBypassSession,
-} from '@/features/auth/lib/auth-bypass'
+import { fetchMe, login } from '@/features/auth/api/auth-api'
+import { previewProfile } from '@/features/auth/lib/preview-profile'
 import { mapAuthError } from '@/features/auth/lib/auth-errors'
 import { duration, easeOut } from '@/shared/lib/motion'
-import { supabase } from '@/shared/lib/supabase'
-import { authBypass, designPreview, useApiMock } from '@/shared/lib/utils'
+import { designPreview, useApiMock } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
@@ -25,10 +21,11 @@ const enter = {
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const session = useAuthStore((s) => s.session)
+  const accessToken = useAuthStore((s) => s.accessToken)
   const loading = useAuthStore((s) => s.loading)
-  const setSession = useAuthStore((s) => s.setSession)
+  const setAccessToken = useAuthStore((s) => s.setAccessToken)
   const setProfile = useAuthStore((s) => s.setProfile)
+  const clear = useAuthStore((s) => s.clear)
   const reduceMotion = useReducedMotion()
   const formId = useId()
 
@@ -44,7 +41,7 @@ export function LoginPage() {
       ? (location.state as { from: string }).from
       : '/clientes'
 
-  if (designPreview || (!loading && session)) {
+  if (designPreview || (!loading && accessToken)) {
     return <Navigate to={from} replace />
   }
 
@@ -54,60 +51,41 @@ export function LoginPage() {
     setSubmitting(true)
 
     try {
-      // TEMP: bypass local — mañana con VITE_AUTH_BYPASS=false usa el bloque real abajo.
-      if (authBypass) {
-        setSession(createBypassSession())
-        setProfile(bypassProfile)
+      if (useApiMock) {
+        setAccessToken('preview-token')
+        setProfile({
+          ...previewProfile,
+          email: email.trim() || previewProfile.email,
+        })
         navigate(from, { replace: true })
         return
       }
 
-      // Real auth (Supabase + Nest /auth/me) — no borrar.
-      const { data, error: signInError } = await supabase.auth.signInWithPassword(
-        {
-          email: email.trim(),
-          password,
-        },
-      )
+      const { accessToken: token, user } = await login({
+        email: email.trim(),
+        password,
+      })
 
-      if (signInError) {
-        setError(mapAuthError(signInError))
-        return
-      }
+      setAccessToken(token)
+      setProfile(user)
 
-      setSession(data.session)
-
-      if (useApiMock) {
-        setProfile({
-          id: 'preview-admin',
-          authUserId: data.session?.user.id ?? 'preview',
-          email: data.session?.user.email ?? email.trim(),
-          name: 'Admin NORMA',
-          role: 'ADMIN',
-          memberships: [],
-        })
-      } else {
-        try {
-          const profile = await fetchMe()
-          setProfile(profile)
-        } catch (profileError) {
-          await supabase.auth.signOut()
-          setSession(null)
-          setProfile(null)
-          setError(mapAuthError(profileError))
-          return
-        }
+      try {
+        const profile = await fetchMe()
+        setProfile(profile)
+      } catch {
+        // Login ya trajo user; /auth/me es best-effort para memberships frescos.
       }
 
       navigate(from, { replace: true })
     } catch (err) {
+      clear()
       setError(mapAuthError(err))
     } finally {
       setSubmitting(false)
     }
   }
 
-  const canSubmit = authBypass || (Boolean(email.trim()) && Boolean(password))
+  const canSubmit = Boolean(email.trim()) && Boolean(password)
   const motionOff = Boolean(reduceMotion)
   const stagger = (i: number) =>
     motionOff
@@ -212,7 +190,7 @@ export function LoginPage() {
                   type="email"
                   autoComplete="email"
                   autoFocus
-                  required={!authBypass}
+                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@empresa.com"
@@ -234,7 +212,7 @@ export function LoginPage() {
                     name="password"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
-                    required={!authBypass}
+                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Tu contraseña"

@@ -16,6 +16,7 @@ import {
   SOURCE_TYPES,
 } from '@/features/sources/types/source'
 import { useUnsavedChangesGuard } from '@/shared/hooks/useUnsavedChangesGuard'
+import { mapApiError } from '@/shared/lib/api-error'
 import { focusFirstInvalid } from '@/shared/lib/form'
 import { slugify } from '@/shared/lib/utils'
 import { Badge } from '@/shared/ui/badge'
@@ -166,7 +167,7 @@ export function SourceDataForm({
       onSaved(updated)
       toast.success('Cambios guardados.')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo guardar.')
+      toast.error(mapApiError(err, 'No se pudo guardar.'))
     } finally {
       setSaving(false)
     }
@@ -187,7 +188,7 @@ export function SourceDataForm({
       )
       setConfirmOff(false)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo completar.')
+      toast.error(mapApiError(err, 'No se pudo completar.'))
     } finally {
       setBusyStatus(false)
     }
@@ -235,13 +236,14 @@ export function SourceDataForm({
           <Input
             id="source-url"
             name="url"
-            type="url"
+            type="text"
+            inputMode="url"
             autoComplete="url"
             spellCheck={false}
             value={url}
             disabled={!canEdit}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://"
+            placeholder="https://ejemplo.com"
           />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -434,7 +436,7 @@ export function CreateSourceDialog({
       onCreated(created)
       onOpenChange(false)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo crear.')
+      toast.error(mapApiError(err, 'No se pudo crear.'))
     } finally {
       setSubmitting(false)
     }
@@ -490,17 +492,20 @@ export function CreateSourceDialog({
             value={type}
             onValueChange={(v) => setType(v as SourceType)}
             options={SOURCE_TYPE_OPTIONS}
-            required
           />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="new-source-url">URL</Label>
           <Input
             id="new-source-url"
-            type="url"
+            name="url"
+            type="text"
+            inputMode="url"
+            autoComplete="url"
+            spellCheck={false}
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://"
+            placeholder="https://ejemplo.com"
           />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

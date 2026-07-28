@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { supabase } from '@/shared/lib/supabase'
+import { clearAccessToken, getAccessToken } from '@/shared/lib/auth-token'
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3000',
@@ -8,11 +8,28 @@ export const api = axios.create({
   },
 })
 
-api.interceptors.request.use(async (config) => {
-  const { data } = await supabase.auth.getSession()
-  const token = data.session?.access_token
+api.interceptors.request.use((config) => {
+  const token = getAccessToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
 })
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      const url = error.config?.url ?? ''
+      const isLogin = url.includes('/auth/login')
+      if (!isLogin && getAccessToken()) {
+        clearAccessToken()
+        // Lazy import to avoid circular init with the store.
+        void import('@/store/auth-store').then(({ useAuthStore }) => {
+          useAuthStore.getState().clear()
+        })
+      }
+    }
+    return Promise.reject(error)
+  },
+)

@@ -17,8 +17,7 @@ import {
   pageTransition,
   sectionKeyFromPath,
 } from '@/shared/lib/motion'
-import { cn, authBypass, designPreview } from '@/shared/lib/utils'
-import { supabase } from '@/shared/lib/supabase'
+import { cn } from '@/shared/lib/utils'
 import { useAuthStore } from '@/store/auth-store'
 import { Button } from '@/shared/ui/button'
 import { NormaMark } from '@/shared/ui/norma-mark'
@@ -43,11 +42,7 @@ export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const sectionKey = sectionKeyFromPath(location.pathname)
 
-  async function handleLogout() {
-    // TEMP: bypass/preview no tienen sesión Supabase real.
-    if (!designPreview && !authBypass) {
-      await supabase.auth.signOut()
-    }
+  function handleLogout() {
     clear()
     navigate('/login', { replace: true })
   }

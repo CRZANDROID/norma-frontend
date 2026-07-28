@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
-import { Search } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import type { NormaUser } from '@/features/users/types/user'
 import { USER_ROLE_LABELS } from '@/features/users/types/user'
 import { RoleBadge, StatusBadge } from '@/features/users/components/chips'
 import { duration, easeOut } from '@/shared/lib/motion'
 import { cn } from '@/shared/lib/utils'
+import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Skeleton } from '@/shared/ui/skeleton'
 
@@ -18,27 +19,39 @@ export function UserListPanel({
   loading,
   query,
   includeInactive,
+  canCreate,
   itemTo,
   onQueryChange,
   onIncludeInactiveChange,
+  onCreate,
 }: {
   users: NormaUser[]
   selectedId?: string
   loading: boolean
   query: string
   includeInactive: boolean
+  canCreate: boolean
   itemTo: (id: string) => string
   onQueryChange: (q: string) => void
   onIncludeInactiveChange: (v: boolean) => void
+  onCreate: () => void
 }) {
   const reduceMotion = useReducedMotion()
 
   return (
     <div className="flex h-full min-h-[520px] flex-col overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface shadow-[0_12px_32px_-18px_rgba(13,27,42,0.35)]">
       <div className="space-y-3 border-b-2 border-norma-border bg-norma-raised/80 p-4">
-        <h2 className="font-display text-sm font-semibold tracking-wide text-balance">
-          Usuarios
-        </h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-display text-sm font-semibold tracking-wide text-balance">
+            Usuarios
+          </h2>
+          {canCreate ? (
+            <Button size="sm" onClick={onCreate} aria-label="Nuevo usuario">
+              <Plus className="size-4" aria-hidden />
+              Nuevo
+            </Button>
+          ) : null}
+        </div>
         <div className="relative">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-norma-subtle"

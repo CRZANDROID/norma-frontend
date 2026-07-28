@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { motion, useReducedMotion } from 'motion/react'
 import { usersApi } from '@/features/users/api/users-api'
 import {
+  CreateUserDialog,
   UserDetailHeader,
   UserMemberships,
   UserRoleForm,
@@ -11,6 +12,7 @@ import { UserListPanel } from '@/features/users/components/UserListPanel'
 import { useDebouncedValue } from '@/features/users/hooks/useDebouncedValue'
 import type { NormaUser } from '@/features/users/types/user'
 import { detailCrossfade, duration, easeOut } from '@/shared/lib/motion'
+import { mapApiError } from '@/shared/lib/api-error'
 import { useAuthStore } from '@/store/auth-store'
 import { EmptyState, ErrorState, PageHeader } from '@/shared/ui/page'
 import { Skeleton } from '@/shared/ui/skeleton'
@@ -40,6 +42,8 @@ export function UsersPage() {
   detailRef.current = detail
   const usersRef = useRef(users)
   usersRef.current = users
+
+  const [createOpen, setCreateOpen] = useState(false)
 
   const patchSearch = useCallback(
     (patch: Record<string, string | null>) => {
@@ -78,7 +82,7 @@ export function UsersPage() {
       })
       setUsers(rows)
     } catch (err) {
-      setListError(err instanceof Error ? err.message : 'No se pudo cargar.')
+      setListError(mapApiError(err, 'No se pudo cargar la lista de usuarios.'))
     } finally {
       setListLoading(false)
     }
@@ -96,7 +100,7 @@ export function UsersPage() {
       setDetail(data)
     } catch (err) {
       setDetail(null)
-      setDetailError(err instanceof Error ? err.message : 'No se pudo cargar.')
+      setDetailError(mapApiError(err, 'No se pudo cargar el usuario.'))
     } finally {
       setDetailLoading(false)
     }
@@ -138,7 +142,7 @@ export function UsersPage() {
         if (!cancelled) {
           setDetail(null)
           setDetailError(
-            err instanceof Error ? err.message : 'No se pudo cargar.',
+          setDetailError(mapApiError(err, 'No se pudo cargar el usuario.'))
           )
         }
       } finally {
@@ -197,18 +201,24 @@ export function UsersPage() {
             loading={listLoading}
             query={query}
             includeInactive={includeInactive}
+            canCreate={canManage}
             itemTo={itemTo}
             onQueryChange={(q) => patchSearch({ q: q || null })}
             onIncludeInactiveChange={(v) =>
               patchSearch({ inactive: v ? '1' : null })
             }
+            onCreate={() => setCreateOpen(true)}
           />
 
           <section className="min-h-[520px] rounded-3xl border-2 border-norma-border bg-norma-surface p-5 shadow-[0_12px_32px_-18px_rgba(13,27,42,0.35)] md:p-6">
             {!userId && !listLoading && users.length === 0 ? (
               <EmptyState
                 title="Aún no hay usuarios"
-                description="Aparecen cuando alguien inicia sesión por primera vez."
+                description="Crea el primero con correo y contraseña."
+                actionLabel={canManage ? 'Nuevo usuario' : undefined}
+                onAction={
+                  canManage ? () => setCreateOpen(true) : undefined
+                }
               />
             ) : showBlockingSkeleton ? (
               <div className="space-y-4">
@@ -254,6 +264,15 @@ export function UsersPage() {
           </section>
         </div>
       )}
+
+      <CreateUserDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(created) => {
+          void loadList()
+          navigate(`/usuarios/${created.id}${listQueryString}`)
+        }}
+      />
     </div>
   )
 }

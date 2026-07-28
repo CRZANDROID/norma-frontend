@@ -1,5 +1,6 @@
 import type {
   CreateMembershipInput,
+  CreateUserInput,
   ListUsersParams,
   MembershipClientOption,
   NormaUser,
@@ -18,7 +19,6 @@ function delay(ms = 280) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-/** Clientes seed (mismos ids que clients mock) para el picker de membresía. */
 const clientsCatalog: MembershipClientOption[] = [
   {
     id: 'client_arca',
@@ -36,11 +36,9 @@ function clientById(clientId: string): MembershipClientOption | undefined {
   return clientsCatalog.find((c) => c.id === clientId)
 }
 
-/** Seed alineado al piloto (admin + analista Arca). */
 let users: NormaUser[] = [
   {
     id: 'user_admin',
-    authUserId: '00000000-0000-4000-8000-000000000001',
     email: 'admin@norma.local',
     name: 'Admin NORMA',
     role: 'ADMIN',
@@ -51,7 +49,6 @@ let users: NormaUser[] = [
   },
   {
     id: 'user_analyst',
-    authUserId: '00000000-0000-4000-8000-000000000002',
     email: 'analista@norma.local',
     name: 'Ana Analista',
     role: 'ANALYST',
@@ -71,7 +68,6 @@ let users: NormaUser[] = [
   },
   {
     id: 'user_viewer',
-    authUserId: '00000000-0000-4000-8000-000000000003',
     email: 'viewer@norma.local',
     name: 'Vera Viewer',
     role: 'VIEWER',
@@ -91,7 +87,6 @@ let users: NormaUser[] = [
   },
   {
     id: 'user_client',
-    authUserId: '00000000-0000-4000-8000-000000000004',
     email: 'contacto@arca.com',
     name: 'Contacto Arca',
     role: 'CLIENT_USER',
@@ -159,6 +154,28 @@ export const usersMockApi = {
     const user = users.find((u) => u.id === userId)
     if (!user) throw new Error('Usuario no encontrado')
     return cloneUser(user)
+  },
+
+  async create(input: CreateUserInput): Promise<NormaUser> {
+    await delay()
+    if (users.some((u) => u.email.toLowerCase() === input.email.toLowerCase())) {
+      throw new Error('Ya existe un usuario con ese correo.')
+    }
+    if (input.password.length < 8) {
+      throw new Error('La contraseña debe tener al menos 8 caracteres.')
+    }
+    const created: NormaUser = {
+      id: id('user'),
+      email: input.email.trim(),
+      name: input.name.trim(),
+      role: input.role ?? 'ANALYST',
+      status: 'ACTIVE',
+      memberships: [],
+      createdAt: now(),
+      updatedAt: now(),
+    }
+    users = [...users, created]
+    return cloneUser(created)
   },
 
   async updateRole(

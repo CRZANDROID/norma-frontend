@@ -22,6 +22,7 @@ import {
 } from '@/features/clients/components/ProfileList'
 import { useDebouncedValue } from '@/features/clients/hooks/useDebouncedValue'
 import { useAuthStore } from '@/store/auth-store'
+import { mapApiError } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/utils'
 import { EmptyState, ErrorState, PageHeader } from '@/shared/ui/page'
 import { Skeleton } from '@/shared/ui/skeleton'
@@ -43,6 +44,7 @@ export function ClientsPage() {
   const role = profile?.role ?? 'ADMIN'
   const canManageClients = role === 'ADMIN'
   const canManageProfiles = role === 'ADMIN' || role === 'ANALYST'
+  const canToggleProfiles = role === 'ADMIN'
 
   const [clients, setClients] = useState<Client[]>([])
   const [listLoading, setListLoading] = useState(true)
@@ -97,7 +99,7 @@ export function ClientsPage() {
       })
       setClients(rows)
     } catch (err) {
-      setListError(err instanceof Error ? err.message : 'No se pudo cargar.')
+      setListError(mapApiError(err, 'No se pudo cargar la lista de clientes.'))
     } finally {
       setListLoading(false)
     }
@@ -112,7 +114,7 @@ export function ClientsPage() {
       setDetail(data)
     } catch (err) {
       setDetail(null)
-      setDetailError(err instanceof Error ? err.message : 'No se pudo cargar.')
+      setDetailError(mapApiError(err, 'No se pudo cargar el cliente.'))
     } finally {
       setDetailLoading(false)
     }
@@ -149,9 +151,7 @@ export function ClientsPage() {
       } catch (err) {
         if (!cancelled) {
           setDetail(null)
-          setDetailError(
-            err instanceof Error ? err.message : 'No se pudo cargar.',
-          )
+          setDetailError(mapApiError(err, 'No se pudo cargar el cliente.'))
         }
       } finally {
         if (!cancelled) setDetailLoading(false)
@@ -307,6 +307,7 @@ export function ClientsPage() {
                           <ProfileList
                             profiles={detail.profiles}
                             canEdit={canManageProfiles}
+                            canToggleStatus={canToggleProfiles}
                             onCreate={() => setProfileCreateOpen(true)}
                             onChanged={() =>
                               clientId && void loadDetail(clientId)

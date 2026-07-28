@@ -11,13 +11,13 @@
 | Motion | `motion` cuando haga falta |
 | Estado auth/UI | Zustand (solo sesión/perfil/UI global) |
 | HTTP | Axios → NestJS (`VITE_API_URL`) |
-| Auth | `@supabase/supabase-js` (solo identidad) |
+| Auth | NestJS JWT (`POST /auth/login`) |
 
 ## Flujo
 
 ```text
-Login → Supabase Auth
-  → AuthProvider + Zustand (session/profile)
+Login → POST /auth/login (Nest)
+  → accessToken en localStorage + Zustand (token/profile)
   → Bearer en Axios
   → NestJS → Prisma → Postgres
 ```
@@ -51,7 +51,7 @@ src/
 
   shared/                   # Código sin dominio de negocio
     ui/                     # Button, Input, Dialog, Badge, Skeleton…
-    lib/                    # cn, supabase client, axios instance
+    lib/                    # cn, auth-token, axios instance
     hooks/                  # hooks genéricos (useDebounce, useMediaQuery)
     config/                 # env helpers
     types/                  # tipos transversales mínimos
@@ -103,15 +103,15 @@ Cada feature grande entra en su propio chunk. Obligatorio cuando haya >4 áreas 
 ## Migración desde la estructura actual
 
 1. Crear `app/`, `features/`, `shared/`.
-2. Mover axios/supabase/`cn` → `shared/lib`.
+2. Mover axios/`cn` → `shared/lib`.
 3. Mover UI base → `shared/ui`.
 4. Implementar Clientes como **primer feature canónico** (`features/clients`).
 5. Ir migrando Auth, Fuentes, etc.; no reescribir todo el día 1, pero **código nuevo solo en esta estructura**.
 
 ## Reglas de producto (resumen)
 
-1. Supabase = Auth (y Storage solo si Nest lo expone).
-2. NestJS = autoridad de datos y permisos.
+1. NestJS = Auth (JWT) + autoridad de datos y permisos.
+2. Usuarios nuevos solo vía `POST /users` (ADMIN); no hay registro público.
 3. Toda pantalla: loading / empty / error / success.
 4. Deep links estables (`/clientes/:id?tab=perfiles`, `/fuentes/:sourceId`, `/usuarios/:userId`).
 
@@ -120,7 +120,7 @@ Cada feature grande entra en su propio chunk. Obligatorio cuando haya >4 áreas 
 | Variable | Uso |
 |----------|-----|
 | `VITE_API_URL` | NestJS |
-| `VITE_SUPABASE_URL` | Proyecto Supabase |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Anon/publishable key |
+| `VITE_USE_API_MOCK` | Datos locales sin Nest |
+| `VITE_DESIGN_PREVIEW` | Salta `/login` (solo UI) |
 
 Ver `.env.example`.

@@ -12,6 +12,7 @@ import { useDebouncedValue } from '@/features/sources/hooks/useDebouncedValue'
 import type { Source, SourceType } from '@/features/sources/types/source'
 import { SOURCE_TYPES } from '@/features/sources/types/source'
 import { detailCrossfade, duration, easeOut } from '@/shared/lib/motion'
+import { mapApiError } from '@/shared/lib/api-error'
 import { useAuthStore } from '@/store/auth-store'
 import { EmptyState, ErrorState, PageHeader } from '@/shared/ui/page'
 import { Skeleton } from '@/shared/ui/skeleton'
@@ -93,7 +94,7 @@ export function SourcesPage() {
       })
       setSources(rows)
     } catch (err) {
-      setListError(err instanceof Error ? err.message : 'No se pudo cargar.')
+      setListError(mapApiError(err, 'No se pudo cargar la lista de fuentes.'))
     } finally {
       setListLoading(false)
     }
@@ -116,7 +117,7 @@ export function SourcesPage() {
       setDetail(data)
     } catch (err) {
       setDetail(null)
-      setDetailError(err instanceof Error ? err.message : 'No se pudo cargar.')
+      setDetailError(mapApiError(err, 'No se pudo cargar la fuente.'))
     } finally {
       setDetailLoading(false)
     }
@@ -158,7 +159,7 @@ export function SourcesPage() {
         if (!cancelled) {
           setDetail(null)
           setDetailError(
-            err instanceof Error ? err.message : 'No se pudo cargar.',
+          setDetailError(mapApiError(err, 'No se pudo cargar la fuente.'))
           )
         }
       } finally {

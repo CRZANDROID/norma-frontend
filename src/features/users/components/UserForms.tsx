@@ -14,8 +14,10 @@ import {
   USER_ROLES,
 } from '@/features/users/types/user'
 import { useUnsavedChangesGuard } from '@/shared/hooks/useUnsavedChangesGuard'
+import { mapApiError } from '@/shared/lib/api-error'
 import { focusFirstInvalid } from '@/shared/lib/form'
 import { Button } from '@/shared/ui/button'
+import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Modal } from '@/shared/ui/modal'
 import { Select } from '@/shared/ui/select'
@@ -37,9 +39,6 @@ export function UserDetailHeader({ user }: { user: NormaUser }) {
           <RoleBadge role={user.role} />
         </div>
         <p className="mt-1 text-sm text-norma-muted">{user.email}</p>
-        <p className="mt-1 font-mono text-[11px] text-norma-subtle">
-          {user.authUserId}
-        </p>
       </div>
     </div>
   )
@@ -82,7 +81,7 @@ export function UserRoleForm({
       onSaved(updated)
       toast.success('Rol actualizado.')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo guardar.')
+      toast.error(mapApiError(err, 'No se pudo guardar.'))
     } finally {
       setSaving(false)
     }
@@ -103,7 +102,7 @@ export function UserRoleForm({
       )
       setConfirmOff(false)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo completar.')
+      toast.error(mapApiError(err, 'No se pudo completar.'))
     } finally {
       setBusyStatus(false)
     }
@@ -201,7 +200,7 @@ function MembershipRow({
       onUpdated(updated)
       toast.success('Membresía actualizada.')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo guardar.')
+      toast.error(mapApiError(err, 'No se pudo guardar.'))
     } finally {
       setSaving(false)
     }
@@ -223,7 +222,7 @@ function MembershipRow({
       )
       setConfirmOff(false)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo completar.')
+      toast.error(mapApiError(err, 'No se pudo completar.'))
     } finally {
       setBusyStatus(false)
     }
@@ -442,11 +441,7 @@ function CreateMembershipDialog({
       })
       .catch((err) => {
         if (!cancelled) {
-          toast.error(
-            err instanceof Error
-              ? err.message
-              : 'No se pudieron cargar los clientes.',
-          )
+          toast.error(mapApiError(err, 'No se pudieron cargar los clientes.'))
         }
       })
       .finally(() => {
@@ -486,7 +481,7 @@ function CreateMembershipDialog({
       onCreated(created)
       onOpenChange(false)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo crear.')
+      toast.error(mapApiError(err, 'No se pudo crear.'))
     } finally {
       setSubmitting(false)
     }
@@ -514,7 +509,6 @@ function CreateMembershipDialog({
               value={clientId}
               onValueChange={setClientId}
               options={clientOptions}
-              required
             />
           ) : (
             <p className="text-sm text-norma-muted">Cargando clientes…</p>
@@ -527,7 +521,6 @@ function CreateMembershipDialog({
             value={role}
             onValueChange={(v) => setRole(v as UserRole)}
             options={ROLE_OPTIONS}
-            required
           />
         </div>
         <div className="flex justify-end gap-2 pt-2">
@@ -545,6 +538,128 @@ function CreateMembershipDialog({
             }
           >
             {submitting ? 'Guardando…' : 'Crear membresía'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+export function CreateUserDialog({
+  open,
+  onOpenChange,
+  onCreated,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onCreated: (user: NormaUser) => void
+}) {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [role, setRole] = useState<UserRole>('ANALYST')
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!open) {
+      setName('')
+      setEmail('')
+      setPassword('')
+      setRole('ANALYST')
+    }
+  }, [open])
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const form = e.currentTarget
+    if (!form.checkValidity()) {
+      focusFirstInvalid(form)
+      form.reportValidity()
+      return
+    }
+    setSubmitting(true)
+    try {
+      const created = await usersApi.create({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        role,
+      })
+      toast.success('Usuario creado.')
+      onCreated(created)
+      onOpenChange(false)
+    } catch (err) {
+      toast.error(mapApiError(err, 'No se pudo crear el usuario.'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Nuevo usuario"
+      description="Crea una cuenta con contraseña. Luego puedes ligarla a un cliente."
+    >
+      <form className="space-y-4" onSubmit={onSubmit} noValidate>
+        <div className="space-y-1.5">
+          <Label htmlFor="new-user-name">Nombre</Label>
+          <Input
+            id="new-user-name"
+            name="name"
+            autoComplete="name"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="new-user-email">Correo</Label>
+          <Input
+            id="new-user-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            spellCheck={false}
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="new-user-password">Contraseña</Label>
+          <Input
+            id="new-user-password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <p className="text-xs text-norma-muted">Mínimo 8 caracteres.</p>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="new-user-role">Rol global</Label>
+          <Select
+            id="new-user-role"
+            value={role}
+            onValueChange={(v) => setRole(v as UserRole)}
+            options={ROLE_OPTIONS}
+          />
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? 'Creando…' : 'Crear usuario'}
           </Button>
         </div>
       </form>

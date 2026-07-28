@@ -1,48 +1,52 @@
+import {
+  clearAccessToken,
+  getAccessToken,
+  setAccessToken as persistAccessToken,
+} from '@/shared/lib/auth-token'
 import { create } from 'zustand'
-import type { Session, User } from '@supabase/supabase-js'
+
+export type NormaMembership = {
+  clientId: string
+  clientName: string
+  clientSlug: string
+  role: string
+}
 
 export type NormaProfile = {
   id: string
-  authUserId: string
   email: string
   name: string
   role: string
-  memberships: Array<{
-    clientId: string
-    clientName: string
-    clientSlug: string
-    role: string
-  }>
+  memberships: NormaMembership[]
 }
 
 type AuthState = {
-  session: Session | null
-  user: User | null
+  accessToken: string | null
   profile: NormaProfile | null
   loading: boolean
-  setSession: (session: Session | null) => void
+  setAccessToken: (token: string | null) => void
   setProfile: (profile: NormaProfile | null) => void
   setLoading: (loading: boolean) => void
   clear: () => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  session: null,
-  user: null,
+  accessToken: getAccessToken(),
   profile: null,
   loading: true,
-  setSession: (session) =>
-    set({
-      session,
-      user: session?.user ?? null,
-    }),
+  setAccessToken: (token) => {
+    if (token) persistAccessToken(token)
+    else clearAccessToken()
+    set({ accessToken: token })
+  },
   setProfile: (profile) => set({ profile }),
   setLoading: (loading) => set({ loading }),
-  clear: () =>
+  clear: () => {
+    clearAccessToken()
     set({
-      session: null,
-      user: null,
+      accessToken: null,
       profile: null,
       loading: false,
-    }),
+    })
+  },
 }))

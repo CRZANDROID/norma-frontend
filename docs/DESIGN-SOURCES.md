@@ -1,9 +1,9 @@
 # NORMA — Diseño: Fuentes de información
 
-**Estado:** implementado en UI con mock local (`VITE_USE_API_MOCK` / `VITE_DESIGN_PREVIEW`)  
+**Estado:** CRUD conectado a Nest (`VITE_USE_API_MOCK=false`); mock solo para preview UI  
 **Alcance:** CRUD Sprint 3 Sources (listar / crear / editar / pausar / reanudar)  
 **Firma visual:** misma shell que Clientes (aurora navy, chips de señal, master-detail)  
-**Contrato API:** [SPRINT-3-BACKEND.md](../../backend-norma/docs/SPRINT-3-BACKEND.md) §7.4  
+**Contrato API:** [POSTMAN-BACKEND.md](./POSTMAN-BACKEND.md) §6  
 
 Tokens, tipografía y motion: heredar de [DESIGN-CLIENTS-PROFILES.md](./DESIGN-CLIENTS-PROFILES.md).
 

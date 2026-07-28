@@ -19,7 +19,8 @@ No agregar pantallas nuevas en `src/pages/` plano. Ver `ARCHITECTURE.md`.
 
 ## Datos
 
-- Supabase = Auth. Negocio = NestJS + Bearer.
+- Auth = Nest JWT (`POST /auth/login` + Bearer).
+- Negocio = NestJS + Bearer.
 - No PostgREST a tablas de negocio.
 - Mocks solo temporales; no permanentes si el API del sprint existe.
 

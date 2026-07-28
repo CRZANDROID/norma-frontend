@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import type { Client } from '@/features/clients/types/client'
 import { clientsApi } from '@/features/clients/api/clients-api'
 import { useUnsavedChangesGuard } from '@/shared/hooks/useUnsavedChangesGuard'
+import { mapApiError } from '@/shared/lib/api-error'
 import { focusFirstInvalid } from '@/shared/lib/form'
 import { slugify } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
@@ -75,7 +76,7 @@ export function ClientDataForm({
       onSaved(updated)
       toast.success('Cambios guardados.')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo guardar.')
+      toast.error(mapApiError(err, 'No se pudo guardar.'))
     } finally {
       setSaving(false)
     }
@@ -94,7 +95,7 @@ export function ClientDataForm({
       )
       setConfirmOff(false)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo completar.')
+      toast.error(mapApiError(err, 'No se pudo completar.'))
     } finally {
       setBusyStatus(false)
     }
@@ -249,7 +250,7 @@ export function CreateClientDialog({
       onCreated(created)
       onOpenChange(false)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo crear.')
+      toast.error(mapApiError(err, 'No se pudo crear el cliente.'))
     } finally {
       setSubmitting(false)
     }

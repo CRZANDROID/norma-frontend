@@ -1,10 +1,10 @@
 # NORMA — Propuesta de diseño: Clientes + Perfiles regulatorios
 
-**Estado:** implementado en UI con mock local (`VITE_USE_API_MOCK` + `VITE_DESIGN_PREVIEW`)  
+**Estado:** CRUD clientes conectado a Nest (`VITE_USE_API_MOCK=false`); mock solo para preview UI  
 **Alcance:** CRUD Sprint 3 (clients + regulatory profiles) + rediseño del shell autenticado  
 **Inspiración:** deck `Norma — Presentación.html` (MAIA / VCGA)  
 **Skills:** frontend-design, ui-ux-pro-max, emil-design-eng, web-design-guidelines  
-**Contrato API:** [SPRINT-3-BACKEND.md](../../backend-norma/docs/SPRINT-3-BACKEND.md) §§7.2–7.3  
+**Contrato API:** [POSTMAN-BACKEND.md](./POSTMAN-BACKEND.md) §§4–5  
 
 ---
 
@@ -180,8 +180,8 @@ Estado en URL (web-design-guidelines): selección y tab deep-linkeables.
 - Lista desde `GET /clients/:id` (incluye `profiles`) o `GET .../profiles`  
 - **Nuevo perfil** / **Editar**: Dialog  
   - Nombre*, Descripción, Keywords (chip input), Categorías (chip input), Products JSON simplificado: textarea JSON opcional o chips de categorías de producto  
-- Desactivar perfil: confirmación corta → `PATCH /profiles/:id/deactivate`  
-- ANALYST: puede crear/editar perfiles; no crear cliente (ocultar [+] si no ADMIN)
+- Desactivar perfil: confirmación corta → `PATCH /profiles/:id/deactivate` (solo ADMIN)
+- ANALYST: puede crear/editar perfiles; no crear cliente ni activate/deactivate perfil (ocultar [+] cliente y botones Off/On perfil)
 
 ### Estados de pantalla (obligatorios)
 
@@ -300,7 +300,7 @@ src/
       index.ts             # exports públicos mínimos
   shared/
     ui/                    # Button, Input, Dialog, Tabs, Badge…
-    lib/                   # axios, cn, supabase
+    lib/                   # axios, auth-token, api-error, cn
   index.css                # SOLO Tailwind + @theme
 ```
 
@@ -322,7 +322,7 @@ API mock: solo con `VITE_USE_API_MOCK=true` si Nest aún no expone endpoints; mi
 | Nuevo/editar perfil | `POST /clients/:id/profiles` / `PATCH /profiles/:id` |
 | Off/On perfil | `PATCH /profiles/:id/deactivate` / `activate` |
 
-Roles UI: ocultar mutaciones de cliente si `profile.role !== ADMIN`; perfiles visibles create/edit para ADMIN y ANALYST.
+Roles UI: mutaciones de cliente solo `ADMIN`; perfiles create/edit `ADMIN` | `ANALYST`; activate/deactivate perfil solo `ADMIN`.
 
 ---
 

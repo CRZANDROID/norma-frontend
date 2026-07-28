@@ -28,7 +28,6 @@ export type UserMembership = {
 
 export type NormaUser = {
   id: string
-  authUserId: string
   email: string
   name: string
   role: UserRole
@@ -43,6 +42,13 @@ export type MembershipClientOption = {
   id: string
   name: string
   slug: string
+}
+
+export type CreateUserInput = {
+  email: string
+  name: string
+  password: string
+  role?: UserRole
 }
 
 export type UpdateUserRoleInput = {
