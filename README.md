@@ -18,6 +18,9 @@ pnpm dev
 App en `http://localhost:5173`  
 API NestJS en `http://localhost:3000` (`VITE_API_URL`).
 
+**Importante:** el front es una SPA. Usa siempre el puerto de Vite (`5173`), no el del API (`3000`).  
+Si en deploy (Vercel/Netlify) un refresh en `/login` o `/clientes` da `404`, hace falta fallback a `index.html` (`vercel.json` y `public/_redirects` ya están en el repo).
+
 ## Estructura
 
 ```
