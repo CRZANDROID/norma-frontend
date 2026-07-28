@@ -17,7 +17,7 @@ import {
   pageTransition,
   sectionKeyFromPath,
 } from '@/shared/lib/motion'
-import { cn, authBypass, designPreview } from '@/shared/lib/utils'
+import { cn, designPreview } from '@/shared/lib/utils'
 import { supabase } from '@/shared/lib/supabase'
 import { useAuthStore } from '@/store/auth-store'
 import { Button } from '@/shared/ui/button'
@@ -44,8 +44,8 @@ export function AppLayout() {
   const sectionKey = sectionKeyFromPath(location.pathname)
 
   async function handleLogout() {
-    // TEMP: bypass/preview no tienen sesión Supabase real.
-    if (!designPreview && !authBypass) {
+    // designPreview no tiene sesión Supabase real.
+    if (!designPreview) {
       await supabase.auth.signOut()
     }
     clear()

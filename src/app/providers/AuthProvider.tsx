@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { fetchMe } from '@/features/auth/api/auth-api'
 import { bypassProfile } from '@/features/auth/lib/auth-bypass'
-import { authBypass, designPreview, useApiMock } from '@/shared/lib/utils'
+import { designPreview, useApiMock } from '@/shared/lib/utils'
 import { supabase } from '@/shared/lib/supabase'
 import { useAuthStore, type NormaProfile } from '@/store/auth-store'
 
@@ -10,8 +10,6 @@ async function resolveProfile(): Promise<NormaProfile | null> {
   return fetchMe()
 }
 
-// TEMP: con VITE_AUTH_BYPASS=true no hay bootstrap Supabase; el login setea sesión local.
-// Mañana: VITE_AUTH_BYPASS=false (+ mock/preview false) restaura signIn + /auth/me.
 export function AuthProvider({ children }: { children: ReactNode }) {
   const setSession = useAuthStore((s) => s.setSession)
   const setProfile = useAuthStore((s) => s.setProfile)
@@ -21,14 +19,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true
 
     async function bootstrap() {
-      // designPreview: entra al panel sin /login. authBypass: muestra login y espera submit.
+      // designPreview: entra al panel sin /login (solo diseño UI).
       if (designPreview) {
         setProfile(bypassProfile)
-        setLoading(false)
-        return
-      }
-
-      if (authBypass) {
         setLoading(false)
         return
       }
@@ -58,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void bootstrap()
 
-    if (designPreview || authBypass) {
+    if (designPreview) {
       return () => {
         mounted = false
       }
