@@ -141,9 +141,7 @@ export function UsersPage() {
       } catch (err) {
         if (!cancelled) {
           setDetail(null)
-          setDetailError(
           setDetailError(mapApiError(err, 'No se pudo cargar el usuario.'))
-          )
         }
       } finally {
         if (!cancelled) setDetailLoading(false)

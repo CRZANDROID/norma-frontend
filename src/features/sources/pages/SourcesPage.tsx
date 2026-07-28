@@ -158,9 +158,7 @@ export function SourcesPage() {
       } catch (err) {
         if (!cancelled) {
           setDetail(null)
-          setDetailError(
           setDetailError(mapApiError(err, 'No se pudo cargar la fuente.'))
-          )
         }
       } finally {
         if (!cancelled) setDetailLoading(false)
