@@ -1,34 +1,32 @@
-import { PagePlaceholder } from '@/components/PagePlaceholder'
+import { PageHeader } from '@/shared/ui/page'
 import { useAuthStore } from '@/store/auth-store'
+import { Badge } from '@/shared/ui/badge'
 
 export function DashboardPage() {
   const profile = useAuthStore((s) => s.profile)
 
   return (
-    <section className="space-y-4">
-      <PagePlaceholder
+    <div>
+      <PageHeader
+        eyebrow="Operación"
         title="Dashboard"
-        description="Resumen operativo del sistema NORMA."
+        description="Resumen del piloto. El detalle operativo vive en Clientes y, más adelante, en Alertas."
       />
-      {profile ? (
-        <div className="rounded-lg border border-norma-border bg-norma-surface p-4 text-sm">
-          <p className="font-medium">Sesión activa</p>
-          <p className="mt-1 text-norma-muted">
-            {profile.name} ({profile.email}) — rol {profile.role}
-          </p>
-          {profile.memberships.length > 0 ? (
-            <p className="mt-2 text-norma-muted">
-              Clientes:{' '}
-              {profile.memberships.map((m) => m.clientName).join(', ')}
-            </p>
-          ) : (
-            <p className="mt-2 text-norma-muted">
-              Sin membresías de cliente aún. El perfil se crea automáticamente
-              al iniciar sesión.
-            </p>
-          )}
+      <div className="rounded-3xl border-2 border-norma-border bg-norma-surface p-6 shadow-[0_12px_32px_-18px_rgba(13,27,42,0.3)]">
+        <p className="text-sm text-norma-muted">Sesión actual</p>
+        <p className="mt-2 font-display text-xl font-semibold">
+          {profile?.name ?? '—'}
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Badge variant="accent">{profile?.role ?? '—'}</Badge>
+          <Badge variant="signal">{profile?.email ?? '—'}</Badge>
         </div>
-      ) : null}
-    </section>
+        <p className="mt-6 text-sm text-norma-subtle">
+          Usa <span className="font-medium text-norma-fg">Clientes</span> para
+          administrar tenants y perfiles del agente (mock local hasta conectar
+          Nest).
+        </p>
+      </div>
+    </div>
   )
 }

@@ -1,10 +1,1 @@
-import { PagePlaceholder } from '@/components/PagePlaceholder'
-
-export function ClientsPage() {
-  return (
-    <PagePlaceholder
-      title="Clientes"
-      description="Administración de clientes."
-    />
-  )
-}
+export { ClientsPage } from '@/features/clients'

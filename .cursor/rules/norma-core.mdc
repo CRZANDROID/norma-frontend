@@ -1,25 +1,28 @@
 ---
-description: NORMA frontend core — auth boundary and API flow
+description: NORMA frontend core — architecture, auth boundary, no hand-written CSS
 alwaysApply: true
 ---
 
 # NORMA — Frontend Core
 
-Leer `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, `docs/SPRINTS.md` antes de implementar.
+Antes de codear: `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, `docs/SPRINTS.md`.
 
-## Fijo
+## Arquitectura de archivos
 
-- React + Vite + TS + Tailwind + Radix + Zustand + Axios
-- Auth: Supabase JS (`signIn` / `signOut` / session)
-- Datos de negocio: solo NestJS (`VITE_API_URL`) con Bearer
+`app/` (shell/router) + `features/<dominio>/` + `shared/`.  
+No agregar pantallas nuevas en `src/pages/` plano. Ver `ARCHITECTURE.md`.
 
-## Prohibido
+## Estilos
 
-- Consultar tablas de negocio en Supabase desde el client
-- Passwords/JWT propios
-- Mocks permanentes cuando el endpoint del sprint ya existe
-- Tratar ocultar botones como autorización real
+- Tailwind + Radix + CVA. **Cero CSS a mano.**
+- Motion/UI libs (`motion`, `sonner`, etc.) cuando aporten.
+
+## Datos
+
+- Supabase = Auth. Negocio = NestJS + Bearer.
+- No PostgREST a tablas de negocio.
+- Mocks solo temporales; no permanentes si el API del sprint existe.
 
 ## Sprint actual
 
-Pantallas admin CRUD contra API real. Contrato: brief backend `SPRINT-3-BACKEND.md`.
+Admin CRUD. Clientes/perfiles: `docs/DESIGN-CLIENTS-PROFILES.md` + brief backend S3.

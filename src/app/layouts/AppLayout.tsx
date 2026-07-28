@@ -1,0 +1,200 @@
+import { useState } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import {
+  Bell,
+  Building2,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Radio,
+  X,
+} from 'lucide-react'
+import {
+  duration,
+  easeOut,
+  pageTransition,
+  sectionKeyFromPath,
+} from '@/shared/lib/motion'
+import { cn, designPreview } from '@/shared/lib/utils'
+import { supabase } from '@/shared/lib/supabase'
+import { useAuthStore } from '@/store/auth-store'
+import { Button } from '@/shared/ui/button'
+import { NormaMark } from '@/shared/ui/norma-mark'
+
+const navItems = [
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/alertas', label: 'Alertas', icon: Bell },
+  { to: '/clientes', label: 'Clientes', icon: Building2 },
+  { to: '/fuentes', label: 'Fuentes', icon: Radio },
+]
+
+export function AppLayout() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const profile = useAuthStore((s) => s.profile)
+  const clear = useAuthStore((s) => s.clear)
+  const reduceMotion = useReducedMotion()
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const sectionKey = sectionKeyFromPath(location.pathname)
+
+  async function handleLogout() {
+    if (!designPreview) {
+      await supabase.auth.signOut()
+    }
+    clear()
+    navigate('/login', { replace: true })
+  }
+
+  const nav = (
+    <nav className="flex flex-1 flex-col gap-1 p-3">
+      {navItems.map(({ to, label, icon: Icon }) => (
+        <NavLink
+          key={to}
+          to={to}
+          onClick={() => setMobileOpen(false)}
+          className={({ isActive }) =>
+            cn(
+              'relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-norma-muted transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-norma-accent/8 hover:text-norma-fg',
+              isActive && 'text-norma-accent',
+            )
+          }
+        >
+          {({ isActive }) => (
+            <>
+              {isActive ? (
+                <motion.span
+                  layoutId={reduceMotion ? undefined : 'nav-section-pill'}
+                  className="absolute inset-0 rounded-2xl border-2 border-norma-accent/25 bg-norma-accent/10"
+                  transition={{
+                    type: 'spring',
+                    stiffness: 420,
+                    damping: 34,
+                    mass: 0.7,
+                  }}
+                />
+              ) : null}
+              <motion.span
+                className="relative inline-flex"
+                animate={
+                  reduceMotion
+                    ? undefined
+                    : isActive
+                      ? { scale: 1.06 }
+                      : { scale: 1 }
+                }
+                transition={{ duration: duration.fast, ease: easeOut }}
+              >
+                <Icon className="size-4" aria-hidden />
+              </motion.span>
+              <span className="relative">{label}</span>
+            </>
+          )}
+        </NavLink>
+      ))}
+    </nav>
+  )
+
+  return (
+    <div className="relative flex min-h-screen overflow-hidden bg-norma-bg text-norma-fg">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-24 top-[-10%] h-[420px] w-[420px] rounded-full bg-norma-accent/12 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute bottom-[-10%] right-[-5%] h-[380px] w-[380px] rounded-full bg-norma-signal/12 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(13,27,42,0.07)_1px,transparent_0)] bg-[size:22px_22px] opacity-50"
+      />
+
+      <aside className="relative z-10 hidden w-[248px] flex-col border-r-2 border-norma-border bg-norma-surface/95 backdrop-blur-md md:flex">
+        <div className="border-b-2 border-norma-border px-5 py-6">
+          <div className="flex items-center gap-3">
+            <NormaMark />
+            <div>
+              <p className="font-display text-base font-semibold tracking-[0.12em]">
+                NORMA
+              </p>
+              <p className="text-[9px] font-medium uppercase tracking-[0.2em] text-norma-muted">
+                Inteligencia regulatoria
+              </p>
+            </div>
+          </div>
+        </div>
+        {nav}
+        <div className="border-t-2 border-norma-border p-3">
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={() => void handleLogout()}
+          >
+            <LogOut className="size-4" />
+            Cerrar sesión
+          </Button>
+        </div>
+      </aside>
+
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col">
+        <header className="flex items-center justify-between border-b-2 border-norma-border bg-norma-surface/95 px-4 py-3 backdrop-blur-md md:px-8">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
+              onClick={() => setMobileOpen((v) => !v)}
+            >
+              {mobileOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+            </Button>
+            <div className="flex items-center gap-2.5 md:hidden">
+              <NormaMark className="size-9 rounded-xl" />
+              <p className="font-display text-sm font-semibold tracking-[0.12em]">
+                NORMA
+              </p>
+            </div>
+          </div>
+          <div className="rounded-2xl border-2 border-norma-border bg-norma-raised px-3 py-1.5 text-right">
+            <p className="truncate text-xs font-medium text-norma-fg">
+              {profile?.name ?? 'Diseño preview'}
+            </p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-norma-accent">
+              {profile?.role ?? 'ADMIN'}
+            </p>
+          </div>
+        </header>
+
+        <AnimatePresence initial={false}>
+          {mobileOpen ? (
+            <motion.div
+              initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: duration.ui, ease: easeOut }}
+              className="overflow-hidden border-b-2 border-norma-border bg-norma-surface md:hidden"
+            >
+              {nav}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+
+        <main className="flex-1 overflow-auto p-4 md:p-8">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={sectionKey}
+              initial={reduceMotion ? false : pageTransition.initial}
+              animate={pageTransition.animate}
+              exit={reduceMotion ? undefined : pageTransition.exit}
+              transition={{ duration: duration.page, ease: easeOut }}
+              className="min-h-full"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
+    </div>
+  )
+}

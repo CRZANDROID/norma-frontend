@@ -1,5 +1,5 @@
-import { AuthProvider } from '@/components/AuthProvider'
-import { AppRouter } from '@/routes/AppRouter'
+import { AuthProvider } from '@/app/providers/AuthProvider'
+import { AppRouter } from '@/app/router/AppRouter'
 
 export default function App() {
   return (
