@@ -1,0 +1,30 @@
+---
+description: NORMA React patterns — api, pages, store, routes
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# NORMA — React
+
+## Capas
+
+```text
+Page/Component → api/* → Axios (Bearer) → NestJS
+AuthProvider → Supabase session → Zustand → ProtectedRoute
+```
+
+- Nuevas llamadas HTTP en `src/api/` (o `features/*/api` si se adopta features).
+- No `fetch`/Axios suelto dentro de páginas grandes.
+- `AuthProvider` es dueño de sincronizar sesión + `fetchMe`.
+
+## Estado
+
+- Zustand (`auth-store`): session, user, profile, loading.
+- No persistir token a mano; Supabase ya persiste la sesión.
+- Tipos de respuesta API: preferir `src/api` o `types`, no hinchar el store.
+
+## UI
+
+- Reutilizar `components/ui` + layouts existentes.
+- Toda vista nueva: loading / empty / error / success.
+- Rutas protegidas vía `ProtectedRoute`; login en `AuthLayout`.

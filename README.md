@@ -72,3 +72,15 @@ Tablero: [NORMA — Piloto Arca](https://github.com/users/CRZANDROID/projects/1)
 - Supabase JS (`@supabase/supabase-js`)
 - Axios
 - Zustand
+
+## Documentación para agentes y colaboradores
+
+| Archivo | Contenido |
+|---------|-----------|
+| [AGENTS.md](./AGENTS.md) | Índice de entrada para cualquier agente |
+| [docs/PRODUCT.md](./docs/PRODUCT.md) | Producto y límites del frontend |
+| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Auth, Axios, estructura |
+| [docs/SPRINTS.md](./docs/SPRINTS.md) | Vista frontend del plan |
+| `.cursor/rules/` | Reglas Cursor (core, React) |
+
+Contratos de API del Sprint 3: ver en el repo backend `docs/SPRINT-3-BACKEND.md`.
