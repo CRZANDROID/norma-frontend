@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  /* Studio suave: menos blanco puro, bordes legibles */
+  --color-norma-bg: #d8e0ec;
+  --color-norma-navy: #0d1b2a;
+  --color-norma-navy-deep: #e6ebf4;
+  --color-norma-surface: #eef1f7;
+  --color-norma-raised: #e2e7f1;
+  --color-norma-border: #9aa8bc;
+  --color-norma-fg: #0d1b2a;
+  --color-norma-muted: rgb(13 27 42 / 0.68);
+  --color-norma-subtle: rgb(13 27 42 / 0.48);
+  --color-norma-accent: #6958f8;
+  --color-norma-accent-soft: #8e80ff;
+  --color-norma-signal: #0e7490;
+  --color-norma-coral: #d96b48;
+  --color-norma-green: #1a945c;
+  --color-norma-amber: #b8861f;
+  --color-norma-red: #c93f46;
+
+  --font-display: "Sora", "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --ease-norma-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-norma-inout: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background: var(--color-norma-bg);
+    color: var(--color-norma-fg);
+    -webkit-font-smoothing: antialiased;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  button,
+  a,
+  [role='button'] {
+    touch-action: manipulation;
+  }
+}

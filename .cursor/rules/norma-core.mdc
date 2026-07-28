@@ -1,0 +1,29 @@
+---
+description: NORMA frontend core — architecture, auth boundary, no hand-written CSS
+alwaysApply: true
+---
+
+# NORMA — Frontend Core
+
+Antes de codear: `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, `docs/SPRINTS.md`.
+
+## Arquitectura de archivos
+
+`app/` (shell/router) + `features/<dominio>/` + `shared/`.  
+No agregar pantallas nuevas en `src/pages/` plano. Ver `ARCHITECTURE.md`.
+
+## Estilos
+
+- Tailwind + Radix + CVA. **Cero CSS a mano.**
+- Motion/UI libs (`motion`, `sonner`, etc.) cuando aporten.
+
+## Datos
+
+- Auth = Nest JWT (`POST /auth/login` + Bearer).
+- Negocio = NestJS + Bearer.
+- No PostgREST a tablas de negocio.
+- Mocks solo temporales; no permanentes si el API del sprint existe.
+
+## Sprint actual
+
+Admin CRUD. Clientes/perfiles: `docs/DESIGN-CLIENTS-PROFILES.md` + brief backend S3.

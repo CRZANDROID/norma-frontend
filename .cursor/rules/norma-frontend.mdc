@@ -1,0 +1,31 @@
+---
+description: NORMA React patterns — features, shared, router
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# NORMA — React
+
+Arquitectura: `docs/ARCHITECTURE.md` (`app/` + `features/` + `shared/`).
+
+## Capas
+
+```text
+app/router → features/*/pages → hooks/api → shared/lib/axios → NestJS
+```
+
+- Código nuevo **solo** en `features/<dominio>` o `shared/`.
+- No crecer `src/pages/` ni `src/api/` planos.
+- Feature A no importa internos de Feature B; solo `features/B/index.ts`.
+- UI sin dominio → `shared/ui`. Axios/supabase/cn → `shared/lib`.
+
+## Estilos
+
+- Tailwind utilities + `@theme`. Cero CSS Modules / CSS custom de componentes.
+- Motion con `motion` si hace falta; no keyframes en CSS propio.
+
+## Estado
+
+- Zustand: auth/shell únicamente.
+- Listados/detalle: hooks del feature.
+- Pantallas: loading / empty / error / success.
