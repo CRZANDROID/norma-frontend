@@ -137,7 +137,10 @@ export function LoginPage() {
           className="flex items-center gap-3"
         >
           <NormaMark className="size-11 rounded-2xl sm:size-12" />
-          <span className="font-display text-sm font-semibold tracking-[0.22em] text-norma-navy">
+          <span
+            className="font-display text-sm font-semibold tracking-[0.22em] text-norma-navy"
+            translate="no"
+          >
             NORMA
           </span>
         </motion.div>
@@ -148,6 +151,7 @@ export function LoginPage() {
             animate={enter.animate}
             transition={stagger(1)}
             className="font-display text-[clamp(2.75rem,8vw,5.5rem)] font-semibold leading-[0.92] tracking-[-0.03em] text-norma-navy"
+            translate="no"
           >
             NORMA
           </motion.h1>

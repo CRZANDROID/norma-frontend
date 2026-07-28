@@ -15,6 +15,8 @@ import {
   SOURCE_TYPE_LABELS,
   SOURCE_TYPES,
 } from '@/features/sources/types/source'
+import { useUnsavedChangesGuard } from '@/shared/hooks/useUnsavedChangesGuard'
+import { focusFirstInvalid } from '@/shared/lib/form'
 import { slugify } from '@/shared/lib/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
@@ -55,7 +57,7 @@ export function SourceDetailHeader({ source }: { source: Source }) {
     <div className="flex flex-wrap items-start justify-between gap-3 border-b-2 border-norma-border pb-4">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="font-display text-2xl font-semibold tracking-tight">
+          <h2 className="font-display text-2xl font-semibold tracking-tight text-balance">
             {source.name}
           </h2>
           <StatusBadge status={source.status} />
@@ -128,8 +130,16 @@ export function SourceDataForm({
     keywordsGuide.join('\0') !== source.keywordsGuide.join('\0') ||
     configText.trim() !== configToText(source.config).trim()
 
-  async function onSubmit(e: FormEvent) {
+  useUnsavedChangesGuard(canEdit && dirty)
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const form = e.currentTarget
+    if (!form.checkValidity()) {
+      focusFirstInvalid(form)
+      form.reportValidity()
+      return
+    }
     if (!canEdit || !dirty) return
     setSaving(true)
     try {
@@ -140,6 +150,7 @@ export function SourceDataForm({
         toast.error(
           err instanceof Error ? err.message : 'JSON de config inválido.',
         )
+        document.getElementById('source-config')?.focus()
         return
       }
       const updated = await sourcesApi.update(source.id, {
@@ -184,11 +195,13 @@ export function SourceDataForm({
 
   return (
     <>
-      <form className="mt-6 max-w-xl space-y-4" onSubmit={onSubmit}>
+      <form className="mt-6 max-w-xl space-y-4" onSubmit={onSubmit} noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="source-name">Nombre</Label>
           <Input
             id="source-name"
+            name="name"
+            autoComplete="off"
             value={name}
             disabled={!canEdit}
             onChange={(e) => setName(e.target.value)}
@@ -199,6 +212,9 @@ export function SourceDataForm({
           <Label htmlFor="source-code">Código</Label>
           <Input
             id="source-code"
+            name="code"
+            autoComplete="off"
+            spellCheck={false}
             value={source.code}
             disabled
             className="font-mono text-norma-subtle"
@@ -218,7 +234,10 @@ export function SourceDataForm({
           <Label htmlFor="source-url">URL</Label>
           <Input
             id="source-url"
+            name="url"
             type="url"
+            autoComplete="url"
+            spellCheck={false}
             value={url}
             disabled={!canEdit}
             onChange={(e) => setUrl(e.target.value)}
@@ -230,6 +249,8 @@ export function SourceDataForm({
             <Label htmlFor="source-section">Sección</Label>
             <Input
               id="source-section"
+              name="section"
+              autoComplete="off"
               value={section}
               disabled={!canEdit}
               onChange={(e) => setSection(e.target.value)}
@@ -239,6 +260,9 @@ export function SourceDataForm({
             <Label htmlFor="source-jurisdiction">Jurisdicción</Label>
             <Input
               id="source-jurisdiction"
+              name="jurisdiction"
+              autoComplete="off"
+              spellCheck={false}
               value={jurisdiction}
               disabled={!canEdit}
               onChange={(e) => setJurisdiction(e.target.value)}
@@ -250,6 +274,9 @@ export function SourceDataForm({
           <Label htmlFor="source-frequency">Frecuencia</Label>
           <Input
             id="source-frequency"
+            name="frequency"
+            autoComplete="off"
+            spellCheck={false}
             value={frequency}
             disabled={!canEdit}
             onChange={(e) => setFrequency(e.target.value)}
@@ -372,8 +399,14 @@ export function CreateSourceDialog({
     }
   }, [open])
 
-  async function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const form = e.currentTarget
+    if (!form.checkValidity()) {
+      focusFirstInvalid(form)
+      form.reportValidity()
+      return
+    }
     setSubmitting(true)
     try {
       let config: Record<string, unknown> | null
@@ -383,6 +416,7 @@ export function CreateSourceDialog({
         toast.error(
           err instanceof Error ? err.message : 'JSON de config inválido.',
         )
+        document.getElementById('new-source-config')?.focus()
         return
       }
       const created = await sourcesApi.create({
@@ -412,11 +446,17 @@ export function CreateSourceDialog({
       onOpenChange={onOpenChange}
       title="Nueva fuente"
     >
-      <form className="max-h-[70vh] space-y-4 overflow-y-auto pr-1" onSubmit={onSubmit}>
+      <form
+        className="max-h-[70vh] space-y-4 overflow-y-auto overscroll-contain pr-1"
+        onSubmit={onSubmit}
+        noValidate
+      >
         <div className="space-y-1.5">
           <Label htmlFor="new-source-name">Nombre</Label>
           <Input
             id="new-source-name"
+            name="name"
+            autoComplete="off"
             required
             value={name}
             onChange={(e) => {
@@ -430,6 +470,9 @@ export function CreateSourceDialog({
           <Label htmlFor="new-source-code">Código</Label>
           <Input
             id="new-source-code"
+            name="code"
+            autoComplete="off"
+            spellCheck={false}
             required
             pattern="[a-z0-9-]+"
             className="font-mono"

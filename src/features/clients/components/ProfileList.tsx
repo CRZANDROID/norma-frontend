@@ -7,6 +7,11 @@ import {
   KeywordChips,
   StatusBadge,
 } from '@/features/clients/components/chips'
+import {
+  confirmDiscardIfDirty,
+  useUnsavedChangesGuard,
+} from '@/shared/hooks/useUnsavedChangesGuard'
+import { focusFirstInvalid } from '@/shared/lib/form'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
@@ -75,7 +80,7 @@ export function ProfileList({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="font-display text-lg font-semibold">
+                <h3 className="font-display text-lg font-semibold text-balance">
                   {profile.name}
                 </h3>
                 <StatusBadge status={profile.status} />
@@ -203,8 +208,35 @@ export function ProfileFormDialog({
     setProductCats(initial?.products?.categories ?? [])
   }, [open, initial])
 
-  async function onSubmit(e: FormEvent) {
+  const baselineName = initial?.name ?? ''
+  const baselineDescription = initial?.description ?? ''
+  const baselineKeywords = initial?.keywords ?? []
+  const baselineCategories = initial?.categories ?? []
+  const baselineProducts = initial?.products?.categories ?? []
+
+  const dirty =
+    open &&
+    (name !== baselineName ||
+      description !== baselineDescription ||
+      keywords.join('\0') !== baselineKeywords.join('\0') ||
+      categories.join('\0') !== baselineCategories.join('\0') ||
+      productCats.join('\0') !== baselineProducts.join('\0'))
+
+  useUnsavedChangesGuard(dirty)
+
+  function handleOpenChange(next: boolean) {
+    if (!next && !confirmDiscardIfDirty(dirty)) return
+    onOpenChange(next)
+  }
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const form = e.currentTarget
+    if (!form.checkValidity()) {
+      focusFirstInvalid(form)
+      form.reportValidity()
+      return
+    }
     setSubmitting(true)
     const payload = {
       name,
@@ -233,16 +265,18 @@ export function ProfileFormDialog({
   return (
     <Modal
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
       title={initial ? 'Editar perfil' : 'Nuevo perfil'}
       description="Define qué señales escucha el agente para este cliente."
       className="w-[min(92vw,560px)]"
     >
-      <form className="space-y-4" onSubmit={onSubmit}>
+      <form className="space-y-4" onSubmit={onSubmit} noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="profile-name">Nombre</Label>
           <Input
             id="profile-name"
+            name="name"
+            autoComplete="off"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -252,6 +286,8 @@ export function ProfileFormDialog({
           <Label htmlFor="profile-desc">Descripción</Label>
           <Input
             id="profile-desc"
+            name="description"
+            autoComplete="off"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
@@ -276,7 +312,7 @@ export function ProfileFormDialog({
           placeholder="ej. refrescos"
         />
         <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
             Cancelar
           </Button>
           <Button type="submit" disabled={submitting}>

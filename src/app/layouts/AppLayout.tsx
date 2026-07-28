@@ -31,6 +31,9 @@ const navItems = [
   { to: '/usuarios', label: 'Usuarios', icon: Users },
 ]
 
+const navFocus =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45 focus-visible:ring-offset-2 focus-visible:ring-offset-norma-surface'
+
 export function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -50,7 +53,7 @@ export function AppLayout() {
   }
 
   const nav = (
-    <nav className="flex flex-1 flex-col gap-1 p-3">
+    <nav className="flex flex-1 flex-col gap-1 p-3" aria-label="Principal">
       {navItems.map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}
@@ -59,6 +62,7 @@ export function AppLayout() {
           className={({ isActive }) =>
             cn(
               'relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-norma-muted transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-norma-accent/8 hover:text-norma-fg',
+              navFocus,
               isActive && 'text-norma-accent',
             )
           }
@@ -100,6 +104,12 @@ export function AppLayout() {
 
   return (
     <div className="relative flex min-h-screen overflow-hidden bg-norma-bg text-norma-fg">
+      <a
+        href="#contenido-principal"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-2xl focus:bg-norma-surface focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-norma-fg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-norma-accent focus:ring-offset-2 focus:ring-offset-norma-bg"
+      >
+        Saltar al contenido
+      </a>
       <div
         aria-hidden
         className="pointer-events-none absolute -left-24 top-[-10%] h-[420px] w-[420px] rounded-full bg-norma-accent/12 blur-3xl"
@@ -118,7 +128,10 @@ export function AppLayout() {
           <div className="flex items-center gap-3">
             <NormaMark />
             <div>
-              <p className="font-display text-base font-semibold tracking-[0.12em]">
+              <p
+                className="font-display text-base font-semibold tracking-[0.12em]"
+                translate="no"
+              >
                 NORMA
               </p>
               <p className="text-[9px] font-medium uppercase tracking-[0.2em] text-norma-muted">
@@ -134,7 +147,7 @@ export function AppLayout() {
             className="w-full justify-start"
             onClick={() => void handleLogout()}
           >
-            <LogOut className="size-4" />
+            <LogOut className="size-4" aria-hidden />
             Cerrar sesión
           </Button>
         </div>
@@ -150,11 +163,18 @@ export function AppLayout() {
               aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
               onClick={() => setMobileOpen((v) => !v)}
             >
-              {mobileOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+              {mobileOpen ? (
+                <X className="size-4" aria-hidden />
+              ) : (
+                <Menu className="size-4" aria-hidden />
+              )}
             </Button>
             <div className="flex items-center gap-2.5 md:hidden">
               <NormaMark className="size-9 rounded-xl" />
-              <p className="font-display text-sm font-semibold tracking-[0.12em]">
+              <p
+                className="font-display text-sm font-semibold tracking-[0.12em]"
+                translate="no"
+              >
                 NORMA
               </p>
             </div>
@@ -172,18 +192,22 @@ export function AppLayout() {
         <AnimatePresence initial={false}>
           {mobileOpen ? (
             <motion.div
-              initial={reduceMotion ? false : { height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
+              initial={reduceMotion ? false : { opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
               transition={{ duration: duration.ui, ease: easeOut }}
-              className="overflow-hidden border-b-2 border-norma-border bg-norma-surface md:hidden"
+              className="border-b-2 border-norma-border bg-norma-surface md:hidden"
             >
               {nav}
             </motion.div>
           ) : null}
         </AnimatePresence>
 
-        <main className="flex-1 overflow-auto p-4 md:p-8">
+        <main
+          id="contenido-principal"
+          tabIndex={-1}
+          className="flex-1 overflow-auto p-4 md:p-8"
+        >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={sectionKey}

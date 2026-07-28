@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { X } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { duration, easeOut } from '@/shared/lib/motion'
@@ -6,6 +6,7 @@ import { cn } from '@/shared/lib/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
+import { Label } from '@/shared/ui/label'
 
 export function StatusBadge({ status }: { status: 'ACTIVE' | 'INACTIVE' }) {
   return (
@@ -66,6 +67,7 @@ export function ChipInput({
   helper?: string
 }) {
   const [draft, setDraft] = useState('')
+  const inputId = useId()
 
   function addChip() {
     const value = draft.trim()
@@ -80,9 +82,7 @@ export function ChipInput({
 
   return (
     <div className="space-y-2">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-norma-subtle">
-        {label}
-      </p>
+      <Label htmlFor={inputId}>{label}</Label>
       <div className="flex flex-wrap gap-1.5">
         {values.map((value) => (
           <span
@@ -93,16 +93,19 @@ export function ChipInput({
             <button
               type="button"
               aria-label={`Quitar ${value}`}
-              className="rounded-full p-0.5 transition-colors hover:bg-norma-navy/10"
+              className="rounded-full p-0.5 transition-colors hover:bg-norma-navy/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45"
               onClick={() => onChange(values.filter((v) => v !== value))}
             >
-              <X className="size-3" />
+              <X className="size-3" aria-hidden />
             </button>
           </span>
         ))}
       </div>
       <div className="flex gap-2">
         <Input
+          id={inputId}
+          name="chip-draft"
+          autoComplete="off"
           value={draft}
           placeholder={placeholder}
           onChange={(e) => setDraft(e.target.value)}

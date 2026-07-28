@@ -48,5 +48,14 @@
     background: var(--color-norma-bg);
     color: var(--color-norma-fg);
     -webkit-font-smoothing: antialiased;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  button,
+  a,
+  [role='button'] {
+    touch-action: manipulation;
   }
 }

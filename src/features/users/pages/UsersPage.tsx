@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { motion, useReducedMotion } from 'motion/react'
 import { usersApi } from '@/features/users/api/users-api'
 import {
@@ -18,15 +18,16 @@ import { Skeleton } from '@/shared/ui/skeleton'
 export function UsersPage() {
   const navigate = useNavigate()
   const { userId } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const reduceMotion = useReducedMotion()
+
+  const query = searchParams.get('q') ?? ''
+  const includeInactive = searchParams.get('inactive') === '1'
+  const debouncedQuery = useDebouncedValue(query, 300)
 
   const profile = useAuthStore((s) => s.profile)
   const role = profile?.role ?? 'ADMIN'
   const canManage = role === 'ADMIN'
-
-  const [query, setQuery] = useState('')
-  const debouncedQuery = useDebouncedValue(query, 300)
-  const [includeInactive, setIncludeInactive] = useState(false)
 
   const [users, setUsers] = useState<NormaUser[]>([])
   const [listLoading, setListLoading] = useState(true)
@@ -39,6 +40,33 @@ export function UsersPage() {
   detailRef.current = detail
   const usersRef = useRef(users)
   usersRef.current = users
+
+  const patchSearch = useCallback(
+    (patch: Record<string, string | null>) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          for (const [key, value] of Object.entries(patch)) {
+            if (value === null || value === '') next.delete(key)
+            else next.set(key, value)
+          }
+          return next
+        },
+        { replace: true },
+      )
+    },
+    [setSearchParams],
+  )
+
+  const listQueryString = useMemo(() => {
+    const qs = searchParams.toString()
+    return qs ? `?${qs}` : ''
+  }, [searchParams])
+
+  const itemTo = useCallback(
+    (id: string) => `/usuarios/${id}${listQueryString}`,
+    [listQueryString],
+  )
 
   const loadList = useCallback(async () => {
     setListLoading(true)
@@ -80,9 +108,11 @@ export function UsersPage() {
 
   useEffect(() => {
     if (!listLoading && !userId && users.length > 0) {
-      navigate(`/usuarios/${users[0].id}`, { replace: true })
+      navigate(`/usuarios/${users[0].id}${listQueryString}`, {
+        replace: true,
+      })
     }
-  }, [listLoading, userId, users, navigate])
+  }, [listLoading, userId, users, navigate, listQueryString])
 
   useEffect(() => {
     if (!userId) {
@@ -167,9 +197,11 @@ export function UsersPage() {
             loading={listLoading}
             query={query}
             includeInactive={includeInactive}
-            onQueryChange={setQuery}
-            onIncludeInactiveChange={setIncludeInactive}
-            onSelect={(id) => navigate(`/usuarios/${id}`)}
+            itemTo={itemTo}
+            onQueryChange={(q) => patchSearch({ q: q || null })}
+            onIncludeInactiveChange={(v) =>
+              patchSearch({ inactive: v ? '1' : null })
+            }
           />
 
           <section className="min-h-[520px] rounded-3xl border-2 border-norma-border bg-norma-surface p-5 shadow-[0_12px_32px_-18px_rgba(13,27,42,0.35)] md:p-6">

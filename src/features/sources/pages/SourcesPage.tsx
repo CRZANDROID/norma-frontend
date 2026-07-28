@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { motion, useReducedMotion } from 'motion/react'
 import { sourcesApi } from '@/features/sources/api/sources-api'
 import {
@@ -10,28 +10,35 @@ import {
 import { SourceListPanel } from '@/features/sources/components/SourceListPanel'
 import { useDebouncedValue } from '@/features/sources/hooks/useDebouncedValue'
 import type { Source, SourceType } from '@/features/sources/types/source'
+import { SOURCE_TYPES } from '@/features/sources/types/source'
 import { detailCrossfade, duration, easeOut } from '@/shared/lib/motion'
 import { useAuthStore } from '@/store/auth-store'
 import { EmptyState, ErrorState, PageHeader } from '@/shared/ui/page'
 import { Skeleton } from '@/shared/ui/skeleton'
 
+function parseTypeFilter(raw: string | null): SourceType | '' {
+  if (!raw) return ''
+  return (SOURCE_TYPES as string[]).includes(raw) ? (raw as SourceType) : ''
+}
+
 export function SourcesPage() {
   const navigate = useNavigate()
   const { sourceId } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const reduceMotion = useReducedMotion()
+
+  const query = searchParams.get('q') ?? ''
+  const includeInactive = searchParams.get('inactive') === '1'
+  const typeFilter = parseTypeFilter(searchParams.get('type'))
+  const jurisdictionFilter = searchParams.get('jurisdiction') ?? ''
+  const debouncedQuery = useDebouncedValue(query, 300)
+  const debouncedJurisdiction = useDebouncedValue(jurisdictionFilter, 300)
 
   const profile = useAuthStore((s) => s.profile)
   const role = profile?.role ?? 'ADMIN'
   const canManage = role === 'ADMIN'
   const canRead =
     role === 'ADMIN' || role === 'ANALYST' || role === 'VIEWER'
-
-  const [query, setQuery] = useState('')
-  const debouncedQuery = useDebouncedValue(query, 300)
-  const [includeInactive, setIncludeInactive] = useState(false)
-  const [typeFilter, setTypeFilter] = useState<SourceType | ''>('')
-  const [jurisdictionFilter, setJurisdictionFilter] = useState('')
-  const debouncedJurisdiction = useDebouncedValue(jurisdictionFilter, 300)
 
   const [sources, setSources] = useState<Source[]>([])
   const [listLoading, setListLoading] = useState(true)
@@ -46,6 +53,33 @@ export function SourcesPage() {
   sourcesRef.current = sources
 
   const [createOpen, setCreateOpen] = useState(false)
+
+  const patchSearch = useCallback(
+    (patch: Record<string, string | null>) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          for (const [key, value] of Object.entries(patch)) {
+            if (value === null || value === '') next.delete(key)
+            else next.set(key, value)
+          }
+          return next
+        },
+        { replace: true },
+      )
+    },
+    [setSearchParams],
+  )
+
+  const listQueryString = useMemo(() => {
+    const qs = searchParams.toString()
+    return qs ? `?${qs}` : ''
+  }, [searchParams])
+
+  const itemTo = useCallback(
+    (id: string) => `/fuentes/${id}${listQueryString}`,
+    [listQueryString],
+  )
 
   const loadList = useCallback(async () => {
     setListLoading(true)
@@ -94,9 +128,11 @@ export function SourcesPage() {
 
   useEffect(() => {
     if (!listLoading && !sourceId && sources.length > 0) {
-      navigate(`/fuentes/${sources[0].id}`, { replace: true })
+      navigate(`/fuentes/${sources[0].id}${listQueryString}`, {
+        replace: true,
+      })
     }
-  }, [listLoading, sourceId, sources, navigate])
+  }, [listLoading, sourceId, sources, navigate, listQueryString])
 
   useEffect(() => {
     if (!sourceId) {
@@ -177,11 +213,15 @@ export function SourcesPage() {
             typeFilter={typeFilter}
             jurisdictionFilter={jurisdictionFilter}
             canCreate={canManage}
-            onQueryChange={setQuery}
-            onIncludeInactiveChange={setIncludeInactive}
-            onTypeFilterChange={setTypeFilter}
-            onJurisdictionFilterChange={setJurisdictionFilter}
-            onSelect={(id) => navigate(`/fuentes/${id}`)}
+            itemTo={itemTo}
+            onQueryChange={(q) => patchSearch({ q: q || null })}
+            onIncludeInactiveChange={(v) =>
+              patchSearch({ inactive: v ? '1' : null })
+            }
+            onTypeFilterChange={(v) => patchSearch({ type: v || null })}
+            onJurisdictionFilterChange={(v) =>
+              patchSearch({ jurisdiction: v || null })
+            }
             onCreate={() => setCreateOpen(true)}
           />
 

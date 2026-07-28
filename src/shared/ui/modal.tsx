@@ -44,7 +44,7 @@ export function Modal({
                 exit={fadeScale.exit}
                 transition={{ duration: duration.modal, ease: easeOut }}
                 className={cn(
-                  'fixed left-1/2 top-1/2 z-50 w-[min(92vw,480px)] -translate-x-1/2 -translate-y-1/2 rounded-3xl border-2 border-norma-border bg-norma-surface p-6 shadow-[0_24px_60px_-20px_rgba(13,27,42,0.4)] outline-none',
+                  'fixed left-1/2 top-1/2 z-50 w-[min(92vw,480px)] -translate-x-1/2 -translate-y-1/2 overscroll-contain rounded-3xl border-2 border-norma-border bg-norma-surface p-6 shadow-[0_24px_60px_-20px_rgba(13,27,42,0.4)] outline-none',
                   className,
                 )}
               >
@@ -65,7 +65,7 @@ export function Modal({
                   </div>
                   <Dialog.Close asChild>
                     <Button variant="ghost" size="icon" aria-label="Cerrar">
-                      <X className="size-4" />
+                      <X className="size-4" aria-hidden />
                     </Button>
                   </Dialog.Close>
                 </div>

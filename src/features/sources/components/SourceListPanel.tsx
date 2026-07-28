@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Plus, Search } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import type { Source, SourceType } from '@/features/sources/types/source'
@@ -15,6 +16,9 @@ import { Skeleton } from '@/shared/ui/skeleton'
 
 const TYPE_FILTER_ALL = '__all__'
 
+const rowFocus =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45 focus-visible:ring-offset-2 focus-visible:ring-offset-norma-surface'
+
 export function SourceListPanel({
   sources,
   selectedId,
@@ -24,11 +28,11 @@ export function SourceListPanel({
   typeFilter,
   jurisdictionFilter,
   canCreate,
+  itemTo,
   onQueryChange,
   onIncludeInactiveChange,
   onTypeFilterChange,
   onJurisdictionFilterChange,
-  onSelect,
   onCreate,
 }: {
   sources: Source[]
@@ -39,11 +43,11 @@ export function SourceListPanel({
   typeFilter: SourceType | ''
   jurisdictionFilter: string
   canCreate: boolean
+  itemTo: (id: string) => string
   onQueryChange: (q: string) => void
   onIncludeInactiveChange: (v: boolean) => void
   onTypeFilterChange: (v: SourceType | '') => void
   onJurisdictionFilterChange: (v: string) => void
-  onSelect: (id: string) => void
   onCreate: () => void
 }) {
   const reduceMotion = useReducedMotion()
@@ -52,20 +56,28 @@ export function SourceListPanel({
     <div className="flex h-full min-h-[520px] flex-col overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface shadow-[0_12px_32px_-18px_rgba(13,27,42,0.35)]">
       <div className="space-y-3 border-b-2 border-norma-border bg-norma-raised/80 p-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="font-display text-sm font-semibold tracking-wide">
+          <h2 className="font-display text-sm font-semibold tracking-wide text-balance">
             Fuentes
           </h2>
           {canCreate ? (
             <Button size="sm" onClick={onCreate} aria-label="Nueva fuente">
-              <Plus className="size-4" />
+              <Plus className="size-4" aria-hidden />
               Nueva
             </Button>
           ) : null}
         </div>
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-norma-subtle" />
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-norma-subtle"
+            aria-hidden
+          />
           <Input
             className="pl-9"
+            type="search"
+            name="source-search"
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="Buscar fuentes"
             placeholder="Buscar por nombre o código…"
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
@@ -92,7 +104,15 @@ export function SourceListPanel({
               })),
             ]}
           />
+          <label className="sr-only" htmlFor="source-jurisdiction-filter">
+            Jurisdicción
+          </label>
           <Input
+            id="source-jurisdiction-filter"
+            name="jurisdiction"
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="Filtrar por jurisdicción"
             placeholder="Jurisdicción (ej. federal, JAL)"
             value={jurisdictionFilter}
             onChange={(e) => onJurisdictionFilterChange(e.target.value)}
@@ -101,7 +121,7 @@ export function SourceListPanel({
         <label className="flex items-center gap-2 text-xs text-norma-muted">
           <input
             type="checkbox"
-            className="size-3.5 rounded border-norma-border accent-norma-accent"
+            className="size-3.5 rounded border-norma-border accent-norma-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/40"
             checked={includeInactive}
             onChange={(e) => onIncludeInactiveChange(e.target.checked)}
           />
@@ -135,11 +155,12 @@ export function SourceListPanel({
                     delay: reduceMotion ? 0 : Math.min(index * 0.04, 0.2),
                   }}
                 >
-                  <button
-                    type="button"
-                    onClick={() => onSelect(source.id)}
+                  <Link
+                    to={itemTo(source.id)}
+                    aria-current={active ? 'page' : undefined}
                     className={cn(
-                      'relative w-full rounded-2xl px-3 py-3 text-left transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
+                      'relative block w-full rounded-2xl px-3 py-3 text-left transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
+                      rowFocus,
                       active
                         ? 'bg-norma-accent/10 text-norma-fg'
                         : 'hover:bg-norma-raised',
@@ -169,7 +190,7 @@ export function SourceListPanel({
                       </div>
                       <StatusBadge status={source.status} />
                     </div>
-                  </button>
+                  </Link>
                 </motion.li>
               )
             })}

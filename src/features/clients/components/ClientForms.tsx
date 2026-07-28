@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import type { Client } from '@/features/clients/types/client'
 import { clientsApi } from '@/features/clients/api/clients-api'
+import { useUnsavedChangesGuard } from '@/shared/hooks/useUnsavedChangesGuard'
+import { focusFirstInvalid } from '@/shared/lib/form'
 import { slugify } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -14,7 +16,7 @@ export function ClientDetailHeader({ client }: { client: Client }) {
     <div className="flex flex-wrap items-start justify-between gap-3 border-b-2 border-norma-border pb-4">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="font-display text-2xl font-semibold tracking-tight">
+          <h2 className="font-display text-2xl font-semibold tracking-tight text-balance">
             {client.name}
           </h2>
           <StatusBadge status={client.status} />
@@ -52,8 +54,16 @@ export function ClientDataForm({
     email !== (client.email ?? '') ||
     phone !== (client.phone ?? '')
 
-  async function onSubmit(e: FormEvent) {
+  useUnsavedChangesGuard(canEdit && dirty)
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const form = e.currentTarget
+    if (!form.checkValidity()) {
+      focusFirstInvalid(form)
+      form.reportValidity()
+      return
+    }
     if (!canEdit || !dirty) return
     setSaving(true)
     try {
@@ -92,11 +102,13 @@ export function ClientDataForm({
 
   return (
     <>
-      <form className="mt-6 max-w-lg space-y-4" onSubmit={onSubmit}>
+      <form className="mt-6 max-w-lg space-y-4" onSubmit={onSubmit} noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="client-name">Nombre</Label>
           <Input
             id="client-name"
+            name="name"
+            autoComplete="organization"
             value={name}
             disabled={!canEdit}
             onChange={(e) => setName(e.target.value)}
@@ -107,6 +119,9 @@ export function ClientDataForm({
           <Label htmlFor="client-slug">Slug</Label>
           <Input
             id="client-slug"
+            name="slug"
+            autoComplete="off"
+            spellCheck={false}
             value={client.slug}
             disabled
             className="font-mono text-norma-subtle"
@@ -116,7 +131,10 @@ export function ClientDataForm({
           <Label htmlFor="client-email">Correo</Label>
           <Input
             id="client-email"
+            name="email"
             type="email"
+            autoComplete="email"
+            spellCheck={false}
             value={email}
             disabled={!canEdit}
             onChange={(e) => setEmail(e.target.value)}
@@ -126,7 +144,9 @@ export function ClientDataForm({
           <Label htmlFor="client-phone">Teléfono</Label>
           <Input
             id="client-phone"
+            name="tel"
             type="tel"
+            autoComplete="tel"
             value={phone}
             disabled={!canEdit}
             onChange={(e) => setPhone(e.target.value)}
@@ -209,8 +229,14 @@ export function CreateClientDialog({
     }
   }, [open])
 
-  async function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const form = e.currentTarget
+    if (!form.checkValidity()) {
+      focusFirstInvalid(form)
+      form.reportValidity()
+      return
+    }
     setSubmitting(true)
     try {
       const created = await clientsApi.create({
@@ -235,11 +261,13 @@ export function CreateClientDialog({
       onOpenChange={onOpenChange}
       title="Nuevo cliente"
     >
-      <form className="space-y-4" onSubmit={onSubmit}>
+      <form className="space-y-4" onSubmit={onSubmit} noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="new-name">Nombre</Label>
           <Input
             id="new-name"
+            name="name"
+            autoComplete="organization"
             required
             value={name}
             onChange={(e) => {
@@ -253,6 +281,9 @@ export function CreateClientDialog({
           <Label htmlFor="new-slug">Slug</Label>
           <Input
             id="new-slug"
+            name="slug"
+            autoComplete="off"
+            spellCheck={false}
             required
             pattern="[a-z0-9-]+"
             className="font-mono"
@@ -267,7 +298,10 @@ export function CreateClientDialog({
           <Label htmlFor="new-email">Correo</Label>
           <Input
             id="new-email"
+            name="email"
             type="email"
+            autoComplete="email"
+            spellCheck={false}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -276,7 +310,9 @@ export function CreateClientDialog({
           <Label htmlFor="new-phone">Teléfono</Label>
           <Input
             id="new-phone"
+            name="tel"
             type="tel"
+            autoComplete="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />

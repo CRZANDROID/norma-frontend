@@ -4,7 +4,7 @@ export function Skeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'animate-pulse rounded-2xl bg-norma-navy/8',
+        'rounded-2xl bg-norma-navy/8 motion-safe:animate-pulse',
         className,
       )}
     />

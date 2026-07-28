@@ -26,11 +26,17 @@ import { cn } from '@/shared/lib/utils'
 import { EmptyState, ErrorState, PageHeader } from '@/shared/ui/page'
 import { Skeleton } from '@/shared/ui/skeleton'
 
+const tabFocus =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45 focus-visible:ring-offset-2 focus-visible:ring-offset-norma-raised'
+
 export function ClientsPage() {
   const navigate = useNavigate()
   const { clientId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = searchParams.get('tab') === 'perfiles' ? 'perfiles' : 'datos'
+  const query = searchParams.get('q') ?? ''
+  const includeInactive = searchParams.get('inactive') === '1'
+  const debouncedQuery = useDebouncedValue(query, 300)
   const reduceMotion = useReducedMotion()
 
   const profile = useAuthStore((s) => s.profile)
@@ -38,9 +44,6 @@ export function ClientsPage() {
   const canManageClients = role === 'ADMIN'
   const canManageProfiles = role === 'ADMIN' || role === 'ANALYST'
 
-  const [query, setQuery] = useState('')
-  const debouncedQuery = useDebouncedValue(query, 300)
-  const [includeInactive, setIncludeInactive] = useState(false)
   const [clients, setClients] = useState<Client[]>([])
   const [listLoading, setListLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
@@ -53,6 +56,36 @@ export function ClientsPage() {
 
   const [createOpen, setCreateOpen] = useState(false)
   const [profileCreateOpen, setProfileCreateOpen] = useState(false)
+
+  const patchSearch = useCallback(
+    (patch: Record<string, string | null>) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          for (const [key, value] of Object.entries(patch)) {
+            if (value === null || value === '') next.delete(key)
+            else next.set(key, value)
+          }
+          if (!next.get('tab')) next.set('tab', tab)
+          return next
+        },
+        { replace: true },
+      )
+    },
+    [setSearchParams, tab],
+  )
+
+  const listQueryString = useMemo(() => {
+    const p = new URLSearchParams(searchParams)
+    if (!p.get('tab')) p.set('tab', tab)
+    const qs = p.toString()
+    return qs ? `?${qs}` : ''
+  }, [searchParams, tab])
+
+  const itemTo = useCallback(
+    (id: string) => `/clientes/${id}${listQueryString}`,
+    [listQueryString],
+  )
 
   const loadList = useCallback(async () => {
     setListLoading(true)
@@ -91,9 +124,11 @@ export function ClientsPage() {
 
   useEffect(() => {
     if (!listLoading && !clientId && clients.length > 0) {
-      navigate(`/clientes/${clients[0].id}?tab=${tab}`, { replace: true })
+      navigate(`/clientes/${clients[0].id}${listQueryString}`, {
+        replace: true,
+      })
     }
-  }, [listLoading, clientId, clients, navigate, tab])
+  }, [listLoading, clientId, clients, navigate, listQueryString])
 
   useEffect(() => {
     if (!clientId) {
@@ -137,7 +172,7 @@ export function ClientsPage() {
   const contentKey = detail?.id ?? clientId ?? 'empty'
 
   function setTab(next: string) {
-    setSearchParams({ tab: next })
+    patchSearch({ tab: next })
   }
 
   return (
@@ -159,9 +194,11 @@ export function ClientsPage() {
             query={query}
             includeInactive={includeInactive}
             canCreate={canManageClients}
-            onQueryChange={setQuery}
-            onIncludeInactiveChange={setIncludeInactive}
-            onSelect={(id) => navigate(`/clientes/${id}?tab=${tab}`)}
+            itemTo={itemTo}
+            onQueryChange={(q) => patchSearch({ q: q || null })}
+            onIncludeInactiveChange={(v) =>
+              patchSearch({ inactive: v ? '1' : null })
+            }
             onCreate={() => setCreateOpen(true)}
           />
 
@@ -208,6 +245,7 @@ export function ClientsPage() {
                           value={item.value}
                           className={cn(
                             'relative z-10 flex-1 rounded-xl px-4 py-2 text-sm font-medium text-norma-muted transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
+                            tabFocus,
                             active && 'text-norma-accent',
                           )}
                         >

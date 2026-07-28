@@ -14,8 +14,8 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-start gap-3 rounded-3xl border-2 border-dashed border-norma-accent/40 bg-norma-raised p-8">
-      <h3 className="font-display text-lg font-semibold">{title}</h3>
-      <p className="max-w-md text-sm leading-relaxed text-norma-muted">
+      <h3 className="font-display text-lg font-semibold text-balance">{title}</h3>
+      <p className="max-w-md text-pretty text-sm leading-relaxed text-norma-muted">
         {description}
       </p>
       {actionLabel && onAction ? (
@@ -63,11 +63,11 @@ export function PageHeader({
             {eyebrow}
           </p>
         ) : null}
-        <h1 className="mt-1 font-display text-[2rem] font-semibold tracking-tight text-norma-fg md:text-[2.25rem]">
+        <h1 className="mt-1 font-display text-[2rem] font-semibold tracking-tight text-balance text-norma-fg md:text-[2.25rem]">
           {title}
         </h1>
         {description ? (
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-norma-muted">
+          <p className="mt-2 max-w-xl text-pretty text-sm leading-relaxed text-norma-muted">
             {description}
           </p>
         ) : null}

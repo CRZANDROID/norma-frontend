@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Plus, Search } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import type { Client } from '@/features/clients/types/client'
@@ -8,6 +9,9 @@ import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Skeleton } from '@/shared/ui/skeleton'
 
+const rowFocus =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45 focus-visible:ring-offset-2 focus-visible:ring-offset-norma-surface'
+
 export function ClientListPanel({
   clients,
   selectedId,
@@ -15,9 +19,9 @@ export function ClientListPanel({
   query,
   includeInactive,
   canCreate,
+  itemTo,
   onQueryChange,
   onIncludeInactiveChange,
-  onSelect,
   onCreate,
 }: {
   clients: Client[]
@@ -26,9 +30,9 @@ export function ClientListPanel({
   query: string
   includeInactive: boolean
   canCreate: boolean
+  itemTo: (id: string) => string
   onQueryChange: (q: string) => void
   onIncludeInactiveChange: (v: boolean) => void
-  onSelect: (id: string) => void
   onCreate: () => void
 }) {
   const reduceMotion = useReducedMotion()
@@ -37,20 +41,28 @@ export function ClientListPanel({
     <div className="flex h-full min-h-[520px] flex-col overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface shadow-[0_12px_32px_-18px_rgba(13,27,42,0.35)]">
       <div className="space-y-3 border-b-2 border-norma-border bg-norma-raised/80 p-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="font-display text-sm font-semibold tracking-wide">
+          <h2 className="font-display text-sm font-semibold tracking-wide text-balance">
             Clientes
           </h2>
           {canCreate ? (
             <Button size="sm" onClick={onCreate} aria-label="Nuevo cliente">
-              <Plus className="size-4" />
+              <Plus className="size-4" aria-hidden />
               Nuevo
             </Button>
           ) : null}
         </div>
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-norma-subtle" />
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-norma-subtle"
+            aria-hidden
+          />
           <Input
             className="pl-9"
+            type="search"
+            name="client-search"
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="Buscar clientes"
             placeholder="Buscar por nombre o slug…"
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
@@ -59,7 +71,7 @@ export function ClientListPanel({
         <label className="flex items-center gap-2 text-xs text-norma-muted">
           <input
             type="checkbox"
-            className="size-3.5 rounded border-norma-border accent-norma-accent"
+            className="size-3.5 rounded border-norma-border accent-norma-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/40"
             checked={includeInactive}
             onChange={(e) => onIncludeInactiveChange(e.target.checked)}
           />
@@ -93,11 +105,12 @@ export function ClientListPanel({
                     delay: reduceMotion ? 0 : Math.min(index * 0.04, 0.2),
                   }}
                 >
-                  <button
-                    type="button"
-                    onClick={() => onSelect(client.id)}
+                  <Link
+                    to={itemTo(client.id)}
+                    aria-current={active ? 'page' : undefined}
                     className={cn(
-                      'relative w-full rounded-2xl px-3 py-3 text-left transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
+                      'relative block w-full rounded-2xl px-3 py-3 text-left transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
+                      rowFocus,
                       active
                         ? 'bg-norma-accent/10 text-norma-fg'
                         : 'hover:bg-norma-raised',
@@ -121,7 +134,7 @@ export function ClientListPanel({
                       </div>
                       <StatusBadge status={client.status} />
                     </div>
-                  </button>
+                  </Link>
                 </motion.li>
               )
             })}

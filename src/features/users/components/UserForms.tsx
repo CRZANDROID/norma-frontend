@@ -13,6 +13,8 @@ import {
   USER_ROLE_LABELS,
   USER_ROLES,
 } from '@/features/users/types/user'
+import { useUnsavedChangesGuard } from '@/shared/hooks/useUnsavedChangesGuard'
+import { focusFirstInvalid } from '@/shared/lib/form'
 import { Button } from '@/shared/ui/button'
 import { Label } from '@/shared/ui/label'
 import { Modal } from '@/shared/ui/modal'
@@ -28,7 +30,7 @@ export function UserDetailHeader({ user }: { user: NormaUser }) {
     <div className="flex flex-wrap items-start justify-between gap-3 border-b-2 border-norma-border pb-4">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="font-display text-2xl font-semibold tracking-tight">
+          <h2 className="font-display text-2xl font-semibold tracking-tight text-balance">
             {user.name}
           </h2>
           <StatusBadge status={user.status} />
@@ -63,8 +65,16 @@ export function UserRoleForm({
 
   const dirty = role !== user.role
 
-  async function onSubmit(e: FormEvent) {
+  useUnsavedChangesGuard(canEdit && dirty)
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const form = e.currentTarget
+    if (!form.checkValidity()) {
+      focusFirstInvalid(form)
+      form.reportValidity()
+      return
+    }
     if (!canEdit || !dirty) return
     setSaving(true)
     try {
@@ -175,6 +185,7 @@ function MembershipRow({
   const [role, setRole] = useState<UserRole>(membership.role)
   const [saving, setSaving] = useState(false)
   const [busyStatus, setBusyStatus] = useState(false)
+  const [confirmOff, setConfirmOff] = useState(false)
 
   useEffect(() => {
     setRole(membership.role)
@@ -210,6 +221,7 @@ function MembershipRow({
           ? 'Membresía activada.'
           : 'Membresía desactivada.',
       )
+      setConfirmOff(false)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo completar.')
     } finally {
@@ -254,7 +266,7 @@ function MembershipRow({
               size="sm"
               variant="danger"
               disabled={busyStatus}
-              onClick={() => void toggleStatus()}
+              onClick={() => setConfirmOff(true)}
             >
               Desactivar
             </Button>
@@ -275,6 +287,26 @@ function MembershipRow({
           {USER_ROLE_LABELS[membership.role]}
         </p>
       )}
+
+      <Modal
+        open={confirmOff}
+        onOpenChange={setConfirmOff}
+        title={`Desactivar membresía en ${membership.clientName}?`}
+        description="El acceso a este cliente se corta. Puedes reactivar después."
+      >
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setConfirmOff(false)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="danger"
+            disabled={busyStatus}
+            onClick={() => void toggleStatus()}
+          >
+            {busyStatus ? 'Desactivando…' : 'Desactivar'}
+          </Button>
+        </div>
+      </Modal>
     </li>
   )
 }
@@ -303,7 +335,7 @@ export function UserMemberships({
     <div className="mt-8 border-t-2 border-norma-border pt-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="font-display text-lg font-semibold tracking-tight">
+          <h3 className="font-display text-lg font-semibold tracking-tight text-balance">
             Membresías
           </h3>
           <p className="mt-1 text-sm text-norma-muted">
@@ -435,8 +467,14 @@ function CreateMembershipDialog({
     }
   }, [open, availableClients, clientId])
 
-  async function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const form = e.currentTarget
+    if (!form.checkValidity()) {
+      focusFirstInvalid(form)
+      form.reportValidity()
+      return
+    }
     if (!clientId) return
     setSubmitting(true)
     try {
@@ -461,7 +499,7 @@ function CreateMembershipDialog({
       title="Ligar a cliente"
       description={`Asignar acceso de ${user.name} a un cliente.`}
     >
-      <form className="space-y-4" onSubmit={onSubmit}>
+      <form className="space-y-4" onSubmit={onSubmit} noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="new-mem-client">Cliente</Label>
           {loadingClients ? (
