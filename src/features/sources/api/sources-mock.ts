@@ -21,19 +21,21 @@ function delay(ms = 280) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-/** Seed alineado a `prisma/seed.ts` del backend. */
+/** Seed alineado a `prisma/seed.ts` del backend (Sources v2). */
 let sources: Source[] = [
   {
     id: 'source_dof',
     name: 'Diario Oficial de la Federación',
     code: 'dof',
-    type: 'DOF',
+    category: 'OFFICIAL',
+    platform: 'WEB',
     url: 'https://www.dof.gob.mx/',
-    section: null,
-    jurisdiction: 'federal',
     frequency: 'daily',
+    sections: [
+      ['Comunicados', 'Normatividad'],
+      ['Avisos'],
+    ],
     keywordsGuide: ['COFEPRIS', 'NOM', 'etiquetado', 'IEPS', 'bebidas'],
-    config: null,
     status: 'ACTIVE',
     createdAt: '2026-07-18T00:00:00.000Z',
     updatedAt: '2026-07-18T00:00:00.000Z',
@@ -42,13 +44,12 @@ let sources: Source[] = [
     id: 'source_diputados',
     name: 'Gaceta Parlamentaria - Cámara de Diputados',
     code: 'diputados-gaceta',
-    type: 'CONGRESS_FEDERAL',
+    category: 'OFFICIAL',
+    platform: 'WEB',
     url: 'https://gaceta.diputados.gob.mx/',
-    section: null,
-    jurisdiction: 'federal',
     frequency: 'daily',
+    sections: [['Gaceta', 'Iniciativas']],
     keywordsGuide: ['Ley General de Salud', 'bebidas azucaradas', 'etiquetado'],
-    config: null,
     status: 'ACTIVE',
     createdAt: '2026-07-18T00:00:00.000Z',
     updatedAt: '2026-07-18T00:00:00.000Z',
@@ -57,13 +58,12 @@ let sources: Source[] = [
     id: 'source_jalisco',
     name: 'Congreso de Jalisco',
     code: 'jalisco-congreso',
-    type: 'CONGRESS_STATE',
+    category: 'OFFICIAL',
+    platform: 'WEB',
     url: 'https://www.congresojal.gob.mx/',
-    section: null,
-    jurisdiction: 'JAL',
     frequency: 'daily',
+    sections: [['Comunicados'], ['Sesiones']],
     keywordsGuide: ['bebidas', 'salud', 'publicidad', 'residuos'],
-    config: null,
     status: 'ACTIVE',
     createdAt: '2026-07-18T00:00:00.000Z',
     updatedAt: '2026-07-18T00:00:00.000Z',
@@ -90,14 +90,11 @@ export const sourcesMockApi = {
     if (params?.status === 'ACTIVE' || params?.status === 'INACTIVE') {
       rows = rows.filter((s) => s.status === params.status)
     }
-    if (params?.type) {
-      rows = rows.filter((s) => s.type === params.type)
+    if (params?.category) {
+      rows = rows.filter((s) => s.category === params.category)
     }
-    if (params?.jurisdiction?.trim()) {
-      const j = params.jurisdiction.trim().toLowerCase()
-      rows = rows.filter((s) =>
-        (s.jurisdiction ?? '').toLowerCase().includes(j),
-      )
+    if (params?.platform) {
+      rows = rows.filter((s) => s.platform === params.platform)
     }
     if (params?.clientId) {
       const clientId = params.clientId
@@ -134,13 +131,12 @@ export const sourcesMockApi = {
       id: id('source'),
       name: input.name,
       code: input.code,
-      type: input.type,
+      category: input.category,
+      platform: input.platform,
       url: input.url ?? null,
-      section: input.section ?? null,
-      jurisdiction: input.jurisdiction ?? null,
       frequency: input.frequency ?? null,
+      sections: input.sections ?? [],
       keywordsGuide: input.keywordsGuide ?? [],
-      config: input.config ?? null,
       status: 'ACTIVE',
       createdAt: stamp,
       updatedAt: stamp,
@@ -150,9 +146,9 @@ export const sourcesMockApi = {
       id: source.id,
       name: source.name,
       code: source.code,
-      type: source.type,
+      category: source.category,
+      platform: source.platform,
       status: source.status,
-      jurisdiction: source.jurisdiction,
     })
     if (input.clientIds?.length) {
       linkSourceToClients(source.id, input.clientIds)
@@ -174,9 +170,9 @@ export const sourcesMockApi = {
       id: next.id,
       name: next.name,
       code: next.code,
-      type: next.type,
+      category: next.category,
+      platform: next.platform,
       status: next.status,
-      jurisdiction: next.jurisdiction,
     })
     return withClients(next)
   },

@@ -2,10 +2,16 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronDown, Plus, Search } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import type { Source, SourceType } from '@/features/sources/types/source'
+import type {
+  Source,
+  SourceCategory,
+  SourcePlatform,
+} from '@/features/sources/types/source'
 import {
-  SOURCE_TYPE_LABELS,
-  SOURCE_TYPES,
+  SOURCE_CATEGORIES,
+  SOURCE_CATEGORY_LABELS,
+  SOURCE_PLATFORM_LABELS,
+  SOURCE_PLATFORMS,
 } from '@/features/sources/types/source'
 import { StatusBadge } from '@/features/sources/components/chips'
 import { duration, easeOut } from '@/shared/lib/motion'
@@ -14,7 +20,7 @@ import { Button } from '@/shared/ui/button'
 import { Select } from '@/shared/ui/select'
 import { Skeleton } from '@/shared/ui/skeleton'
 
-const TYPE_FILTER_ALL = '__all__'
+const FILTER_ALL = '__all__'
 
 const rowFocus =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45 focus-visible:ring-offset-2 focus-visible:ring-offset-norma-surface'
@@ -25,14 +31,14 @@ export function SourceListPanel({
   loading,
   query,
   includeInactive,
-  typeFilter,
-  jurisdictionFilter,
+  categoryFilter,
+  platformFilter,
   canCreate,
   itemTo,
   onQueryChange,
   onIncludeInactiveChange,
-  onTypeFilterChange,
-  onJurisdictionFilterChange,
+  onCategoryFilterChange,
+  onPlatformFilterChange,
   onCreate,
   maxHeight,
 }: {
@@ -41,14 +47,14 @@ export function SourceListPanel({
   loading: boolean
   query: string
   includeInactive: boolean
-  typeFilter: SourceType | ''
-  jurisdictionFilter: string
+  categoryFilter: SourceCategory | ''
+  platformFilter: SourcePlatform | ''
   canCreate: boolean
   itemTo: (id: string) => string
   onQueryChange: (q: string) => void
   onIncludeInactiveChange: (v: boolean) => void
-  onTypeFilterChange: (v: SourceType | '') => void
-  onJurisdictionFilterChange: (v: string) => void
+  onCategoryFilterChange: (v: SourceCategory | '') => void
+  onPlatformFilterChange: (v: SourcePlatform | '') => void
   onCreate: () => void
   /** Si la lista supera esta altura (p. ej. del detalle), hace scroll interno. */
   maxHeight?: number | null
@@ -129,39 +135,45 @@ export function SourceListPanel({
             />
           </div>
           <div className="space-y-2 border-t border-norma-border/80 p-2">
-            <label className="sr-only" htmlFor="source-type-filter">
-              Tipo
+            <label className="sr-only" htmlFor="source-category-filter">
+              Categoría
             </label>
             <Select
-              id="source-type-filter"
-              aria-label="Tipo"
-              value={typeFilter || TYPE_FILTER_ALL}
+              id="source-category-filter"
+              aria-label="Categoría"
+              value={categoryFilter || FILTER_ALL}
               onValueChange={(v) =>
-                onTypeFilterChange(
-                  v === TYPE_FILTER_ALL ? '' : (v as SourceType),
+                onCategoryFilterChange(
+                  v === FILTER_ALL ? '' : (v as SourceCategory),
                 )
               }
               options={[
-                { value: TYPE_FILTER_ALL, label: 'Todos los tipos' },
-                ...SOURCE_TYPES.map((t) => ({
-                  value: t,
-                  label: SOURCE_TYPE_LABELS[t],
+                { value: FILTER_ALL, label: 'Todas las categorías' },
+                ...SOURCE_CATEGORIES.map((c) => ({
+                  value: c,
+                  label: SOURCE_CATEGORY_LABELS[c],
                 })),
               ]}
             />
-            <label className="sr-only" htmlFor="source-jurisdiction-filter">
-              Jurisdicción
+            <label className="sr-only" htmlFor="source-platform-filter">
+              Plataforma
             </label>
-            <input
-              id="source-jurisdiction-filter"
-              name="jurisdiction"
-              autoComplete="off"
-              spellCheck={false}
-              aria-label="Filtrar por jurisdicción"
-              placeholder="Jurisdicción (ej. federal, JAL)"
-              value={jurisdictionFilter}
-              onChange={(e) => onJurisdictionFilterChange(e.target.value)}
-              className="flex h-10 w-full rounded-xl border-2 border-norma-border bg-norma-raised px-3 text-sm text-norma-fg outline-none placeholder:text-norma-subtle focus-visible:border-norma-accent focus-visible:ring-2 focus-visible:ring-norma-accent/25"
+            <Select
+              id="source-platform-filter"
+              aria-label="Plataforma"
+              value={platformFilter || FILTER_ALL}
+              onValueChange={(v) =>
+                onPlatformFilterChange(
+                  v === FILTER_ALL ? '' : (v as SourcePlatform),
+                )
+              }
+              options={[
+                { value: FILTER_ALL, label: 'Todas las plataformas' },
+                ...SOURCE_PLATFORMS.map((p) => ({
+                  value: p,
+                  label: SOURCE_PLATFORM_LABELS[p],
+                })),
+              ]}
             />
             <label className="flex min-h-9 cursor-pointer items-center gap-2 px-1 text-xs text-norma-muted">
               <input
@@ -250,15 +262,14 @@ export function SourceListPanel({
                                 </p>
                                 <p className="truncate font-mono text-[11px] text-norma-subtle">
                                   {source.code}
-                                  {source.jurisdiction
-                                    ? ` · ${source.jurisdiction}`
-                                    : ''}
                                   {clients.length > 0
                                     ? ` · ${clients.length} cliente${clients.length === 1 ? '' : 's'}`
                                     : ''}
                                 </p>
                                 <p className="mt-0.5 truncate text-[11px] text-norma-muted">
-                                  {SOURCE_TYPE_LABELS[source.type]}
+                                  {SOURCE_CATEGORY_LABELS[source.category]}
+                                  {' · '}
+                                  {SOURCE_PLATFORM_LABELS[source.platform]}
                                 </p>
                               </div>
                               <StatusBadge status={source.status} />

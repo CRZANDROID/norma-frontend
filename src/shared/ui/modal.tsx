@@ -13,6 +13,7 @@ export function Modal({
   description,
   children,
   className,
+  overlayClassName,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -20,6 +21,7 @@ export function Modal({
   description?: string
   children: ReactNode
   className?: string
+  overlayClassName?: string
 }) {
   const reduceMotion = useReducedMotion()
 
@@ -30,7 +32,10 @@ export function Modal({
           <Dialog.Portal forceMount>
             <Dialog.Overlay asChild>
               <motion.div
-                className="fixed inset-0 z-50 bg-norma-navy/35 backdrop-blur-[6px]"
+                className={cn(
+                  'fixed inset-0 z-50 bg-norma-navy/35 backdrop-blur-[6px]',
+                  overlayClassName,
+                )}
                 initial={reduceMotion ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -41,7 +46,7 @@ export function Modal({
               <motion.div
                 initial={reduceMotion ? false : fadeScale.initial}
                 animate={fadeScale.animate}
-                exit={fadeScale.exit}
+                exit={reduceMotion ? undefined : fadeScale.exit}
                 transition={{ duration: duration.modal, ease: easeOut }}
                 className={cn(
                   'fixed left-1/2 top-1/2 z-50 w-[min(92vw,480px)] -translate-x-1/2 -translate-y-1/2 overscroll-contain rounded-3xl border-2 border-norma-border bg-norma-surface p-6 shadow-[0_24px_60px_-20px_rgba(13,27,42,0.4)] outline-none',

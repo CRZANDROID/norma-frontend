@@ -9,17 +9,33 @@ import {
 } from '@/features/sources/components/SourceForms'
 import { SourceListPanel } from '@/features/sources/components/SourceListPanel'
 import { useDebouncedValue } from '@/features/sources/hooks/useDebouncedValue'
-import type { Source, SourceType } from '@/features/sources/types/source'
-import { SOURCE_TYPES } from '@/features/sources/types/source'
+import type {
+  Source,
+  SourceCategory,
+  SourcePlatform,
+} from '@/features/sources/types/source'
+import {
+  SOURCE_CATEGORIES,
+  SOURCE_PLATFORMS,
+} from '@/features/sources/types/source'
 import { detailCrossfade, duration, easeOut } from '@/shared/lib/motion'
 import { mapApiError } from '@/shared/lib/api-error'
 import { useAuthStore } from '@/store/auth-store'
 import { EmptyState, ErrorState, PageHeader } from '@/shared/ui/page'
 import { Skeleton } from '@/shared/ui/skeleton'
 
-function parseTypeFilter(raw: string | null): SourceType | '' {
+function parseCategoryFilter(raw: string | null): SourceCategory | '' {
   if (!raw) return ''
-  return (SOURCE_TYPES as string[]).includes(raw) ? (raw as SourceType) : ''
+  return (SOURCE_CATEGORIES as string[]).includes(raw)
+    ? (raw as SourceCategory)
+    : ''
+}
+
+function parsePlatformFilter(raw: string | null): SourcePlatform | '' {
+  if (!raw) return ''
+  return (SOURCE_PLATFORMS as string[]).includes(raw)
+    ? (raw as SourcePlatform)
+    : ''
 }
 
 export function SourcesPage() {
@@ -30,10 +46,9 @@ export function SourcesPage() {
 
   const query = searchParams.get('q') ?? ''
   const includeInactive = searchParams.get('inactive') === '1'
-  const typeFilter = parseTypeFilter(searchParams.get('type'))
-  const jurisdictionFilter = searchParams.get('jurisdiction') ?? ''
+  const categoryFilter = parseCategoryFilter(searchParams.get('category'))
+  const platformFilter = parsePlatformFilter(searchParams.get('platform'))
   const debouncedQuery = useDebouncedValue(query, 300)
-  const debouncedJurisdiction = useDebouncedValue(jurisdictionFilter, 300)
 
   const profile = useAuthStore((s) => s.profile)
   const role = profile?.role ?? 'ADMIN'
@@ -92,8 +107,8 @@ export function SourcesPage() {
     try {
       const rows = await sourcesApi.list({
         status: includeInactive ? undefined : 'ACTIVE',
-        type: typeFilter || undefined,
-        jurisdiction: debouncedJurisdiction || undefined,
+        category: categoryFilter || undefined,
+        platform: platformFilter || undefined,
         q: debouncedQuery || undefined,
       })
       setSources(rows)
@@ -102,12 +117,7 @@ export function SourcesPage() {
     } finally {
       setListLoading(false)
     }
-  }, [
-    debouncedJurisdiction,
-    debouncedQuery,
-    includeInactive,
-    typeFilter,
-  ])
+  }, [categoryFilter, debouncedQuery, includeInactive, platformFilter])
 
   const loadDetail = useCallback(async (id: string) => {
     setDetailError(null)
@@ -226,17 +236,19 @@ export function SourcesPage() {
             loading={listLoading}
             query={query}
             includeInactive={includeInactive}
-            typeFilter={typeFilter}
-            jurisdictionFilter={jurisdictionFilter}
+            categoryFilter={categoryFilter}
+            platformFilter={platformFilter}
             canCreate={canManage}
             itemTo={itemTo}
             onQueryChange={(q) => patchSearch({ q: q || null })}
             onIncludeInactiveChange={(v) =>
               patchSearch({ inactive: v ? '1' : null })
             }
-            onTypeFilterChange={(v) => patchSearch({ type: v || null })}
-            onJurisdictionFilterChange={(v) =>
-              patchSearch({ jurisdiction: v || null })
+            onCategoryFilterChange={(v) =>
+              patchSearch({ category: v || null })
+            }
+            onPlatformFilterChange={(v) =>
+              patchSearch({ platform: v || null })
             }
             onCreate={() => setCreateOpen(true)}
             maxHeight={detailPanelHeight}
