@@ -1,8 +1,16 @@
 import axios from 'axios'
 import { clearAccessToken, getAccessToken } from '@/shared/lib/auth-token'
 
+const apiBaseUrl =
+  (import.meta.env.VITE_API_URL as string | undefined)?.trim() ||
+  'http://localhost:3000'
+
+if (import.meta.env.DEV) {
+  console.info('[norma] API baseURL →', apiBaseUrl)
+}
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3000',
+  baseURL: apiBaseUrl,
   headers: {
     'Content-Type': 'application/json',
   },

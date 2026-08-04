@@ -1,12 +1,21 @@
 import type {
   Client,
+  ClientContact,
+  ClientContactInput,
   ClientDetail,
+  ClientFiscalData,
+  ClientSourceRef,
   CreateClientInput,
   CreateProfileInput,
   RegulatoryProfile,
   UpdateClientInput,
   UpdateProfileInput,
 } from '@/features/clients/types/client'
+import {
+  registerMockClientRef,
+  resolveSourcesForClient,
+  setSourceIdsForClient,
+} from '@/shared/lib/mock-client-sources'
 
 const now = () => new Date().toISOString()
 
@@ -64,14 +73,77 @@ let profiles: RegulatoryProfile[] = [
   },
 ]
 
+const fiscalByClient: Record<string, ClientFiscalData> = {
+  client_arca: {
+    legalName: 'Arca Continental, S.A.B. de C.V.',
+    rfc: 'ACO010101AAA',
+    postalCode: '64000',
+    cfdi: 'G03',
+    taxRegime: '601',
+  },
+}
+
+const contactsByClient: Record<string, ClientContact[]> = {
+  client_arca: [
+    {
+      id: 'contact_arca_1',
+      name: 'Ana Regulatoria',
+      phone: '+52 81 8000 1000',
+      email: 'ana.regulatoria@arca.com',
+      status: 'ACTIVE',
+    },
+  ],
+}
+
 function delay(ms = 280) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-function withProfiles(client: Client): ClientDetail {
+function asSourceRefs(clientId: string): ClientSourceRef[] {
+  return resolveSourcesForClient(clientId).map((s) => ({
+    id: s.id,
+    name: s.name,
+    code: s.code,
+    type: s.type,
+    status: s.status,
+    jurisdiction: s.jurisdiction,
+  }))
+}
+
+function fiscalDataFor(clientId: string): ClientFiscalData | null {
+  return fiscalByClient[clientId] ?? null
+}
+
+function contactsFor(clientId: string): ClientContact[] {
+  return [...(contactsByClient[clientId] ?? [])]
+}
+
+function mapContactInputs(inputs: ClientContactInput[]): ClientContact[] {
+  return inputs.map((contact) => ({
+    id: id('contact'),
+    name: contact.name,
+    phone: contact.phone,
+    email: contact.email ?? null,
+    status: 'ACTIVE' as const,
+  }))
+}
+
+function withClientExtras(client: Client): Client {
+  return {
+    ...client,
+    sources: asSourceRefs(client.id),
+    fiscalData: fiscalDataFor(client.id),
+    contacts: contactsFor(client.id),
+  }
+}
+
+function withRelations(client: Client): ClientDetail {
   return {
     ...client,
     profiles: profiles.filter((p) => p.clientId === client.id),
+    sources: asSourceRefs(client.id),
+    fiscalData: fiscalDataFor(client.id),
+    contacts: contactsFor(client.id),
   }
 }
 
@@ -89,14 +161,16 @@ export const clientsMockApi = {
           c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q),
       )
     }
-    return rows.sort((a, b) => a.name.localeCompare(b.name))
+    return rows
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((c) => withClientExtras(c))
   },
 
   async get(id: string): Promise<ClientDetail> {
     await delay()
     const client = clients.find((c) => c.id === id)
     if (!client) throw new Error('Cliente no encontrado')
-    return withProfiles(client)
+    return withRelations(client)
   },
 
   async create(input: CreateClientInput): Promise<Client> {
@@ -116,20 +190,51 @@ export const clientsMockApi = {
       updatedAt: stamp,
     }
     clients = [...clients, client]
-    return client
+    registerMockClientRef({
+      id: client.id,
+      name: client.name,
+      slug: client.slug,
+      status: client.status,
+    })
+    if (input.sourceIds) {
+      setSourceIdsForClient(client.id, input.sourceIds)
+    }
+    if (input.fiscal) {
+      fiscalByClient[client.id] = { ...input.fiscal }
+    }
+    if (input.contacts) {
+      contactsByClient[client.id] = mapContactInputs(input.contacts)
+    }
+    return withClientExtras(client)
   },
 
   async update(clientId: string, input: UpdateClientInput): Promise<Client> {
     await delay()
     const idx = clients.findIndex((c) => c.id === clientId)
     if (idx < 0) throw new Error('Cliente no encontrado')
+    const { sourceIds, fiscal, contacts, ...rest } = input
     const next = {
       ...clients[idx],
-      ...input,
+      ...rest,
       updatedAt: now(),
     }
     clients = clients.map((c, i) => (i === idx ? next : c))
-    return next
+    if (sourceIds !== undefined) {
+      setSourceIdsForClient(clientId, sourceIds)
+    }
+    if (fiscal !== undefined) {
+      fiscalByClient[clientId] = { ...fiscal }
+    }
+    if (contacts !== undefined) {
+      contactsByClient[clientId] = mapContactInputs(contacts)
+    }
+    registerMockClientRef({
+      id: next.id,
+      name: next.name,
+      slug: next.slug,
+      status: next.status,
+    })
+    return withClientExtras(next)
   },
 
   async deactivate(clientId: string): Promise<Client> {
@@ -142,7 +247,7 @@ export const clientsMockApi = {
       updatedAt: now(),
     }
     clients = clients.map((c, i) => (i === idx ? next : c))
-    return next
+    return withClientExtras(next)
   },
 
   async activate(clientId: string): Promise<Client> {
@@ -151,7 +256,7 @@ export const clientsMockApi = {
     await delay()
     const next = { ...clients[idx], status: 'ACTIVE' as const, updatedAt: now() }
     clients = clients.map((c, i) => (i === idx ? next : c))
-    return next
+    return withClientExtras(next)
   },
 
   async createProfile(
@@ -203,7 +308,11 @@ export const clientsMockApi = {
     await delay()
     const idx = profiles.findIndex((p) => p.id === profileId)
     if (idx < 0) throw new Error('Perfil no encontrado')
-    const next = { ...profiles[idx], status: 'INACTIVE' as const, updatedAt: now() }
+    const next = {
+      ...profiles[idx],
+      status: 'INACTIVE' as const,
+      updatedAt: now(),
+    }
     profiles = profiles.map((p, i) => (i === idx ? next : p))
     return next
   },
@@ -212,7 +321,11 @@ export const clientsMockApi = {
     await delay()
     const idx = profiles.findIndex((p) => p.id === profileId)
     if (idx < 0) throw new Error('Perfil no encontrado')
-    const next = { ...profiles[idx], status: 'ACTIVE' as const, updatedAt: now() }
+    const next = {
+      ...profiles[idx],
+      status: 'ACTIVE' as const,
+      updatedAt: now(),
+    }
     profiles = profiles.map((p, i) => (i === idx ? next : p))
     return next
   },

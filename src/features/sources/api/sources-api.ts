@@ -25,6 +25,7 @@ function createSourceBody(input: CreateSourceInput) {
       ? { keywordsGuide: input.keywordsGuide }
       : {}),
     ...(input.config ? { config: input.config } : {}),
+    ...(input.clientIds !== undefined ? { clientIds: input.clientIds } : {}),
   }
 }
 
@@ -47,12 +48,20 @@ export const sourcesApi = {
     if (useApiMock) return sourcesMockApi.list(params)
     return api
       .get<Source[] | Source>('/sources', { params })
-      .then((r) => asList(r.data))
+      .then((r) =>
+        asList(r.data).map((s) => ({
+          ...s,
+          clients: asList(s.clients ?? []),
+        })),
+      )
   },
 
   get(id: string): Promise<Source> {
     if (useApiMock) return sourcesMockApi.get(id)
-    return api.get<Source>(`/sources/${id}`).then((r) => r.data)
+    return api.get<Source>(`/sources/${id}`).then((r) => ({
+      ...r.data,
+      clients: asList(r.data.clients ?? []),
+    }))
   },
 
   create(input: CreateSourceInput): Promise<Source> {

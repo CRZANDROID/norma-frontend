@@ -1,6 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
+import { clientsApi } from '@/features/clients/api/clients-api'
+import type { Client } from '@/features/clients/types/client'
 import { sourcesApi } from '@/features/sources/api/sources-api'
 import {
   ChipInput,
@@ -21,6 +24,10 @@ import { focusFirstInvalid } from '@/shared/lib/form'
 import { slugify } from '@/shared/lib/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
+import {
+  EntityLinkPicker,
+  type EntityLinkOption,
+} from '@/shared/ui/entity-link-picker'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Modal } from '@/shared/ui/modal'
@@ -53,7 +60,29 @@ function parseConfig(text: string): Record<string, unknown> | null {
   return parsed as Record<string, unknown>
 }
 
+function clientToOption(client: Pick<Client, 'id' | 'name' | 'slug'>): EntityLinkOption {
+  return {
+    id: client.id,
+    title: client.name,
+    subtitle: client.slug,
+  }
+}
+
+function mergeClientOptions(
+  catalog: Client[],
+  linked: { id: string; name: string; slug: string }[],
+): EntityLinkOption[] {
+  const map = new Map<string, EntityLinkOption>()
+  for (const c of catalog) map.set(c.id, clientToOption(c))
+  for (const c of linked) {
+    if (!map.has(c.id)) map.set(c.id, clientToOption(c))
+  }
+  return [...map.values()].sort((a, b) => a.title.localeCompare(b.title))
+}
+
 export function SourceDetailHeader({ source }: { source: Source }) {
+  const clients = source.clients ?? []
+
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 border-b-2 border-norma-border pb-4">
       <div className="min-w-0">
@@ -72,6 +101,43 @@ export function SourceDetailHeader({ source }: { source: Source }) {
           {source.frequency ? (
             <span className="text-xs text-norma-muted">{source.frequency}</span>
           ) : null}
+        </div>
+
+        <div className="mt-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-norma-subtle">
+            Clientes vinculados
+          </p>
+          {clients.length > 0 ? (
+            <div
+              className="mt-2 flex flex-wrap gap-1.5"
+              aria-label="Clientes vinculados"
+            >
+              {clients.map((client) => (
+                <Link
+                  key={client.id}
+                  to={`/clientes/${client.id}?tab=datos`}
+                  className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-norma-signal/12 px-2.5 py-1 text-[11px] font-semibold text-norma-signal ring-1 ring-norma-signal/15 transition-colors hover:bg-norma-signal/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45"
+                >
+                  <span className="truncate">{client.name}</span>
+                  <span className="font-mono text-[10px] opacity-70">{client.slug}</span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-2 text-xs text-norma-subtle">
+              Ningún cliente usa esta fuente todavía.
+            </p>
+          )}
+          <p className="mt-2 text-xs text-norma-subtle">
+            Para agregar o quitar clientes, edítalos desde{' '}
+            <Link
+              to="/clientes"
+              className="font-medium text-norma-signal underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45"
+            >
+              Clientes
+            </Link>
+            .
+          </p>
         </div>
       </div>
       {source.url ? (
@@ -164,7 +230,7 @@ export function SourceDataForm({
         keywordsGuide,
         config,
       })
-      onSaved(updated)
+      onSaved({ ...updated, clients: updated.clients ?? source.clients })
       toast.success('Cambios guardados.')
     } catch (err) {
       toast.error(mapApiError(err, 'No se pudo guardar.'))
@@ -180,7 +246,7 @@ export function SourceDataForm({
         source.status === 'ACTIVE'
           ? await sourcesApi.deactivate(source.id)
           : await sourcesApi.activate(source.id)
-      onSaved(updated)
+      onSaved({ ...updated, clients: updated.clients ?? source.clients })
       toast.success(
         updated.status === 'ACTIVE'
           ? 'Fuente reanudada.'
@@ -383,6 +449,9 @@ export function CreateSourceDialog({
   const [frequency, setFrequency] = useState('daily')
   const [keywordsGuide, setKeywordsGuide] = useState<string[]>([])
   const [configText, setConfigText] = useState('')
+  const [clientIds, setClientIds] = useState<string[]>([])
+  const [clientOptions, setClientOptions] = useState<EntityLinkOption[]>([])
+  const [loadingClients, setLoadingClients] = useState(false)
   const [codeTouched, setCodeTouched] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -397,7 +466,30 @@ export function CreateSourceDialog({
       setFrequency('daily')
       setKeywordsGuide([])
       setConfigText('')
+      setClientIds([])
+      setClientOptions([])
       setCodeTouched(false)
+      return
+    }
+
+    let cancelled = false
+    setLoadingClients(true)
+    void clientsApi
+      .list({ status: 'ACTIVE' })
+      .then((rows) => {
+        if (!cancelled) setClientOptions(mergeClientOptions(rows, []))
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          toast.error(mapApiError(err, 'No se pudieron cargar los clientes.'))
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingClients(false)
+      })
+
+    return () => {
+      cancelled = true
     }
   }, [open])
 
@@ -431,6 +523,7 @@ export function CreateSourceDialog({
         frequency: frequency || undefined,
         keywordsGuide,
         config,
+        clientIds,
       })
       toast.success('Fuente creada.')
       onCreated(created)
@@ -447,6 +540,7 @@ export function CreateSourceDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Nueva fuente"
+      description="Catálogo de origen y, opcionalmente, clientes que la usarán."
     >
       <form
         className="max-h-[70vh] space-y-4 overflow-y-auto overscroll-contain pr-1"
@@ -552,6 +646,19 @@ export function CreateSourceDialog({
             spellCheck={false}
           />
         </div>
+
+        <EntityLinkPicker
+          label="Clientes"
+          helper="Opcional. También puedes vincularlos al editar cada cliente."
+          options={clientOptions}
+          selectedIds={clientIds}
+          onChange={setClientIds}
+          loading={loadingClients}
+          emptyLabel="Aún no hay clientes activos."
+          searchPlaceholder="Buscar clientes…"
+          compact
+        />
+
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             Cancelar
