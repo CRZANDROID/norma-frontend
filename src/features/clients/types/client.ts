@@ -5,9 +5,9 @@ export type ClientSourceRef = {
   id: string
   name: string
   code: string
-  type: string
+  category: string
+  platform: string
   status: EntityStatus
-  jurisdiction?: string | null
 }
 
 /** Datos fiscales 1:1 (`fiscal` en write, `fiscalData` en read). */

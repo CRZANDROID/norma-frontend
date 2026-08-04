@@ -295,14 +295,13 @@ Escritura: **ADMIN**.
 
 ### GET `/sources`
 
-Query opcionales: `status`, `type`, `jurisdiction`, `q`.
+Query opcionales: `status`, `category`, `platform`, `q`.
 
-`type` posibles:
-
-`CONGRESS_STATE` | `CONGRESS_FEDERAL` | `DOF` | `AUTHORITY` | `MEDIA` | `TRANSCRIPT` | `MANUAL` | `API` | `FEED` | `WEBHOOK`
+`category`: `OFFICIAL` | `MEDIA` | `SOCIAL`  
+`platform`: `WEB` | `YOUTUBE` | `X` | `TIKTOK` | `FACEBOOK` | `INSTAGRAM` | `OTHER`
 
 ```http
-GET {{baseUrl}}/sources?status=ACTIVE&type=DOF&q=diario
+GET {{baseUrl}}/sources?status=ACTIVE&category=OFFICIAL&q=diario
 Authorization: Bearer {{accessToken}}
 ```
 
@@ -325,15 +324,12 @@ Content-Type: application/json
 {
   "name": "Fuente prueba Postman",
   "code": "fuente-postman",
-  "type": "MEDIA",
+  "category": "MEDIA",
+  "platform": "WEB",
   "url": "https://example.com/noticias",
-  "section": "regulatorio",
-  "jurisdiction": "federal",
   "frequency": "daily",
-  "keywordsGuide": ["COFEPRIS", "NOM"],
-  "config": {
-    "selector": ".article"
-  }
+  "sections": [["Regulatorio", "Alertas"]],
+  "keywordsGuide": ["COFEPRIS", "NOM"]
 }
 ```
 
@@ -349,6 +345,7 @@ Content-Type: application/json
 {
   "name": "Fuente actualizada",
   "frequency": "weekly",
+  "sections": [["Comunicados", "Normatividad", "Alertas sanitarias"]],
   "keywordsGuide": ["etiquetado"]
 }
 ```

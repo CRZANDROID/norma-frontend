@@ -1,9 +1,9 @@
 # NORMA — Diseño: Fuentes de información
 
 **Estado:** CRUD conectado a Nest (`VITE_USE_API_MOCK=false`); mock solo para preview UI  
-**Alcance:** CRUD Sprint 3 Sources (listar / crear / editar / pausar / reanudar)  
+**Alcance:** CRUD Sources v2 (categoría / plataforma / secciones / URL)  
 **Firma visual:** misma shell que Clientes (aurora navy, chips de señal, master-detail)  
-**Contrato API:** [POSTMAN-BACKEND.md](./POSTMAN-BACKEND.md) §6  
+**Contrato API:** [POSTMAN-BACKEND.md](./POSTMAN-BACKEND.md) §6 · handoff backend `docs/FRONTEND-SOURCES-V2.md`
 
 Tokens, tipografía y motion: heredar de [DESIGN-CLIENTS-PROFILES.md](./DESIGN-CLIENTS-PROFILES.md).
 
@@ -24,13 +24,13 @@ Tokens, tipografía y motion: heredar de [DESIGN-CLIENTS-PROFILES.md](./DESIGN-C
 +----------------------+-------------------------------------------+
 | FUENTES         [+]  |  Diario Oficial…            ● Activa     |
 | Buscar…              |  code: dof                                |
-| [Tipo ▾]             |  [DOF] [federal]  daily                   |
-| Jurisdicción…        |  ---------------------------------------  |
-| [Incluir pausadas]   |  Nombre / Tipo / URL / Sección            |
-|                      |  Jurisdicción / Frecuencia                |
+| [Categoría ▾]        |  [Oficial] [Web]  daily                   |
+| [Plataforma ▾]       |  ---------------------------------------  |
+| [Incluir pausadas]   |  Nombre / Categoría / Plataforma / URL    |
+|                      |  Frecuencia / Secciones (paths)           |
 | > DOF                |  Palabras guía (chips)                    |
-|   dof · federal      |  Config JSON                              |
-|   ● Activa           |  [Guardar]  [Pausar fuente]               |
+|   dof · Oficial·Web  |  [Guardar]  [Pausar fuente]               |
+|   ● Activa           |                                           |
 +----------------------+-------------------------------------------+
 ```
 
@@ -57,7 +57,7 @@ Tokens, tipografía y motion: heredar de [DESIGN-CLIENTS-PROFILES.md](./DESIGN-C
 
 | UI | API |
 |----|-----|
-| Lista | `GET /sources?status&type&jurisdiction&q` |
+| Lista | `GET /sources?status&category&platform&q` |
 | Detalle | `GET /sources/:id` |
 | Crear | `POST /sources` |
 | Guardar | `PATCH /sources/:id` |
@@ -65,4 +65,5 @@ Tokens, tipografía y motion: heredar de [DESIGN-CLIENTS-PROFILES.md](./DESIGN-C
 
 Roles: mutaciones solo `ADMIN`; lectura `ADMIN` \| `ANALYST` \| `VIEWER`.
 
-`code` de solo lectura tras crear (recomendación S3). Soft-status; sin hard-delete.
+`code` de solo lectura tras crear. Soft-status; sin hard-delete.  
+Secciones: `string[][]` (paths). Relación N:N con clientes sin cambios (`clientIds` create / `sourceIds` en cliente).

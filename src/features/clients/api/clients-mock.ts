@@ -104,9 +104,9 @@ function asSourceRefs(clientId: string): ClientSourceRef[] {
     id: s.id,
     name: s.name,
     code: s.code,
-    type: s.type,
+    category: s.category,
+    platform: s.platform,
     status: s.status,
-    jurisdiction: s.jurisdiction,
   }))
 }
 

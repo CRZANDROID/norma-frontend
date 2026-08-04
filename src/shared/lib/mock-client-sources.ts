@@ -4,9 +4,9 @@ export type MockSourceRef = {
   id: string
   name: string
   code: string
-  type: string
+  category: string
+  platform: string
   status: 'ACTIVE' | 'INACTIVE'
-  jurisdiction: string | null
 }
 
 export type MockClientRef = {
@@ -21,25 +21,25 @@ export const MOCK_SOURCE_REFS: MockSourceRef[] = [
     id: 'source_dof',
     name: 'Diario Oficial de la Federación',
     code: 'dof',
-    type: 'DOF',
+    category: 'OFFICIAL',
+    platform: 'WEB',
     status: 'ACTIVE',
-    jurisdiction: 'federal',
   },
   {
     id: 'source_diputados',
     name: 'Gaceta Parlamentaria - Cámara de Diputados',
     code: 'diputados-gaceta',
-    type: 'CONGRESS_FEDERAL',
+    category: 'OFFICIAL',
+    platform: 'WEB',
     status: 'ACTIVE',
-    jurisdiction: 'federal',
   },
   {
     id: 'source_jalisco',
     name: 'Congreso de Jalisco',
     code: 'jalisco-congreso',
-    type: 'CONGRESS_STATE',
+    category: 'OFFICIAL',
+    platform: 'WEB',
     status: 'ACTIVE',
-    jurisdiction: 'JAL',
   },
 ]
 
@@ -108,9 +108,9 @@ export function resolveClientsForSource(sourceId: string): MockClientRef[] {
 }
 
 export function registerMockSourceRef(ref: MockSourceRef) {
-  if (!MOCK_SOURCE_REFS.some((s) => s.id === ref.id)) {
-    MOCK_SOURCE_REFS.push(ref)
-  }
+  const idx = MOCK_SOURCE_REFS.findIndex((s) => s.id === ref.id)
+  if (idx >= 0) MOCK_SOURCE_REFS[idx] = ref
+  else MOCK_SOURCE_REFS.push(ref)
 }
 
 export function registerMockClientRef(ref: MockClientRef) {

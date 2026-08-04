@@ -8,10 +8,8 @@ import {
   KeywordChips,
   StatusBadge,
 } from '@/features/clients/components/chips'
-import {
-  confirmDiscardIfDirty,
-  useUnsavedChangesGuard,
-} from '@/shared/hooks/useUnsavedChangesGuard'
+import { UnsavedChangesGuard } from '@/shared/hooks/unsaved-changes-guard'
+import { UnsavedChangesDialog } from '@/shared/ui/unsaved-changes-dialog'
 import { focusFirstInvalid } from '@/shared/lib/form'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -208,6 +206,7 @@ export function ProfileFormDialog({
   const [categories, setCategories] = useState<string[]>([])
   const [productCats, setProductCats] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [discardOpen, setDiscardOpen] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -216,6 +215,7 @@ export function ProfileFormDialog({
     setKeywords(initial?.keywords ?? [])
     setCategories(initial?.categories ?? [])
     setProductCats(initial?.products?.categories ?? [])
+    setDiscardOpen(false)
   }, [open, initial])
 
   const baselineName = initial?.name ?? ''
@@ -232,10 +232,11 @@ export function ProfileFormDialog({
       categories.join('\0') !== baselineCategories.join('\0') ||
       productCats.join('\0') !== baselineProducts.join('\0'))
 
-  useUnsavedChangesGuard(dirty)
-
   function handleOpenChange(next: boolean) {
-    if (!next && !confirmDiscardIfDirty(dirty)) return
+    if (!next && dirty) {
+      setDiscardOpen(true)
+      return
+    }
     onOpenChange(next)
   }
 
@@ -273,63 +274,74 @@ export function ProfileFormDialog({
   }
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={handleOpenChange}
-      title={initial ? 'Editar perfil' : 'Nuevo perfil'}
-      description="Define qué señales escucha el agente para este cliente."
-      className="w-[min(92vw,560px)]"
-    >
-      <form className="space-y-4" onSubmit={onSubmit} noValidate>
-        <div className="space-y-1.5">
-          <Label htmlFor="profile-name">Nombre</Label>
-          <Input
-            id="profile-name"
-            name="name"
-            autoComplete="off"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+    <>
+      <UnsavedChangesGuard when={dirty} />
+      <UnsavedChangesDialog
+        open={discardOpen}
+        onStay={() => setDiscardOpen(false)}
+        onLeave={() => {
+          setDiscardOpen(false)
+          onOpenChange(false)
+        }}
+      />
+      <Modal
+        open={open}
+        onOpenChange={handleOpenChange}
+        title={initial ? 'Editar perfil' : 'Nuevo perfil'}
+        description="Define qué señales escucha el agente para este cliente."
+        className="w-[min(92vw,560px)]"
+      >
+        <form className="space-y-4" onSubmit={onSubmit} noValidate>
+          <div className="space-y-1.5">
+            <Label htmlFor="profile-name">Nombre</Label>
+            <Input
+              id="profile-name"
+              name="name"
+              autoComplete="off"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="profile-desc">Descripción</Label>
+            <Input
+              id="profile-desc"
+              name="description"
+              autoComplete="off"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <ChipInput
+            label="Keywords"
+            values={keywords}
+            onChange={setKeywords}
+            placeholder="ej. etiquetado"
+            helper="Señales que el agente buscará en fuentes"
           />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="profile-desc">Descripción</Label>
-          <Input
-            id="profile-desc"
-            name="description"
-            autoComplete="off"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+          <ChipInput
+            label="Categorías"
+            values={categories}
+            onChange={setCategories}
+            placeholder="ej. salud"
           />
-        </div>
-        <ChipInput
-          label="Keywords"
-          values={keywords}
-          onChange={setKeywords}
-          placeholder="ej. etiquetado"
-          helper="Señales que el agente buscará en fuentes"
-        />
-        <ChipInput
-          label="Categorías"
-          values={categories}
-          onChange={setCategories}
-          placeholder="ej. salud"
-        />
-        <ChipInput
-          label="Productos"
-          values={productCats}
-          onChange={setProductCats}
-          placeholder="ej. refrescos"
-        />
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Guardando…' : initial ? 'Guardar cambios' : 'Crear perfil'}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+          <ChipInput
+            label="Productos"
+            values={productCats}
+            onChange={setProductCats}
+            placeholder="ej. refrescos"
+          />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Guardando…' : initial ? 'Guardar cambios' : 'Crear perfil'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </>
   )
 }

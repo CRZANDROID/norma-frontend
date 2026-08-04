@@ -13,7 +13,7 @@ import {
   USER_ROLE_LABELS,
   USER_ROLES,
 } from '@/features/users/types/user'
-import { useUnsavedChangesGuard } from '@/shared/hooks/useUnsavedChangesGuard'
+import { UnsavedChangesGuard } from '@/shared/hooks/unsaved-changes-guard'
 import { mapApiError } from '@/shared/lib/api-error'
 import { focusFirstInvalid } from '@/shared/lib/form'
 import { Button } from '@/shared/ui/button'
@@ -64,8 +64,6 @@ export function UserRoleForm({
 
   const dirty = role !== user.role
 
-  useUnsavedChangesGuard(canEdit && dirty)
-
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = e.currentTarget
@@ -110,6 +108,7 @@ export function UserRoleForm({
 
   return (
     <>
+      <UnsavedChangesGuard when={canEdit && dirty} />
       <form className="mt-6 max-w-xl space-y-4" onSubmit={onSubmit}>
         <div className="space-y-1.5">
           <Label htmlFor="user-role">Rol global</Label>

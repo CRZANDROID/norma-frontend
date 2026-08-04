@@ -10,15 +10,21 @@ import {
   KeywordChips,
   StatusBadge,
 } from '@/features/sources/components/chips'
+import { SectionPathsEditor } from '@/features/sources/components/SectionPathsEditor'
 import type {
   Source,
-  SourceType,
+  SourceCategory,
+  SourcePlatform,
+  SourceSectionPath,
 } from '@/features/sources/types/source'
 import {
-  SOURCE_TYPE_LABELS,
-  SOURCE_TYPES,
+  SOURCE_CATEGORIES,
+  SOURCE_CATEGORY_LABELS,
+  SOURCE_PLATFORM_LABELS,
+  SOURCE_PLATFORMS,
+  sectionsEqual,
 } from '@/features/sources/types/source'
-import { useUnsavedChangesGuard } from '@/shared/hooks/useUnsavedChangesGuard'
+import { UnsavedChangesGuard } from '@/shared/hooks/unsaved-changes-guard'
 import { mapApiError } from '@/shared/lib/api-error'
 import { focusFirstInvalid } from '@/shared/lib/form'
 import { slugify } from '@/shared/lib/utils'
@@ -33,32 +39,15 @@ import { Label } from '@/shared/ui/label'
 import { Modal } from '@/shared/ui/modal'
 import { Select } from '@/shared/ui/select'
 
-const SOURCE_TYPE_OPTIONS = SOURCE_TYPES.map((t) => ({
-  value: t,
-  label: SOURCE_TYPE_LABELS[t],
+const CATEGORY_OPTIONS = SOURCE_CATEGORIES.map((c) => ({
+  value: c,
+  label: SOURCE_CATEGORY_LABELS[c],
 }))
 
-const textareaClass =
-  'flex min-h-[96px] w-full rounded-2xl border-2 border-norma-border bg-norma-raised px-3 py-2 font-mono text-xs text-norma-fg placeholder:text-norma-subtle outline-none transition-[box-shadow,border-color] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] focus-visible:border-norma-accent focus-visible:ring-2 focus-visible:ring-norma-accent/25 disabled:cursor-not-allowed disabled:opacity-50'
-
-function configToText(config: Record<string, unknown> | null): string {
-  if (!config) return ''
-  try {
-    return JSON.stringify(config, null, 2)
-  } catch {
-    return ''
-  }
-}
-
-function parseConfig(text: string): Record<string, unknown> | null {
-  const trimmed = text.trim()
-  if (!trimmed) return null
-  const parsed: unknown = JSON.parse(trimmed)
-  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('El config debe ser un objeto JSON.')
-  }
-  return parsed as Record<string, unknown>
-}
+const PLATFORM_OPTIONS = SOURCE_PLATFORMS.map((p) => ({
+  value: p,
+  label: SOURCE_PLATFORM_LABELS[p],
+}))
 
 function clientToOption(client: Pick<Client, 'id' | 'name' | 'slug'>): EntityLinkOption {
   return {
@@ -94,10 +83,12 @@ export function SourceDetailHeader({ source }: { source: Source }) {
         </div>
         <p className="mt-1 font-mono text-xs text-norma-subtle">{source.code}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Badge variant="accent">{SOURCE_TYPE_LABELS[source.type]}</Badge>
-          {source.jurisdiction ? (
-            <Badge variant="signal">{source.jurisdiction}</Badge>
-          ) : null}
+          <Badge variant="accent">
+            {SOURCE_CATEGORY_LABELS[source.category]}
+          </Badge>
+          <Badge variant="signal">
+            {SOURCE_PLATFORM_LABELS[source.platform]}
+          </Badge>
           {source.frequency ? (
             <span className="text-xs text-norma-muted">{source.frequency}</span>
           ) : null}
@@ -119,7 +110,9 @@ export function SourceDetailHeader({ source }: { source: Source }) {
                   className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-norma-signal/12 px-2.5 py-1 text-[11px] font-semibold text-norma-signal ring-1 ring-norma-signal/15 transition-colors hover:bg-norma-signal/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45"
                 >
                   <span className="truncate">{client.name}</span>
-                  <span className="font-mono text-[10px] opacity-70">{client.slug}</span>
+                  <span className="font-mono text-[10px] opacity-70">
+                    {client.slug}
+                  </span>
                 </Link>
               ))}
             </div>
@@ -165,39 +158,34 @@ export function SourceDataForm({
   onSaved: (source: Source) => void
 }) {
   const [name, setName] = useState(source.name)
-  const [type, setType] = useState<SourceType>(source.type)
+  const [category, setCategory] = useState<SourceCategory>(source.category)
+  const [platform, setPlatform] = useState<SourcePlatform>(source.platform)
   const [url, setUrl] = useState(source.url ?? '')
-  const [section, setSection] = useState(source.section ?? '')
-  const [jurisdiction, setJurisdiction] = useState(source.jurisdiction ?? '')
   const [frequency, setFrequency] = useState(source.frequency ?? '')
+  const [sections, setSections] = useState<SourceSectionPath[]>(source.sections)
   const [keywordsGuide, setKeywordsGuide] = useState(source.keywordsGuide)
-  const [configText, setConfigText] = useState(configToText(source.config))
   const [saving, setSaving] = useState(false)
   const [confirmOff, setConfirmOff] = useState(false)
   const [busyStatus, setBusyStatus] = useState(false)
 
   useEffect(() => {
     setName(source.name)
-    setType(source.type)
+    setCategory(source.category)
+    setPlatform(source.platform)
     setUrl(source.url ?? '')
-    setSection(source.section ?? '')
-    setJurisdiction(source.jurisdiction ?? '')
     setFrequency(source.frequency ?? '')
+    setSections(source.sections)
     setKeywordsGuide(source.keywordsGuide)
-    setConfigText(configToText(source.config))
   }, [source])
 
   const dirty =
     name !== source.name ||
-    type !== source.type ||
+    category !== source.category ||
+    platform !== source.platform ||
     url !== (source.url ?? '') ||
-    section !== (source.section ?? '') ||
-    jurisdiction !== (source.jurisdiction ?? '') ||
     frequency !== (source.frequency ?? '') ||
-    keywordsGuide.join('\0') !== source.keywordsGuide.join('\0') ||
-    configText.trim() !== configToText(source.config).trim()
-
-  useUnsavedChangesGuard(canEdit && dirty)
+    !sectionsEqual(sections, source.sections) ||
+    keywordsGuide.join('\0') !== source.keywordsGuide.join('\0')
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -210,25 +198,14 @@ export function SourceDataForm({
     if (!canEdit || !dirty) return
     setSaving(true)
     try {
-      let config: Record<string, unknown> | null
-      try {
-        config = parseConfig(configText)
-      } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : 'JSON de config inválido.',
-        )
-        document.getElementById('source-config')?.focus()
-        return
-      }
       const updated = await sourcesApi.update(source.id, {
         name,
-        type,
+        category,
+        platform,
         url: url || null,
-        section: section || null,
-        jurisdiction: jurisdiction || null,
         frequency: frequency || null,
+        sections,
         keywordsGuide,
-        config,
       })
       onSaved({ ...updated, clients: updated.clients ?? source.clients })
       toast.success('Cambios guardados.')
@@ -262,127 +239,121 @@ export function SourceDataForm({
 
   return (
     <>
-      <form className="mt-6 max-w-xl space-y-4" onSubmit={onSubmit} noValidate>
-        <div className="space-y-1.5">
-          <Label htmlFor="source-name">Nombre</Label>
-          <Input
-            id="source-name"
-            name="name"
-            autoComplete="off"
-            value={name}
-            disabled={!canEdit}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="source-code">Código</Label>
-          <Input
-            id="source-code"
-            name="code"
-            autoComplete="off"
-            spellCheck={false}
-            value={source.code}
-            disabled
-            className="font-mono text-norma-subtle"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="source-type">Tipo</Label>
-          <Select
-            id="source-type"
-            value={type}
-            disabled={!canEdit}
-            onValueChange={(v) => setType(v as SourceType)}
-            options={SOURCE_TYPE_OPTIONS}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="source-url">URL</Label>
-          <Input
-            id="source-url"
-            name="url"
-            type="text"
-            inputMode="url"
-            autoComplete="url"
-            spellCheck={false}
-            value={url}
-            disabled={!canEdit}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://ejemplo.com"
-          />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="source-section">Sección</Label>
-            <Input
-              id="source-section"
-              name="section"
-              autoComplete="off"
-              value={section}
-              disabled={!canEdit}
-              onChange={(e) => setSection(e.target.value)}
-            />
+      <UnsavedChangesGuard when={canEdit && dirty} />
+      <form
+        className="@container mt-6 space-y-8"
+        onSubmit={onSubmit}
+        noValidate
+      >
+        <div className="grid items-start gap-8 @[52rem]:grid-cols-[minmax(16rem,24rem)_minmax(20rem,1fr)]">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="source-name">Nombre</Label>
+              <Input
+                id="source-name"
+                name="name"
+                autoComplete="off"
+                value={name}
+                disabled={!canEdit}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="source-code">Código</Label>
+              <Input
+                id="source-code"
+                name="code"
+                autoComplete="off"
+                spellCheck={false}
+                value={source.code}
+                disabled
+                className="font-mono text-norma-subtle"
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 @[52rem]:grid-cols-1">
+              <div className="space-y-1.5">
+                <Label htmlFor="source-category">Categoría</Label>
+                <Select
+                  id="source-category"
+                  value={category}
+                  disabled={!canEdit}
+                  onValueChange={(v) => setCategory(v as SourceCategory)}
+                  options={CATEGORY_OPTIONS}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="source-platform">Plataforma</Label>
+                <Select
+                  id="source-platform"
+                  value={platform}
+                  disabled={!canEdit}
+                  onValueChange={(v) => setPlatform(v as SourcePlatform)}
+                  options={PLATFORM_OPTIONS}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="source-url">URL</Label>
+              <Input
+                id="source-url"
+                name="url"
+                type="text"
+                inputMode="url"
+                autoComplete="url"
+                spellCheck={false}
+                value={url}
+                disabled={!canEdit}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://ejemplo.com"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="source-frequency">Frecuencia</Label>
+              <Input
+                id="source-frequency"
+                name="frequency"
+                autoComplete="off"
+                spellCheck={false}
+                value={frequency}
+                disabled={!canEdit}
+                onChange={(e) => setFrequency(e.target.value)}
+                placeholder="daily, weekly…"
+              />
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="source-jurisdiction">Jurisdicción</Label>
-            <Input
-              id="source-jurisdiction"
-              name="jurisdiction"
-              autoComplete="off"
-              spellCheck={false}
-              value={jurisdiction}
-              disabled={!canEdit}
-              onChange={(e) => setJurisdiction(e.target.value)}
-              placeholder="federal, JAL…"
-            />
+
+          <div className="min-w-0 w-full space-y-6 @[52rem]:sticky @[52rem]:top-4">
+            <div className="rounded-2xl border-2 border-norma-border bg-norma-raised/50 p-4">
+              <SectionPathsEditor
+                paths={sections}
+                onChange={setSections}
+                disabled={!canEdit}
+              />
+            </div>
+
+            <div className="rounded-2xl border-2 border-norma-border bg-norma-raised/50 p-4">
+              {canEdit ? (
+                <ChipInput
+                  label="Palabras guía"
+                  values={keywordsGuide}
+                  onChange={setKeywordsGuide}
+                  placeholder="Añadir palabra clave…"
+                />
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-norma-subtle">
+                    Palabras guía
+                  </p>
+                  <KeywordChips items={keywordsGuide} />
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="source-frequency">Frecuencia</Label>
-          <Input
-            id="source-frequency"
-            name="frequency"
-            autoComplete="off"
-            spellCheck={false}
-            value={frequency}
-            disabled={!canEdit}
-            onChange={(e) => setFrequency(e.target.value)}
-            placeholder="daily, weekly…"
-          />
         </div>
 
         {canEdit ? (
-          <ChipInput
-            label="Palabras guía"
-            values={keywordsGuide}
-            onChange={setKeywordsGuide}
-            placeholder="Añadir palabra clave…"
-          />
-        ) : (
-          <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-norma-subtle">
-              Palabras guía
-            </p>
-            <KeywordChips items={keywordsGuide} />
-          </div>
-        )}
-
-        <div className="space-y-1.5">
-          <Label htmlFor="source-config">Config (JSON)</Label>
-          <textarea
-            id="source-config"
-            className={textareaClass}
-            value={configText}
-            disabled={!canEdit}
-            onChange={(e) => setConfigText(e.target.value)}
-            placeholder='{"connector": "dof", "notes": "…"}'
-            spellCheck={false}
-          />
-        </div>
-
-        {canEdit ? (
-          <div className="flex flex-wrap gap-2 pt-2">
+          <div className="flex flex-wrap gap-2 border-t-2 border-norma-border pt-5">
             <Button type="submit" disabled={!dirty || saving}>
               {saving ? 'Guardando…' : 'Guardar cambios'}
             </Button>
@@ -442,13 +413,12 @@ export function CreateSourceDialog({
 }) {
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
-  const [type, setType] = useState<SourceType>('DOF')
+  const [category, setCategory] = useState<SourceCategory>('OFFICIAL')
+  const [platform, setPlatform] = useState<SourcePlatform>('WEB')
   const [url, setUrl] = useState('')
-  const [section, setSection] = useState('')
-  const [jurisdiction, setJurisdiction] = useState('')
   const [frequency, setFrequency] = useState('daily')
+  const [sections, setSections] = useState<SourceSectionPath[]>([])
   const [keywordsGuide, setKeywordsGuide] = useState<string[]>([])
-  const [configText, setConfigText] = useState('')
   const [clientIds, setClientIds] = useState<string[]>([])
   const [clientOptions, setClientOptions] = useState<EntityLinkOption[]>([])
   const [loadingClients, setLoadingClients] = useState(false)
@@ -459,13 +429,12 @@ export function CreateSourceDialog({
     if (!open) {
       setName('')
       setCode('')
-      setType('DOF')
+      setCategory('OFFICIAL')
+      setPlatform('WEB')
       setUrl('')
-      setSection('')
-      setJurisdiction('')
       setFrequency('daily')
+      setSections([])
       setKeywordsGuide([])
-      setConfigText('')
       setClientIds([])
       setClientOptions([])
       setCodeTouched(false)
@@ -503,26 +472,15 @@ export function CreateSourceDialog({
     }
     setSubmitting(true)
     try {
-      let config: Record<string, unknown> | null
-      try {
-        config = parseConfig(configText)
-      } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : 'JSON de config inválido.',
-        )
-        document.getElementById('new-source-config')?.focus()
-        return
-      }
       const created = await sourcesApi.create({
         name,
         code,
-        type,
+        category,
+        platform,
         url: url || undefined,
-        section: section || undefined,
-        jurisdiction: jurisdiction || undefined,
         frequency: frequency || undefined,
+        sections,
         keywordsGuide,
-        config,
         clientIds,
       })
       toast.success('Fuente creada.')
@@ -579,14 +537,25 @@ export function CreateSourceDialog({
             }}
           />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="new-source-type">Tipo</Label>
-          <Select
-            id="new-source-type"
-            value={type}
-            onValueChange={(v) => setType(v as SourceType)}
-            options={SOURCE_TYPE_OPTIONS}
-          />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="new-source-category">Categoría</Label>
+            <Select
+              id="new-source-category"
+              value={category}
+              onValueChange={(v) => setCategory(v as SourceCategory)}
+              options={CATEGORY_OPTIONS}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="new-source-platform">Plataforma</Label>
+            <Select
+              id="new-source-platform"
+              value={platform}
+              onValueChange={(v) => setPlatform(v as SourcePlatform)}
+              options={PLATFORM_OPTIONS}
+            />
+          </div>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="new-source-url">URL</Label>
@@ -602,25 +571,6 @@ export function CreateSourceDialog({
             placeholder="https://ejemplo.com"
           />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="new-source-section">Sección</Label>
-            <Input
-              id="new-source-section"
-              value={section}
-              onChange={(e) => setSection(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="new-source-jurisdiction">Jurisdicción</Label>
-            <Input
-              id="new-source-jurisdiction"
-              value={jurisdiction}
-              onChange={(e) => setJurisdiction(e.target.value)}
-              placeholder="federal, JAL…"
-            />
-          </div>
-        </div>
         <div className="space-y-1.5">
           <Label htmlFor="new-source-frequency">Frecuencia</Label>
           <Input
@@ -629,23 +579,17 @@ export function CreateSourceDialog({
             onChange={(e) => setFrequency(e.target.value)}
           />
         </div>
+        <SectionPathsEditor
+          id="new-source-sections"
+          paths={sections}
+          onChange={setSections}
+        />
         <ChipInput
           label="Palabras guía"
           values={keywordsGuide}
           onChange={setKeywordsGuide}
           placeholder="Añadir palabra clave…"
         />
-        <div className="space-y-1.5">
-          <Label htmlFor="new-source-config">Config (JSON, opcional)</Label>
-          <textarea
-            id="new-source-config"
-            className={textareaClass}
-            value={configText}
-            onChange={(e) => setConfigText(e.target.value)}
-            placeholder='{"connector": "dof"}'
-            spellCheck={false}
-          />
-        </div>
 
         <EntityLinkPicker
           label="Clientes"

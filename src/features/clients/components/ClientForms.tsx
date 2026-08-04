@@ -12,11 +12,13 @@ import type {
 import { clientsApi } from '@/features/clients/api/clients-api'
 import { sourcesApi } from '@/features/sources/api/sources-api'
 import {
-  SOURCE_TYPE_LABELS,
+  SOURCE_CATEGORY_LABELS,
+  SOURCE_PLATFORM_LABELS,
   type Source,
-  type SourceType,
+  type SourceCategory,
+  type SourcePlatform,
 } from '@/features/sources/types/source'
-import { useUnsavedChangesGuard } from '@/shared/hooks/useUnsavedChangesGuard'
+import { UnsavedChangesGuard } from '@/shared/hooks/unsaved-changes-guard'
 import { mapApiError } from '@/shared/lib/api-error'
 import { focusFirstInvalid } from '@/shared/lib/form'
 import { duration, easeOut } from '@/shared/lib/motion'
@@ -206,32 +208,41 @@ function FiscalFields({
   )
 }
 
-function sourceToOption(source: Pick<Source, 'id' | 'name' | 'code' | 'type' | 'jurisdiction'>): EntityLinkOption {
+function sourceToOption(
+  source: Pick<Source, 'id' | 'name' | 'code' | 'category' | 'platform'>,
+): EntityLinkOption {
   return {
     id: source.id,
     title: source.name,
     subtitle: source.code,
-    meta:
-      SOURCE_TYPE_LABELS[source.type as SourceType] ??
-      String(source.type),
+    meta: `${SOURCE_CATEGORY_LABELS[source.category as SourceCategory] ?? source.category} · ${SOURCE_PLATFORM_LABELS[source.platform as SourcePlatform] ?? source.platform}`,
   }
 }
 
 function mergeSourceOptions(
   catalog: Source[],
-  linked: { id: string; name: string; code: string; type: string; jurisdiction?: string | null }[],
+  linked: {
+    id: string
+    name: string
+    code: string
+    category: string
+    platform: string
+  }[],
 ): EntityLinkOption[] {
   const map = new Map<string, EntityLinkOption>()
   for (const s of catalog) map.set(s.id, sourceToOption(s))
   for (const s of linked) {
     if (!map.has(s.id)) {
-      map.set(s.id, sourceToOption({
-        id: s.id,
-        name: s.name,
-        code: s.code,
-        type: s.type as SourceType,
-        jurisdiction: s.jurisdiction ?? null,
-      }))
+      map.set(
+        s.id,
+        sourceToOption({
+          id: s.id,
+          name: s.name,
+          code: s.code,
+          category: s.category as SourceCategory,
+          platform: s.platform as SourcePlatform,
+        }),
+      )
     }
   }
   return [...map.values()].sort((a, b) => a.title.localeCompare(b.title))
@@ -355,8 +366,6 @@ export function ClientDataForm({
     linkIdsDirty(sourceIds, baselineSourceIds) ||
     contactsDirty(contacts, baselineContacts)
 
-  useUnsavedChangesGuard(canEdit && dirty)
-
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = e.currentTarget
@@ -429,6 +438,7 @@ export function ClientDataForm({
 
   return (
     <>
+      <UnsavedChangesGuard when={canEdit && dirty} />
       <form
         className={cn('@container mt-6 space-y-8', dirty && canEdit && 'pb-24')}
         onSubmit={onSubmit}
