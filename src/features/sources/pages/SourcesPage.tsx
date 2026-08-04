@@ -256,7 +256,10 @@ export function SourcesPage() {
                   source={detail}
                   canEdit={canManage}
                   onSaved={(updated) => {
-                    setDetail(updated)
+                    setDetail({
+                      ...updated,
+                      clients: updated.clients ?? detail.clients,
+                    })
                     void loadList()
                   }}
                 />

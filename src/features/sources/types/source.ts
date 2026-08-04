@@ -39,6 +39,14 @@ export const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
   WEBHOOK: 'Webhook',
 }
 
+/** Cliente embebido en respuestas de fuente (`clients`). */
+export type SourceClientRef = {
+  id: string
+  name: string
+  slug: string
+  status: EntityStatus
+}
+
 export type Source = {
   id: string
   name: string
@@ -53,6 +61,7 @@ export type Source = {
   status: EntityStatus
   createdAt: string
   updatedAt: string
+  clients?: SourceClientRef[]
 }
 
 export type CreateSourceInput = {
@@ -65,6 +74,8 @@ export type CreateSourceInput = {
   frequency?: string
   keywordsGuide?: string[]
   config?: Record<string, unknown> | null
+  /** Solo en create; PATCH no acepta clientIds. */
+  clientIds?: string[]
 }
 
 export type UpdateSourceInput = {
@@ -83,4 +94,5 @@ export type ListSourcesParams = {
   type?: SourceType
   jurisdiction?: string
   q?: string
+  clientId?: string
 }

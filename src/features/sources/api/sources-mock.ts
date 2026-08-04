@@ -2,8 +2,14 @@ import type {
   CreateSourceInput,
   ListSourcesParams,
   Source,
+  SourceClientRef,
   UpdateSourceInput,
 } from '@/features/sources/types/source'
+import {
+  linkSourceToClients,
+  registerMockSourceRef,
+  resolveClientsForSource,
+} from '@/shared/lib/mock-client-sources'
 
 const now = () => new Date().toISOString()
 
@@ -64,6 +70,19 @@ let sources: Source[] = [
   },
 ]
 
+function asClientRefs(sourceId: string): SourceClientRef[] {
+  return resolveClientsForSource(sourceId).map((c) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    status: c.status,
+  }))
+}
+
+function withClients(source: Source): Source {
+  return { ...source, clients: asClientRefs(source.id) }
+}
+
 export const sourcesMockApi = {
   async list(params?: ListSourcesParams): Promise<Source[]> {
     await delay()
@@ -80,6 +99,12 @@ export const sourcesMockApi = {
         (s.jurisdiction ?? '').toLowerCase().includes(j),
       )
     }
+    if (params?.clientId) {
+      const clientId = params.clientId
+      rows = rows.filter((s) =>
+        resolveClientsForSource(s.id).some((c) => c.id === clientId),
+      )
+    }
     if (params?.q?.trim()) {
       const q = params.q.trim().toLowerCase()
       rows = rows.filter(
@@ -87,14 +112,16 @@ export const sourcesMockApi = {
           s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q),
       )
     }
-    return rows.sort((a, b) => a.name.localeCompare(b.name))
+    return rows
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((s) => withClients(s))
   },
 
   async get(sourceId: string): Promise<Source> {
     await delay()
     const source = sources.find((s) => s.id === sourceId)
     if (!source) throw new Error('Fuente no encontrada')
-    return { ...source }
+    return withClients(source)
   },
 
   async create(input: CreateSourceInput): Promise<Source> {
@@ -119,7 +146,18 @@ export const sourcesMockApi = {
       updatedAt: stamp,
     }
     sources = [...sources, source]
-    return source
+    registerMockSourceRef({
+      id: source.id,
+      name: source.name,
+      code: source.code,
+      type: source.type,
+      status: source.status,
+      jurisdiction: source.jurisdiction,
+    })
+    if (input.clientIds?.length) {
+      linkSourceToClients(source.id, input.clientIds)
+    }
+    return withClients(source)
   },
 
   async update(sourceId: string, input: UpdateSourceInput): Promise<Source> {
@@ -132,7 +170,15 @@ export const sourcesMockApi = {
       updatedAt: now(),
     }
     sources = sources.map((s, i) => (i === idx ? next : s))
-    return next
+    registerMockSourceRef({
+      id: next.id,
+      name: next.name,
+      code: next.code,
+      type: next.type,
+      status: next.status,
+      jurisdiction: next.jurisdiction,
+    })
+    return withClients(next)
   },
 
   async deactivate(sourceId: string): Promise<Source> {
@@ -145,7 +191,7 @@ export const sourcesMockApi = {
       updatedAt: now(),
     }
     sources = sources.map((s, i) => (i === idx ? next : s))
-    return next
+    return withClients(next)
   },
 
   async activate(sourceId: string): Promise<Source> {
@@ -158,6 +204,6 @@ export const sourcesMockApi = {
       updatedAt: now(),
     }
     sources = sources.map((s, i) => (i === idx ? next : s))
-    return next
+    return withClients(next)
   },
 }

@@ -287,7 +287,17 @@ export function ClientsPage() {
                             client={detail}
                             canEdit={canManageClients}
                             onSaved={(updated) => {
-                              setDetail({ ...detail, ...updated })
+                              setDetail({
+                                ...detail,
+                                ...updated,
+                                sources: updated.sources ?? detail.sources,
+                                fiscalData:
+                                  updated.fiscalData !== undefined
+                                    ? updated.fiscalData
+                                    : detail.fiscalData,
+                                contacts: updated.contacts ?? detail.contacts,
+                                profiles: detail.profiles,
+                              })
                               void loadList()
                             }}
                           />

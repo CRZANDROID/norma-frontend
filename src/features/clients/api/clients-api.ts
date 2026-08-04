@@ -22,6 +22,9 @@ function createClientBody(input: CreateClientInput) {
     slug: input.slug,
     ...(input.email ? { email: input.email } : {}),
     ...(input.phone ? { phone: input.phone } : {}),
+    ...(input.sourceIds !== undefined ? { sourceIds: input.sourceIds } : {}),
+    ...(input.fiscal ? { fiscal: input.fiscal } : {}),
+    ...(input.contacts !== undefined ? { contacts: input.contacts } : {}),
   }
 }
 
@@ -30,6 +33,9 @@ function updateClientBody(input: UpdateClientInput) {
   if (input.name !== undefined) body.name = input.name
   if (input.email !== undefined) body.email = input.email
   if (input.phone !== undefined) body.phone = input.phone
+  if (input.sourceIds !== undefined) body.sourceIds = input.sourceIds
+  if (input.fiscal !== undefined) body.fiscal = input.fiscal
+  if (input.contacts !== undefined) body.contacts = input.contacts
   return body
 }
 
@@ -42,7 +48,12 @@ export const clientsApi = {
     if (useApiMock) return clientsMockApi.list(params)
     return api
       .get<Client[] | Client>('/clients', { params })
-      .then((r) => asList(r.data))
+      .then((r) =>
+        asList(r.data).map((c) => ({
+          ...c,
+          sources: asList(c.sources ?? []),
+        })),
+      )
   },
 
   get(id: string): Promise<ClientDetail> {
@@ -50,6 +61,9 @@ export const clientsApi = {
     return api.get<ClientDetail>(`/clients/${id}`).then((r) => ({
       ...r.data,
       profiles: asList(r.data.profiles ?? []),
+      sources: asList(r.data.sources ?? []),
+      fiscalData: r.data.fiscalData ?? null,
+      contacts: asList(r.data.contacts ?? []),
     }))
   },
 
