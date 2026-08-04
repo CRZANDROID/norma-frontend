@@ -58,6 +58,10 @@ export function ClientsPage() {
 
   const [createOpen, setCreateOpen] = useState(false)
   const [profileCreateOpen, setProfileCreateOpen] = useState(false)
+  const [detailPanelHeight, setDetailPanelHeight] = useState<number | null>(
+    null,
+  )
+  const detailPanelRef = useRef<HTMLElement>(null)
 
   const patchSearch = useCallback(
     (patch: Record<string, string | null>) => {
@@ -163,6 +167,19 @@ export function ClientsPage() {
     }
   }, [clientId])
 
+  useEffect(() => {
+    const el = detailPanelRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+
+    const update = () => {
+      setDetailPanelHeight(el.getBoundingClientRect().height)
+    }
+    update()
+    const observer = new ResizeObserver(() => update())
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [detail, detailLoading, detailError, tab, clientId])
+
   const selected = useMemo(
     () => clients.find((c) => c.id === clientId) ?? detail,
     [clients, clientId, detail],
@@ -186,7 +203,7 @@ export function ClientsPage() {
       {listError ? (
         <ErrorState message={listError} onRetry={() => void loadList()} />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="grid items-start gap-4 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]">
           <ClientListPanel
             clients={clients}
             selectedId={clientId}
@@ -200,10 +217,14 @@ export function ClientsPage() {
               patchSearch({ inactive: v ? '1' : null })
             }
             onCreate={() => setCreateOpen(true)}
+            maxHeight={detailPanelHeight}
           />
 
           {/* Stable shell — do not key by clientId (avoids remount / scroll jump). */}
-          <section className="min-h-[520px] rounded-3xl border-2 border-norma-border bg-norma-surface p-5 shadow-[0_12px_32px_-18px_rgba(13,27,42,0.35)] md:p-6">
+          <section
+            ref={detailPanelRef}
+            className="min-h-[520px] rounded-3xl border-2 border-norma-border bg-norma-surface p-5 shadow-[0_12px_32px_-18px_rgba(13,27,42,0.35)] md:p-6"
+          >
             {!clientId && !listLoading && clients.length === 0 ? (
               <EmptyState
                 title="Aún no hay clientes"

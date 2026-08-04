@@ -54,6 +54,10 @@ export function SourcesPage() {
   sourcesRef.current = sources
 
   const [createOpen, setCreateOpen] = useState(false)
+  const [detailPanelHeight, setDetailPanelHeight] = useState<number | null>(
+    null,
+  )
+  const detailPanelRef = useRef<HTMLElement>(null)
 
   const patchSearch = useCallback(
     (patch: Record<string, string | null>) => {
@@ -170,6 +174,19 @@ export function SourcesPage() {
     }
   }, [sourceId])
 
+  useEffect(() => {
+    const el = detailPanelRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+
+    const update = () => {
+      setDetailPanelHeight(el.getBoundingClientRect().height)
+    }
+    update()
+    const observer = new ResizeObserver(() => update())
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [detail, detailLoading, detailError, sourceId])
+
   const selected = useMemo(
     () => sources.find((s) => s.id === sourceId) ?? detail,
     [sources, sourceId, detail],
@@ -202,7 +219,7 @@ export function SourcesPage() {
       {listError ? (
         <ErrorState message={listError} onRetry={() => void loadList()} />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="grid items-start gap-4 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]">
           <SourceListPanel
             sources={sources}
             selectedId={sourceId}
@@ -222,10 +239,14 @@ export function SourcesPage() {
               patchSearch({ jurisdiction: v || null })
             }
             onCreate={() => setCreateOpen(true)}
+            maxHeight={detailPanelHeight}
           />
 
           {/* Stable shell — do not key by sourceId (avoids remount / scroll jump). */}
-          <section className="min-h-[520px] rounded-3xl border-2 border-norma-border bg-norma-surface p-5 shadow-[0_12px_32px_-18px_rgba(13,27,42,0.35)] md:p-6">
+          <section
+            ref={detailPanelRef}
+            className="min-h-[520px] rounded-3xl border-2 border-norma-border bg-norma-surface p-5 shadow-[0_12px_32px_-18px_rgba(13,27,42,0.35)] md:p-6"
+          >
             {!sourceId && !listLoading && sources.length === 0 ? (
               <EmptyState
                 title="Aún no hay fuentes"

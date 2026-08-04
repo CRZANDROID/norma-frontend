@@ -34,6 +34,7 @@ export function SourceListPanel({
   onTypeFilterChange,
   onJurisdictionFilterChange,
   onCreate,
+  maxHeight,
 }: {
   sources: Source[]
   selectedId?: string
@@ -49,6 +50,8 @@ export function SourceListPanel({
   onTypeFilterChange: (v: SourceType | '') => void
   onJurisdictionFilterChange: (v: string) => void
   onCreate: () => void
+  /** Si la lista supera esta altura (p. ej. del detalle), hace scroll interno. */
+  maxHeight?: number | null
 }) {
   const reduceMotion = useReducedMotion()
   const [listOpen, setListOpen] = useState(true)
@@ -64,8 +67,15 @@ export function SourceListPanel({
   }
 
   return (
-    <div className="flex h-full min-h-[520px] flex-col overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface shadow-[0_12px_32px_-18px_rgba(13,27,42,0.35)]">
-      <div className="space-y-3 border-b-2 border-norma-border bg-norma-raised/80 p-4">
+    <div
+      className="flex w-full flex-col self-start overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface shadow-[0_12px_32px_-18px_rgba(13,27,42,0.35)]"
+      style={
+        maxHeight != null && maxHeight > 0
+          ? { maxHeight: `${Math.round(maxHeight)}px` }
+          : undefined
+      }
+    >
+      <div className="shrink-0 space-y-3 border-b-2 border-norma-border bg-norma-raised/80 p-4">
         <div className="flex items-center justify-between gap-2">
           <h2 className="font-display text-sm font-semibold tracking-wide text-balance">
             Fuentes
@@ -175,9 +185,9 @@ export function SourceListPanel({
             animate={{ height: 'auto', opacity: 1 }}
             exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
             transition={{ duration: duration.ui, ease: easeOut }}
-            className="min-h-0 flex-1 overflow-hidden"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
           >
-            <div className="h-full max-h-[min(560px,60vh)] overflow-auto p-2">
+            <div className="p-2">
               {loading ? (
                 <div className="space-y-2 p-2">
                   <Skeleton className="h-14 w-full" />
