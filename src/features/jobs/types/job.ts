@@ -13,13 +13,18 @@ export const JOB_RUN_STATUS_LABELS: Record<JobRunStatus, string> = {
   SKIPPED: 'Omitido',
 }
 
+export type JobConnector = {
+  code: string
+  label: string
+}
+
 export type JobsStatus = {
   configured: boolean
   redis?: string
   worker?: string | boolean
   scheduler?: string | boolean
   storage?: string
-  connectors?: string[]
+  connectors?: JobConnector[]
 }
 
 export type JobRun = {

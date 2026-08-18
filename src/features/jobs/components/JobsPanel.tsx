@@ -189,8 +189,8 @@ export function JobsPanel({
             {status?.connectors?.length ? (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {status.connectors.map((connector) => (
-                  <Badge key={connector} variant="signal">
-                    {connector}
+                  <Badge key={connector.code} variant="signal">
+                    {connector.label}
                   </Badge>
                 ))}
               </div>

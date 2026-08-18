@@ -2,7 +2,6 @@ import type {
   CrawlEnqueueResult,
   CrawlInput,
   JobRun,
-  JobsStatus,
   ListJobRunsParams,
 } from '@/features/jobs/types/job'
 
@@ -66,7 +65,7 @@ function enqueue(sourceCode: string, sourceId?: string): CrawlEnqueueResult {
 }
 
 export const jobsMockApi = {
-  async status(): Promise<JobsStatus> {
+  async status() {
     await delay()
     return {
       configured: true,
