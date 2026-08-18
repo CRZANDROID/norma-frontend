@@ -18,14 +18,6 @@ export const WEEKDAY_OPTIONS = [
   { value: 7, label: 'Dom' },
 ] as const
 
-export const TIMEZONE_OPTIONS = [
-  { value: 'America/Mexico_City', label: 'Ciudad de México' },
-  { value: 'America/Tijuana', label: 'Tijuana' },
-  { value: 'America/Cancun', label: 'Cancún' },
-] as const
-
-const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
-
 export function defaultFrequencySchedule(): FrequencySchedule {
   return {
     time: DEFAULT_FREQUENCY_TIME,
@@ -34,9 +26,10 @@ export function defaultFrequencySchedule(): FrequencySchedule {
   }
 }
 
+/** Siempre 07:00 America/Mexico_City; solo varían los días. */
 export function serializeFrequency(schedule: FrequencySchedule): string {
   const days = [...schedule.weekdays].sort((a, b) => a - b).join(',')
-  return `${schedule.time}|${days}|${schedule.timezone}`
+  return `${DEFAULT_FREQUENCY_TIME}|${days}|${DEFAULT_FREQUENCY_TIMEZONE}`
 }
 
 export function parseFrequency(
@@ -52,20 +45,16 @@ export function parseFrequency(
   }
 
   const parts = value.split('|')
-  if (parts.length !== 3) return fallback
-
-  const [time, daysRaw, timezone] = parts
+  const daysRaw = parts.length === 3 ? parts[1] : parts[0]
   const weekdays = daysRaw
     .split(',')
     .map((d) => Number(d))
     .filter((d) => d >= 1 && d <= 7)
 
   return {
-    time: TIME_RE.test(time) ? time : fallback.time,
+    time: DEFAULT_FREQUENCY_TIME,
     weekdays: weekdays.length > 0 ? weekdays : fallback.weekdays,
-    timezone: TIMEZONE_OPTIONS.some((z) => z.value === timezone)
-      ? timezone
-      : fallback.timezone,
+    timezone: DEFAULT_FREQUENCY_TIMEZONE,
   }
 }
 
@@ -76,14 +65,13 @@ export function formatFrequencyLabel(raw: string | null | undefined): string {
     .map((d) => WEEKDAY_OPTIONS.find((o) => o.value === d)?.label)
     .filter(Boolean)
     .join(', ')
-  return `${schedule.time} · ${days}`
+  return `07:00 CDMX · ${days}`
 }
 
 export function frequencySchedulesEqual(
   a: FrequencySchedule,
   b: FrequencySchedule,
 ): boolean {
-  if (a.time !== b.time || a.timezone !== b.timezone) return false
   if (a.weekdays.length !== b.weekdays.length) return false
   const left = [...a.weekdays].sort()
   const right = [...b.weekdays].sort()

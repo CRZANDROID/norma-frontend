@@ -1,20 +1,16 @@
 import type { FrequencySchedule } from '@/features/sources/lib/frequency'
 import {
-  TIMEZONE_OPTIONS,
+  DEFAULT_FREQUENCY_TIME,
+  DEFAULT_FREQUENCY_TIMEZONE,
   WEEKDAY_OPTIONS,
 } from '@/features/sources/lib/frequency'
 import { cn } from '@/shared/lib/utils'
-import { Input } from '@/shared/ui/input'
-import { Label } from '@/shared/ui/label'
-import { Select } from '@/shared/ui/select'
 
 export function FrequencyFields({
-  idPrefix,
   value,
   disabled,
   onChange,
 }: {
-  idPrefix: string
   value: FrequencySchedule
   disabled?: boolean
   onChange: (next: FrequencySchedule) => void
@@ -24,45 +20,23 @@ export function FrequencyFields({
     const weekdays = has
       ? value.weekdays.filter((d) => d !== day)
       : [...value.weekdays, day]
-    onChange({ ...value, weekdays: weekdays.sort((a, b) => a - b) })
+    onChange({
+      time: DEFAULT_FREQUENCY_TIME,
+      timezone: DEFAULT_FREQUENCY_TIMEZONE,
+      weekdays: weekdays.sort((a, b) => a - b),
+    })
   }
 
   return (
     <div className="space-y-3">
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-norma-subtle">
-        Horario de revisión
+        Días de revisión
       </p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor={`${idPrefix}-time`}>Hora</Label>
-          <Input
-            id={`${idPrefix}-time`}
-            name="frequencyTime"
-            type="time"
-            required
-            value={value.time}
-            disabled={disabled}
-            onChange={(e) => onChange({ ...value, time: e.target.value })}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor={`${idPrefix}-tz`}>Zona horaria</Label>
-          <Select
-            id={`${idPrefix}-tz`}
-            value={value.timezone}
-            disabled={disabled}
-            onValueChange={(timezone) => onChange({ ...value, timezone })}
-            options={TIMEZONE_OPTIONS.map((z) => ({
-              value: z.value,
-              label: z.label,
-            }))}
-          />
-        </div>
-      </div>
+      <p className="text-xs text-norma-muted">
+        Corre a las 07:00, horario de la Ciudad de México.
+      </p>
       <fieldset className="space-y-1.5">
-        <legend className="text-sm font-medium text-norma-fg">
-          Días hábiles
-        </legend>
+        <legend className="sr-only">Días de revisión</legend>
         <div className="flex flex-wrap gap-1.5">
           {WEEKDAY_OPTIONS.map((day) => {
             const active = value.weekdays.includes(day.value)

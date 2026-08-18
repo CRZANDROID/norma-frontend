@@ -354,7 +354,6 @@ export function SourceDataForm({
               />
             </div>
             <FrequencyFields
-              idPrefix="source"
               value={schedule}
               disabled={!canEdit}
               onChange={setSchedule}
@@ -622,7 +621,6 @@ export function CreateSourceDialog({
           />
         </div>
         <FrequencyFields
-          idPrefix="new-source"
           value={schedule}
           onChange={setSchedule}
         />
