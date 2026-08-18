@@ -2,15 +2,14 @@ import { api } from '@/shared/lib/axios'
 import { useApiMock } from '@/shared/lib/utils'
 import { clientsMockApi } from '@/features/clients/api/clients-mock'
 import {
-  deliveryWriteBody,
-  normalizeDeliveryConfig,
+  normalizeClientDelivery,
 } from '@/features/clients/lib/delivery'
 import type {
   Client,
+  ClientDelivery,
   ClientDetail,
   CreateClientInput,
   CreateProfileInput,
-  DeliveryConfig,
   RegulatoryProfile,
   UpdateClientInput,
   UpdateProfileInput,
@@ -26,10 +25,6 @@ function normalizeClient<T extends Client>(client: T): T {
     sources: asList(client.sources ?? []),
     fiscalData: client.fiscalData ?? null,
     contacts: asList(client.contacts ?? []),
-    deliveryConfig: normalizeDeliveryConfig(
-      client.deliveryConfig ??
-        (client as Client & { delivery?: unknown }).delivery,
-    ),
   }
 }
 
@@ -67,8 +62,7 @@ function updateClientBody(input: UpdateClientInput) {
 
 /**
  * Clients + profiles contra Nest (`docs/POSTMAN-BACKEND.md` §§4–5).
- * Entrega: `GET/PATCH /clients/:id/delivery` (`FRONTEND-CLIENT-DELIVERY.md`).
- * Mock solo si `VITE_USE_API_MOCK` / design preview.
+ * Semáforo: `GET /clients/:id/delivery`.
  */
 export const clientsApi = {
   list(params?: { status?: string; q?: string }): Promise<Client[]> {
@@ -99,18 +93,11 @@ export const clientsApi = {
       .then((r) => normalizeClient(r.data))
   },
 
-  getDelivery(id: string): Promise<DeliveryConfig> {
+  getDelivery(id: string): Promise<ClientDelivery> {
     if (useApiMock) return clientsMockApi.getDelivery(id)
     return api
       .get<unknown>(`/clients/${id}/delivery`)
-      .then((r) => normalizeDeliveryConfig(r.data))
-  },
-
-  updateDelivery(id: string, input: DeliveryConfig): Promise<DeliveryConfig> {
-    if (useApiMock) return clientsMockApi.updateDelivery(id, input)
-    return api
-      .patch<unknown>(`/clients/${id}/delivery`, deliveryWriteBody(input))
-      .then((r) => normalizeDeliveryConfig(r.data))
+      .then((r) => normalizeClientDelivery(r.data))
   },
 
   deactivate(id: string): Promise<Client> {

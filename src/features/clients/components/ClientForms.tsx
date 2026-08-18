@@ -283,12 +283,6 @@ export function ClientDetailHeader({
             Sin fuentes vinculadas todavía.
           </p>
         )}
-        <Link
-          to={`/clientes/${client.id}/semaforo`}
-          className="mt-4 inline-flex items-center rounded-xl border-2 border-norma-border bg-norma-raised px-3 py-2 text-xs font-medium text-norma-signal transition-colors hover:border-norma-signal/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45"
-        >
-          Reglas de entrega
-        </Link>
       </div>
     </div>
   )

@@ -7,12 +7,12 @@ import type {
   ClientSourceRef,
   CreateClientInput,
   CreateProfileInput,
-  DeliveryConfig,
+  ClientDelivery,
   RegulatoryProfile,
   UpdateClientInput,
   UpdateProfileInput,
 } from '@/features/clients/types/client'
-import { defaultDeliveryConfig } from '@/features/clients/lib/delivery'
+import { defaultClientDelivery } from '@/features/clients/lib/delivery'
 import {
   registerMockClientRef,
   resolveSourcesForClient,
@@ -35,7 +35,6 @@ let clients: Client[] = [
     status: 'ACTIVE',
     createdAt: '2026-07-18T00:00:00.000Z',
     updatedAt: '2026-07-18T00:00:00.000Z',
-    deliveryConfig: defaultDeliveryConfig(),
   },
   {
     id: 'client_demo',
@@ -191,7 +190,6 @@ export const clientsMockApi = {
       status: 'ACTIVE',
       createdAt: stamp,
       updatedAt: stamp,
-      deliveryConfig: defaultDeliveryConfig(),
     }
     clients = [...clients, client]
     registerMockClientRef({
@@ -321,27 +319,11 @@ export const clientsMockApi = {
     return next
   },
 
-  async getDelivery(clientId: string): Promise<DeliveryConfig> {
+  async getDelivery(clientId: string): Promise<ClientDelivery> {
     await delay()
     const client = clients.find((c) => c.id === clientId)
     if (!client) throw new Error('Cliente no encontrado')
-    return client.deliveryConfig ?? defaultDeliveryConfig()
-  },
-
-  async updateDelivery(
-    clientId: string,
-    input: DeliveryConfig,
-  ): Promise<DeliveryConfig> {
-    await delay()
-    const idx = clients.findIndex((c) => c.id === clientId)
-    if (idx < 0) throw new Error('Cliente no encontrado')
-    const next = {
-      ...clients[idx],
-      deliveryConfig: input,
-      updatedAt: now(),
-    }
-    clients = clients.map((c, i) => (i === idx ? next : c))
-    return input
+    return defaultClientDelivery(clientId)
   },
 
   async activateProfile(profileId: string): Promise<RegulatoryProfile> {

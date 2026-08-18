@@ -59,30 +59,16 @@ export const ALERT_LEVEL_LABELS: Record<AlertLevel, string> = {
   RED: 'Rojo',
 }
 
-/** Horario de entrega (`FRONTEND-CLIENT-DELIVERY.md`). */
-export type DeliverySchedule = {
-  time: string
-  weekdays: number[]
-  timezone: string
-}
-
-export type DeliveryChannels = {
-  email: boolean
-  whatsapp: boolean
-}
-
-export type DeliveryLevelConfig = {
+/** GET /clients/:id/delivery — solo usamos impacto + acción sugerida. */
+export type ImpactAction = {
+  impact: AlertLevel
   suggestedAction: string
-  inbox: boolean
-  email: boolean
-  whatsapp: boolean
-  requiresHuman: boolean
 }
 
-export type DeliveryConfig = {
-  channels: DeliveryChannels
-  schedule: DeliverySchedule
-  levels: Record<AlertLevel, DeliveryLevelConfig>
+export type ClientDelivery = {
+  id?: string
+  clientId?: string
+  impactActions: ImpactAction[]
 }
 
 export type Client = {
@@ -97,7 +83,6 @@ export type Client = {
   sources?: ClientSourceRef[]
   fiscalData?: ClientFiscalData | null
   contacts?: ClientContact[]
-  deliveryConfig?: DeliveryConfig
 }
 
 export type RegulatoryProfile = {

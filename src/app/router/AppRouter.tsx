@@ -4,6 +4,7 @@ import {
   Navigate,
   Outlet,
   RouterProvider,
+  useParams,
 } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { AppLayout } from '@/app/layouts/AppLayout'
@@ -12,12 +13,6 @@ import { ProtectedRoute } from '@/app/router/ProtectedRoute'
 import { LoginPage } from '@/features/auth'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { AlertsPage } from '@/pages/AlertsPage'
-
-const ClientAlertPolicyPage = lazy(() =>
-  import('@/features/clients/pages/ClientAlertPolicyPage').then((m) => ({
-    default: m.ClientAlertPolicyPage,
-  })),
-)
 
 const ClientsPage = lazy(() =>
   import('@/features/clients/pages/ClientsPage').then((m) => ({
@@ -67,6 +62,12 @@ function SuspensePage({ children }: { children: ReactNode }) {
   return <Suspense fallback={<RouteFallback />}>{children}</Suspense>
 }
 
+function RedirectClientSemaphore() {
+  const { clientId } = useParams()
+  const to = clientId ? `/alertas?cliente=${clientId}` : '/alertas'
+  return <Navigate to={to} replace />
+}
+
 const router = createBrowserRouter([
   {
     element: <RootShell />,
@@ -93,11 +94,7 @@ const router = createBrowserRouter([
               },
               {
                 path: '/clientes/:clientId/semaforo',
-                element: (
-                  <SuspensePage>
-                    <ClientAlertPolicyPage />
-                  </SuspensePage>
-                ),
+                element: <RedirectClientSemaphore />,
               },
               {
                 path: '/clientes/:clientId',
