@@ -197,7 +197,7 @@ export function ClientsPage() {
       <PageHeader
         eyebrow="Administración"
         title="Clientes"
-        description="Tenants del piloto y perfiles que alimentan al agente."
+        description="Clientes del piloto y perfiles que definen qué se monitorea."
       />
 
       {listError ? (
