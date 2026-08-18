@@ -72,7 +72,7 @@ export function ClientAlertPolicyPage() {
       const saved = await clientsApi.updateDelivery(clientId, config)
       setConfig(cloneDeliveryConfig(saved))
       setBaseline(cloneDeliveryConfig(saved))
-      toast.success('Entrega y semáforo guardados.')
+      toast.success('Reglas de entrega guardadas.')
     } catch (err) {
       toast.error(mapApiError(err, 'No se pudo guardar.'))
     } finally {
@@ -84,8 +84,8 @@ export function ClientAlertPolicyPage() {
     <div>
       <PageHeader
         eyebrow="Clientes"
-        title="Entrega y semáforo"
-        description="Canales, horario de entrega y acciones por nivel. Esto no envía correo ni WhatsApp todavía."
+        title="Reglas de entrega"
+        description="Cómo avisar cuando un hallazgo caiga en cada color. El tablero del semáforo vive en Alertas; aquí solo se configura el aviso."
       />
 
       {loading ? (
