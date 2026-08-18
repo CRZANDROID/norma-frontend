@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { api } from '@/shared/lib/axios'
 import { useApiMock } from '@/shared/lib/utils'
 import { clientsMockApi } from '@/features/clients/api/clients-mock'
@@ -97,7 +98,19 @@ export const clientsApi = {
     if (useApiMock) return clientsMockApi.getDelivery(id)
     return api
       .get<unknown>(`/clients/${id}/delivery`)
-      .then((r) => normalizeClientDelivery(r.data))
+      .then((r) => {
+        const parsed = normalizeClientDelivery(r.data)
+        if (!parsed) throw new Error('El cliente no tiene semáforo guardado.')
+        return parsed
+      })
+      .catch(async (err) => {
+        const status = axios.isAxiosError(err) ? err.response?.status : undefined
+        if (status !== 404) throw err
+        const client = await api.get<unknown>(`/clients/${id}`)
+        const parsed = normalizeClientDelivery(client.data)
+        if (!parsed) throw err
+        return parsed
+      })
   },
 
   deactivate(id: string): Promise<Client> {

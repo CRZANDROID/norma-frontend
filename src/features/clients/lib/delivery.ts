@@ -26,28 +26,25 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
 }
 
-function actionFor(
-  rows: unknown[],
-  impact: AlertLevel,
-): ImpactAction {
+function actionFor(rows: unknown[], impact: AlertLevel): ImpactAction {
   const row = rows.find((item) => isRecord(item) && item.impact === impact)
   const suggested =
     isRecord(row) && typeof row.suggestedAction === 'string'
       ? row.suggestedAction
-      : DEFAULT_ACTIONS[impact]
+      : '—'
   return { impact, suggestedAction: suggested }
 }
 
 /** Shape Nest: `{ impactActions: [{ impact, suggestedAction, ... }] }`. */
-export function normalizeClientDelivery(raw: unknown): ClientDelivery {
-  const fallback = defaultClientDelivery()
-  if (!isRecord(raw)) return fallback
+export function normalizeClientDelivery(raw: unknown): ClientDelivery | null {
+  if (!isRecord(raw)) return null
   const root = isRecord(raw.deliveryConfig)
     ? raw.deliveryConfig
     : isRecord(raw.delivery)
       ? raw.delivery
       : raw
-  const rows = Array.isArray(root.impactActions) ? root.impactActions : []
+  const rows = Array.isArray(root.impactActions) ? root.impactActions : null
+  if (!rows) return null
   return {
     id: typeof root.id === 'string' ? root.id : undefined,
     clientId: typeof root.clientId === 'string' ? root.clientId : undefined,

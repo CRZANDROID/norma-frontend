@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import type { AlertLevel } from '@/features/clients/types/client'
 import { clientsApi } from '@/features/clients/api/clients-api'
 import type { Client, ClientDelivery } from '@/features/clients/types/client'
 import { SemaphoreRail } from '@/features/alerts/components/SemaphoreRail'
@@ -16,6 +17,7 @@ export function AlertsPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [clientId, setClientId] = useState(clientFromUrl ?? '')
   const [delivery, setDelivery] = useState<ClientDelivery | null>(null)
+  const [level, setLevel] = useState<AlertLevel>('RED')
   const [loadingList, setLoadingList] = useState(true)
   const [loadingDelivery, setLoadingDelivery] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -58,7 +60,10 @@ export function AlertsPage() {
     void clientsApi
       .getDelivery(clientId)
       .then((data) => {
-        if (!cancelled) setDelivery(data)
+        if (!cancelled) {
+          setDelivery(data)
+          setLevel('RED')
+        }
       })
       .catch((err) => {
         if (!cancelled) {
@@ -79,20 +84,17 @@ export function AlertsPage() {
     setSearchParams(id ? { cliente: id } : {}, { replace: true })
   }
 
-  const selected = clients.find((c) => c.id === clientId)
-  const showPicker = clients.length > 1
-
   return (
     <div>
       <PageHeader
         eyebrow="Alertas"
         title="Semáforo"
-        description="Acción sugerida por nivel de impacto, tal como está guardada para el cliente. Sin edición en este sprint."
+        description="Elige un cliente y pulsa un color. Verás la acción sugerida que ya está guardada para ese nivel. No se edita aquí."
       />
 
       {loadingList ? (
         <Skeleton className="h-48 w-full" />
-      ) : error && !delivery ? (
+      ) : error && !delivery && clients.length === 0 ? (
         <ErrorState message={error} />
       ) : clients.length === 0 ? (
         <p className="rounded-3xl border-2 border-dashed border-norma-border bg-norma-raised px-5 py-10 text-sm text-norma-muted">
@@ -100,24 +102,24 @@ export function AlertsPage() {
         </p>
       ) : (
         <div className="space-y-5">
-          {showPicker ? (
-            <div className="max-w-sm space-y-1.5">
-              <Label htmlFor="alert-client">Cliente</Label>
-              <Select
-                id="alert-client"
-                value={clientId}
-                onValueChange={onClientChange}
-                options={clients.map((c) => ({ value: c.id, label: c.name }))}
-              />
-            </div>
-          ) : selected ? (
-            <p className="text-sm text-norma-muted">{selected.name}</p>
-          ) : null}
+          <div className="max-w-sm space-y-1.5">
+            <Label htmlFor="alert-client">Cliente</Label>
+            <Select
+              id="alert-client"
+              value={clientId}
+              onValueChange={onClientChange}
+              options={clients.map((c) => ({ value: c.id, label: c.name }))}
+            />
+          </div>
 
           {loadingDelivery ? (
             <Skeleton className="h-52 w-full" />
           ) : delivery ? (
-            <SemaphoreRail actions={delivery.impactActions} />
+            <SemaphoreRail
+              actions={delivery.impactActions}
+              selected={level}
+              onSelect={setLevel}
+            />
           ) : error ? (
             <ErrorState message={error} />
           ) : null}
