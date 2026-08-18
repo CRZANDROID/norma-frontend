@@ -31,6 +31,12 @@ export function mapApiError(
     if (status === 400 || status === 409) {
       return message || 'Revisa los datos e inténtalo de nuevo.'
     }
+    if (status === 503) {
+      return (
+        message ||
+        'Falta infraestructura en el servidor (Storage, OpenAI o Redis).'
+      )
+    }
     if (message) return message
     return fallback
   }

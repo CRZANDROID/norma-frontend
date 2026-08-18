@@ -3,14 +3,14 @@ import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { clientsApi } from '@/features/clients/api/clients-api'
-import {
-  AlertPolicyForm,
-  alertPoliciesEqual,
-  cloneAlertPolicy,
-} from '@/features/clients/components/AlertPolicyForm'
+import { DeliveryForm } from '@/features/clients/components/DeliveryForm'
 import { StatusBadge } from '@/features/clients/components/chips'
-import type { AlertPolicy, ClientDetail } from '@/features/clients/types/client'
-import { defaultAlertPolicy } from '@/features/clients/types/client'
+import {
+  cloneDeliveryConfig,
+  defaultDeliveryConfig,
+  deliveryConfigsEqual,
+} from '@/features/clients/lib/delivery'
+import type { ClientDetail, DeliveryConfig } from '@/features/clients/types/client'
 import { UnsavedChangesGuard } from '@/shared/hooks/unsaved-changes-guard'
 import { mapApiError } from '@/shared/lib/api-error'
 import { useAuthStore } from '@/store/auth-store'
@@ -26,8 +26,8 @@ export function ClientAlertPolicyPage() {
   const [client, setClient] = useState<ClientDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [policy, setPolicy] = useState<AlertPolicy>(defaultAlertPolicy)
-  const [baseline, setBaseline] = useState<AlertPolicy>(defaultAlertPolicy)
+  const [config, setConfig] = useState<DeliveryConfig>(defaultDeliveryConfig)
+  const [baseline, setBaseline] = useState<DeliveryConfig>(defaultDeliveryConfig)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -35,14 +35,18 @@ export function ClientAlertPolicyPage() {
     let cancelled = false
     setLoading(true)
     setError(null)
-    void clientsApi
-      .get(clientId)
-      .then((data) => {
+    void Promise.all([
+      clientsApi.get(clientId),
+      clientsApi.getDelivery(clientId).catch(() => null),
+    ])
+      .then(([data, delivery]) => {
         if (cancelled) return
-        const next = data.alertPolicy ?? defaultAlertPolicy()
+        const next = cloneDeliveryConfig(
+          delivery ?? data.deliveryConfig ?? defaultDeliveryConfig(),
+        )
         setClient(data)
-        setPolicy(cloneAlertPolicy(next))
-        setBaseline(cloneAlertPolicy(next))
+        setConfig(next)
+        setBaseline(cloneDeliveryConfig(next))
       })
       .catch((err) => {
         if (!cancelled) {
@@ -58,18 +62,17 @@ export function ClientAlertPolicyPage() {
     }
   }, [clientId])
 
-  const dirty = !alertPoliciesEqual(policy, baseline)
+  const dirty = !deliveryConfigsEqual(config, baseline)
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     if (!clientId || !canEdit || !dirty) return
     setSaving(true)
     try {
-      const updated = await clientsApi.update(clientId, { alertPolicy: policy })
-      const saved = updated.alertPolicy ?? policy
-      setPolicy(cloneAlertPolicy(saved))
-      setBaseline(cloneAlertPolicy(saved))
-      toast.success('Semáforo y canales guardados.')
+      const saved = await clientsApi.updateDelivery(clientId, config)
+      setConfig(cloneDeliveryConfig(saved))
+      setBaseline(cloneDeliveryConfig(saved))
+      toast.success('Entrega y semáforo guardados.')
     } catch (err) {
       toast.error(mapApiError(err, 'No se pudo guardar.'))
     } finally {
@@ -81,8 +84,8 @@ export function ClientAlertPolicyPage() {
     <div>
       <PageHeader
         eyebrow="Clientes"
-        title="Semáforo y canales"
-        description="Acciones y canales de entrega por nivel. El correo va por defecto; WhatsApp queda como opción, sin envío."
+        title="Entrega y semáforo"
+        description="Canales, horario de entrega y acciones por nivel. Esto no envía correo ni WhatsApp todavía."
       />
 
       {loading ? (
@@ -116,10 +119,10 @@ export function ClientAlertPolicyPage() {
             </div>
           </div>
 
-          <AlertPolicyForm
-            value={policy}
+          <DeliveryForm
+            value={config}
             disabled={!canEdit}
-            onChange={setPolicy}
+            onChange={setConfig}
           />
 
           {canEdit ? (

@@ -5,11 +5,7 @@ import type {
   SourceClientRef,
   UpdateSourceInput,
 } from '@/features/sources/types/source'
-import { FEDERAL_STATE_VALUE } from '@/features/sources/lib/mexican-states'
-import {
-  serializeFrequency,
-  defaultFrequencySchedule,
-} from '@/features/sources/lib/frequency'
+import { pinnedSchedule } from '@/features/sources/lib/frequency'
 import {
   linkSourceToClients,
   registerMockSourceRef,
@@ -26,9 +22,9 @@ function delay(ms = 280) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-const defaultFrequency = serializeFrequency(defaultFrequencySchedule())
+const defaultSchedule = pinnedSchedule()
 
-/** Seed alineado a `prisma/seed.ts` del backend (Sources v2). */
+/** Seed piloto (no las 32 estatales). */
 let sources: Source[] = [
   {
     id: 'source_dof',
@@ -37,8 +33,11 @@ let sources: Source[] = [
     category: 'OFFICIAL',
     platform: 'WEB',
     url: 'https://www.dof.gob.mx/',
-    frequency: defaultFrequency,
+    jurisdiction: 'FEDERAL',
     stateCode: null,
+    schedule: defaultSchedule,
+    searchFocus: [],
+    notes: null,
     sections: [
       ['Comunicados', 'Normatividad'],
       ['Avisos'],
@@ -55,8 +54,11 @@ let sources: Source[] = [
     category: 'OFFICIAL',
     platform: 'WEB',
     url: 'https://gaceta.diputados.gob.mx/',
-    frequency: defaultFrequency,
+    jurisdiction: 'FEDERAL',
     stateCode: null,
+    schedule: defaultSchedule,
+    searchFocus: [],
+    notes: null,
     sections: [['Gaceta', 'Iniciativas']],
     keywordsGuide: ['Ley General de Salud', 'bebidas azucaradas', 'etiquetado'],
     status: 'ACTIVE',
@@ -70,8 +72,11 @@ let sources: Source[] = [
     category: 'OFFICIAL',
     platform: 'WEB',
     url: 'https://www.congresojal.gob.mx/',
-    frequency: defaultFrequency,
+    jurisdiction: 'STATE',
     stateCode: 'JAL',
+    schedule: defaultSchedule,
+    searchFocus: [],
+    notes: null,
     sections: [['Comunicados'], ['Sesiones']],
     keywordsGuide: ['bebidas', 'salud', 'publicidad', 'residuos'],
     status: 'ACTIVE',
@@ -106,9 +111,10 @@ export const sourcesMockApi = {
     if (params?.platform) {
       rows = rows.filter((s) => s.platform === params.platform)
     }
-    if (params?.stateCode === FEDERAL_STATE_VALUE) {
-      rows = rows.filter((s) => !s.stateCode)
-    } else if (params?.stateCode) {
+    if (params?.jurisdiction) {
+      rows = rows.filter((s) => s.jurisdiction === params.jurisdiction)
+    }
+    if (params?.stateCode) {
       rows = rows.filter((s) => s.stateCode === params.stateCode)
     }
     if (params?.clientId) {
@@ -142,6 +148,7 @@ export const sourcesMockApi = {
       throw new Error('Ese identificador ya está en uso. Prueba otro.')
     }
     const stamp = now()
+    const jurisdiction = input.jurisdiction
     const source: Source = {
       id: id('source'),
       name: input.name,
@@ -149,8 +156,11 @@ export const sourcesMockApi = {
       category: input.category,
       platform: input.platform,
       url: input.url ?? null,
-      frequency: input.frequency ?? defaultFrequency,
-      stateCode: input.stateCode ?? null,
+      jurisdiction,
+      stateCode: jurisdiction === 'STATE' ? (input.stateCode ?? null) : null,
+      schedule: input.schedule ?? pinnedSchedule(),
+      searchFocus: input.searchFocus ?? [],
+      notes: input.notes ?? null,
       sections: input.sections ?? [],
       keywordsGuide: input.keywordsGuide ?? [],
       status: 'ACTIVE',
@@ -181,6 +191,7 @@ export const sourcesMockApi = {
       ...input,
       updatedAt: now(),
     }
+    if (next.jurisdiction === 'FEDERAL') next.stateCode = null
     sources = sources.map((s, i) => (i === idx ? next : s))
     registerMockSourceRef({
       id: next.id,

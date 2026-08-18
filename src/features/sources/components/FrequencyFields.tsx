@@ -1,8 +1,7 @@
-import type { FrequencySchedule } from '@/features/sources/lib/frequency'
+import type { SourceSchedule } from '@/features/sources/lib/frequency'
 import {
-  DEFAULT_FREQUENCY_TIME,
-  DEFAULT_FREQUENCY_TIMEZONE,
   WEEKDAY_OPTIONS,
+  pinnedSchedule,
 } from '@/features/sources/lib/frequency'
 import { cn } from '@/shared/lib/utils'
 
@@ -10,30 +9,28 @@ export function FrequencyFields({
   value,
   disabled,
   onChange,
+  label = 'Días de rastreo',
 }: {
-  value: FrequencySchedule
+  value: SourceSchedule
   disabled?: boolean
-  onChange: (next: FrequencySchedule) => void
+  onChange: (next: SourceSchedule) => void
+  label?: string
 }) {
   function toggleDay(day: number) {
     const has = value.weekdays.includes(day)
     const weekdays = has
       ? value.weekdays.filter((d) => d !== day)
       : [...value.weekdays, day]
-    onChange({
-      time: DEFAULT_FREQUENCY_TIME,
-      timezone: DEFAULT_FREQUENCY_TIMEZONE,
-      weekdays: weekdays.sort((a, b) => a - b),
-    })
+    onChange(pinnedSchedule(weekdays))
   }
 
   return (
     <div className="space-y-3">
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-norma-subtle">
-        Días de revisión
+        {label}
       </p>
       <fieldset className="space-y-1.5">
-        <legend className="sr-only">Días de revisión</legend>
+        <legend className="sr-only">{label}</legend>
         <div className="flex flex-wrap gap-1.5">
           {WEEKDAY_OPTIONS.map((day) => {
             const active = value.weekdays.includes(day.value)

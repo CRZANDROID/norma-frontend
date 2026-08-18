@@ -6,7 +6,7 @@ export function AlertsPage() {
       <PageHeader
         eyebrow="Próximamente"
         title="Alertas"
-        description="Inbox de hallazgos del agente. Entra en sprints posteriores."
+        description="Inbox de hallazgos. Aún no hay API de findings; esta vista queda reservada."
       />
       <div className="rounded-3xl border-2 border-dashed border-norma-accent/45 bg-norma-raised p-10 text-sm text-norma-muted">
         Vista reservada para findings / semáforo.

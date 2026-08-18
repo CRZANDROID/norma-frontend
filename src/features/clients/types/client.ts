@@ -43,33 +43,7 @@ export type ClientContactInput = {
   email?: string
 }
 
-export type Client = {
-  id: string
-  name: string
-  slug: string
-  email: string | null
-  phone: string | null
-  status: EntityStatus
-  createdAt: string
-  updatedAt: string
-  sources?: ClientSourceRef[]
-  fiscalData?: ClientFiscalData | null
-  contacts?: ClientContact[]
-  alertPolicy?: AlertPolicy
-}
-
-export type AlertChannel = 'EMAIL' | 'WHATSAPP'
-
 export type AlertLevel = 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED'
-
-export type AlertLevelConfig = {
-  action: string
-  channels: AlertChannel[]
-}
-
-export type AlertPolicy = {
-  levels: Record<AlertLevel, AlertLevelConfig>
-}
 
 export const ALERT_LEVELS: AlertLevel[] = [
   'GREEN',
@@ -85,27 +59,45 @@ export const ALERT_LEVEL_LABELS: Record<AlertLevel, string> = {
   RED: 'Rojo',
 }
 
-export function defaultAlertPolicy(): AlertPolicy {
-  return {
-    levels: {
-      GREEN: {
-        action: 'Registrar en bitácora. Sin escalamiento.',
-        channels: ['EMAIL'],
-      },
-      YELLOW: {
-        action: 'Notificar al analista para seguimiento.',
-        channels: ['EMAIL'],
-      },
-      ORANGE: {
-        action: 'Escalar al responsable VCGA el mismo día.',
-        channels: ['EMAIL'],
-      },
-      RED: {
-        action: 'Alerta inmediata al responsable del cliente.',
-        channels: ['EMAIL'],
-      },
-    },
-  }
+/** Horario de entrega (`FRONTEND-CLIENT-DELIVERY.md`). */
+export type DeliverySchedule = {
+  time: string
+  weekdays: number[]
+  timezone: string
+}
+
+export type DeliveryChannels = {
+  email: boolean
+  whatsapp: boolean
+}
+
+export type DeliveryLevelConfig = {
+  suggestedAction: string
+  inbox: boolean
+  email: boolean
+  whatsapp: boolean
+  requiresHuman: boolean
+}
+
+export type DeliveryConfig = {
+  channels: DeliveryChannels
+  schedule: DeliverySchedule
+  levels: Record<AlertLevel, DeliveryLevelConfig>
+}
+
+export type Client = {
+  id: string
+  name: string
+  slug: string
+  email: string | null
+  phone: string | null
+  status: EntityStatus
+  createdAt: string
+  updatedAt: string
+  sources?: ClientSourceRef[]
+  fiscalData?: ClientFiscalData | null
+  contacts?: ClientContact[]
+  deliveryConfig?: DeliveryConfig
 }
 
 export type RegulatoryProfile = {
@@ -148,7 +140,6 @@ export type UpdateClientInput = {
   fiscal?: ClientFiscalInput
   /** Si se envía, reemplaza el set completo de contactos. */
   contacts?: ClientContactInput[]
-  alertPolicy?: AlertPolicy
 }
 
 export type CreateProfileInput = {

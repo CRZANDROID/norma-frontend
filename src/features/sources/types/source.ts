@@ -56,6 +56,14 @@ export type SourceClientRef = {
 /** Path de secciones, p.ej. `["Comunicados","Normatividad","Alertas sanitarias"]`. */
 export type SourceSectionPath = string[]
 
+export type SourceJurisdiction = 'FEDERAL' | 'STATE'
+
+export type SourceSchedule = {
+  time: string
+  weekdays: number[]
+  timezone: string
+}
+
 export type Source = {
   id: string
   name: string
@@ -63,10 +71,12 @@ export type Source = {
   category: SourceCategory
   platform: SourcePlatform
   url: string | null
-  /** Disparador serializado: `07:00|1,2,3,4,5|America/Mexico_City` */
-  frequency: string | null
-  /** ISO 3166-2:MX (`JAL`). `null` = federal. */
+  jurisdiction: SourceJurisdiction
+  /** ISO 3166-2:MX (`JAL`). `null` si FEDERAL. */
   stateCode: string | null
+  schedule: SourceSchedule | null
+  searchFocus: string[]
+  notes: string | null
   sections: SourceSectionPath[]
   keywordsGuide: string[]
   status: EntityStatus
@@ -81,8 +91,11 @@ export type CreateSourceInput = {
   category: SourceCategory
   platform: SourcePlatform
   url?: string
-  frequency?: string
+  jurisdiction: SourceJurisdiction
   stateCode?: string | null
+  schedule?: SourceSchedule
+  searchFocus?: string[]
+  notes?: string | null
   sections?: SourceSectionPath[]
   keywordsGuide?: string[]
   /** Solo en create; PATCH no acepta clientIds. */
@@ -94,8 +107,11 @@ export type UpdateSourceInput = {
   category?: SourceCategory
   platform?: SourcePlatform
   url?: string | null
-  frequency?: string | null
+  jurisdiction?: SourceJurisdiction
   stateCode?: string | null
+  schedule?: SourceSchedule
+  searchFocus?: string[]
+  notes?: string | null
   sections?: SourceSectionPath[]
   keywordsGuide?: string[]
 }
@@ -104,7 +120,7 @@ export type ListSourcesParams = {
   status?: EntityStatus
   category?: SourceCategory
   platform?: SourcePlatform
-  /** Código de estado, o `federal` para fuentes sin entidad. */
+  jurisdiction?: SourceJurisdiction
   stateCode?: string
   q?: string
   clientId?: string

@@ -120,7 +120,12 @@ export function SourcesPage() {
         status: includeInactive ? undefined : 'ACTIVE',
         category: categoryFilter || undefined,
         platform: platformFilter || undefined,
-        stateCode: stateFilter || undefined,
+        jurisdiction:
+          stateFilter === FEDERAL_STATE_VALUE ? 'FEDERAL' : undefined,
+        stateCode:
+          stateFilter && stateFilter !== FEDERAL_STATE_VALUE
+            ? stateFilter
+            : undefined,
         q: debouncedQuery || undefined,
       })
       setSources(rows)

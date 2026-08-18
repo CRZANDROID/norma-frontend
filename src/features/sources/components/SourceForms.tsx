@@ -12,6 +12,7 @@ import {
 } from '@/features/sources/components/chips'
 import { SectionPathsEditor } from '@/features/sources/components/SectionPathsEditor'
 import { FrequencyFields } from '@/features/sources/components/FrequencyFields'
+import { SourceCrawlButton } from '@/features/jobs/components/SourceCrawlButton'
 import type {
   Source,
   SourceCategory,
@@ -33,9 +34,9 @@ import {
 import {
   defaultFrequencySchedule,
   frequencySchedulesEqual,
-  parseFrequency,
-  serializeFrequency,
-  formatFrequencyLabel,
+  parseSchedule,
+  formatScheduleLabel,
+  pinnedSchedule,
 } from '@/features/sources/lib/frequency'
 import { UnsavedChangesGuard } from '@/shared/hooks/unsaved-changes-guard'
 import { mapApiError } from '@/shared/lib/api-error'
@@ -116,9 +117,9 @@ export function SourceDetailHeader({ source }: { source: Source }) {
             {SOURCE_PLATFORM_LABELS[source.platform]}
           </Badge>
           <Badge variant="active">{stateCodeLabel(source.stateCode)}</Badge>
-          {source.frequency ? (
+          {source.schedule ? (
             <span className="text-xs text-norma-muted">
-              {formatFrequencyLabel(source.frequency)}
+              {formatScheduleLabel(source.schedule)}
             </span>
           ) : null}
         </div>
@@ -192,10 +193,12 @@ export function SourceDataForm({
   const [url, setUrl] = useState(source.url ?? '')
   const [stateCode, setStateCode] = useState<string | null>(source.stateCode)
   const [schedule, setSchedule] = useState(() =>
-    parseFrequency(source.frequency),
+    parseSchedule(source.schedule),
   )
   const [sections, setSections] = useState<SourceSectionPath[]>(source.sections)
   const [keywordsGuide, setKeywordsGuide] = useState(source.keywordsGuide)
+  const [searchFocus, setSearchFocus] = useState(source.searchFocus)
+  const [notes, setNotes] = useState(source.notes ?? '')
   const [saving, setSaving] = useState(false)
   const [confirmOff, setConfirmOff] = useState(false)
   const [busyStatus, setBusyStatus] = useState(false)
@@ -206,9 +209,11 @@ export function SourceDataForm({
     setPlatform(source.platform)
     setUrl(source.url ?? '')
     setStateCode(source.stateCode)
-    setSchedule(parseFrequency(source.frequency))
+    setSchedule(parseSchedule(source.schedule))
     setSections(source.sections)
     setKeywordsGuide(source.keywordsGuide)
+    setSearchFocus(source.searchFocus)
+    setNotes(source.notes ?? '')
   }, [source])
 
   const dirty =
@@ -217,9 +222,11 @@ export function SourceDataForm({
     platform !== source.platform ||
     url !== (source.url ?? '') ||
     stateCode !== source.stateCode ||
-    !frequencySchedulesEqual(schedule, parseFrequency(source.frequency)) ||
+    !frequencySchedulesEqual(schedule, parseSchedule(source.schedule)) ||
     !sectionsEqual(sections, source.sections) ||
-    keywordsGuide.join('\0') !== source.keywordsGuide.join('\0')
+    keywordsGuide.join('\0') !== source.keywordsGuide.join('\0') ||
+    searchFocus.join('\0') !== source.searchFocus.join('\0') ||
+    notes !== (source.notes ?? '')
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -237,10 +244,13 @@ export function SourceDataForm({
         category,
         platform,
         url: url || null,
-        frequency: serializeFrequency(schedule),
-        stateCode,
+        jurisdiction: stateCode ? 'STATE' : 'FEDERAL',
+        stateCode: stateCode || null,
+        schedule: pinnedSchedule(schedule.weekdays),
         sections,
         keywordsGuide,
+        searchFocus,
+        notes: notes.trim() ? notes.trim() : null,
       })
       onSaved({ ...updated, clients: updated.clients ?? source.clients })
       toast.success('Cambios guardados.')
@@ -386,6 +396,36 @@ export function SourceDataForm({
                 </div>
               )}
             </div>
+
+            <div className="rounded-2xl border-2 border-norma-border bg-norma-raised/50 p-4">
+              {canEdit ? (
+                <ChipInput
+                  label="Enfoque de búsqueda"
+                  values={searchFocus}
+                  onChange={setSearchFocus}
+                  placeholder="Añadir enfoque…"
+                />
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-norma-subtle">
+                    Enfoque de búsqueda
+                  </p>
+                  <KeywordChips items={searchFocus} />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="source-notes">Notas</Label>
+              <textarea
+                id="source-notes"
+                rows={3}
+                disabled={!canEdit}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full resize-y rounded-2xl border-2 border-norma-border bg-norma-surface px-3 py-2 text-sm text-norma-fg outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45 disabled:opacity-60"
+              />
+            </div>
           </div>
         </div>
 
@@ -394,6 +434,13 @@ export function SourceDataForm({
             <Button type="submit" disabled={!dirty || saving}>
               {saving ? 'Guardando…' : 'Guardar cambios'}
             </Button>
+            {source.status === 'ACTIVE' ? (
+              <SourceCrawlButton
+                sourceId={source.id}
+                sourceCode={source.code}
+                disabled={busyStatus}
+              />
+            ) : null}
             {source.status === 'ACTIVE' ? (
               <Button
                 type="button"
@@ -457,6 +504,8 @@ export function CreateSourceDialog({
   const [schedule, setSchedule] = useState(defaultFrequencySchedule)
   const [sections, setSections] = useState<SourceSectionPath[]>([])
   const [keywordsGuide, setKeywordsGuide] = useState<string[]>([])
+  const [searchFocus, setSearchFocus] = useState<string[]>([])
+  const [notes, setNotes] = useState('')
   const [clientIds, setClientIds] = useState<string[]>([])
   const [clientOptions, setClientOptions] = useState<EntityLinkOption[]>([])
   const [loadingClients, setLoadingClients] = useState(false)
@@ -474,6 +523,8 @@ export function CreateSourceDialog({
       setSchedule(defaultFrequencySchedule())
       setSections([])
       setKeywordsGuide([])
+      setSearchFocus([])
+      setNotes('')
       setClientIds([])
       setClientOptions([])
       setCodeTouched(false)
@@ -517,10 +568,13 @@ export function CreateSourceDialog({
         category,
         platform,
         url: url || undefined,
-        frequency: serializeFrequency(schedule),
-        stateCode,
+        jurisdiction: stateCode ? 'STATE' : 'FEDERAL',
+        stateCode: stateCode || null,
+        schedule: pinnedSchedule(schedule.weekdays),
         sections,
         keywordsGuide,
+        searchFocus,
+        notes: notes.trim() || undefined,
         clientIds,
       })
       toast.success('Fuente creada.')
@@ -635,6 +689,22 @@ export function CreateSourceDialog({
           onChange={setKeywordsGuide}
           placeholder="Añadir palabra clave…"
         />
+        <ChipInput
+          label="Enfoque de búsqueda"
+          values={searchFocus}
+          onChange={setSearchFocus}
+          placeholder="Añadir enfoque…"
+        />
+        <div className="space-y-1.5">
+          <Label htmlFor="new-source-notes">Notas</Label>
+          <textarea
+            id="new-source-notes"
+            rows={2}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="w-full resize-y rounded-2xl border-2 border-norma-border bg-norma-raised px-3 py-2 text-sm text-norma-fg outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45"
+          />
+        </div>
 
         <EntityLinkPicker
           label="Clientes"
