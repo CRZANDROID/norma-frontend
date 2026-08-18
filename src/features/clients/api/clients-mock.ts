@@ -11,6 +11,7 @@ import type {
   UpdateClientInput,
   UpdateProfileInput,
 } from '@/features/clients/types/client'
+import { defaultAlertPolicy } from '@/features/clients/types/client'
 import {
   registerMockClientRef,
   resolveSourcesForClient,
@@ -33,6 +34,7 @@ let clients: Client[] = [
     status: 'ACTIVE',
     createdAt: '2026-07-18T00:00:00.000Z',
     updatedAt: '2026-07-18T00:00:00.000Z',
+    alertPolicy: defaultAlertPolicy(),
   },
   {
     id: 'client_demo',
@@ -212,10 +214,11 @@ export const clientsMockApi = {
     await delay()
     const idx = clients.findIndex((c) => c.id === clientId)
     if (idx < 0) throw new Error('Cliente no encontrado')
-    const { sourceIds, fiscal, contacts, ...rest } = input
+    const { sourceIds, fiscal, contacts, alertPolicy, ...rest } = input
     const next = {
       ...clients[idx],
       ...rest,
+      ...(alertPolicy !== undefined ? { alertPolicy } : {}),
       updatedAt: now(),
     }
     clients = clients.map((c, i) => (i === idx ? next : c))

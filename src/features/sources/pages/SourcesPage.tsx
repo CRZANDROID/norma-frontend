@@ -18,6 +18,10 @@ import {
   SOURCE_CATEGORIES,
   SOURCE_PLATFORMS,
 } from '@/features/sources/types/source'
+import {
+  FEDERAL_STATE_VALUE,
+  MEXICAN_STATES,
+} from '@/features/sources/lib/mexican-states'
 import { detailCrossfade, duration, easeOut } from '@/shared/lib/motion'
 import { mapApiError } from '@/shared/lib/api-error'
 import { useAuthStore } from '@/store/auth-store'
@@ -38,6 +42,12 @@ function parsePlatformFilter(raw: string | null): SourcePlatform | '' {
     : ''
 }
 
+function parseStateFilter(raw: string | null): string {
+  if (!raw) return ''
+  if (raw === FEDERAL_STATE_VALUE) return FEDERAL_STATE_VALUE
+  return MEXICAN_STATES.some((s) => s.code === raw) ? raw : ''
+}
+
 export function SourcesPage() {
   const navigate = useNavigate()
   const { sourceId } = useParams()
@@ -48,6 +58,7 @@ export function SourcesPage() {
   const includeInactive = searchParams.get('inactive') === '1'
   const categoryFilter = parseCategoryFilter(searchParams.get('category'))
   const platformFilter = parsePlatformFilter(searchParams.get('platform'))
+  const stateFilter = parseStateFilter(searchParams.get('state'))
   const debouncedQuery = useDebouncedValue(query, 300)
 
   const profile = useAuthStore((s) => s.profile)
@@ -109,6 +120,7 @@ export function SourcesPage() {
         status: includeInactive ? undefined : 'ACTIVE',
         category: categoryFilter || undefined,
         platform: platformFilter || undefined,
+        stateCode: stateFilter || undefined,
         q: debouncedQuery || undefined,
       })
       setSources(rows)
@@ -117,7 +129,7 @@ export function SourcesPage() {
     } finally {
       setListLoading(false)
     }
-  }, [categoryFilter, debouncedQuery, includeInactive, platformFilter])
+  }, [categoryFilter, debouncedQuery, includeInactive, platformFilter, stateFilter])
 
   const loadDetail = useCallback(async (id: string) => {
     setDetailError(null)
@@ -238,6 +250,7 @@ export function SourcesPage() {
             includeInactive={includeInactive}
             categoryFilter={categoryFilter}
             platformFilter={platformFilter}
+            stateFilter={stateFilter}
             canCreate={canManage}
             itemTo={itemTo}
             onQueryChange={(q) => patchSearch({ q: q || null })}
@@ -250,6 +263,7 @@ export function SourcesPage() {
             onPlatformFilterChange={(v) =>
               patchSearch({ platform: v || null })
             }
+            onStateFilterChange={(v) => patchSearch({ state: v || null })}
             onCreate={() => setCreateOpen(true)}
             maxHeight={detailPanelHeight}
           />

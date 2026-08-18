@@ -29,6 +29,7 @@ function normalizeSections(value: unknown): SourceSectionPath[] {
 function normalizeSource(source: Source): Source {
   return {
     ...source,
+    stateCode: source.stateCode || null,
     sections: normalizeSections(source.sections),
     keywordsGuide: asList(source.keywordsGuide ?? []),
     clients: asList(source.clients ?? []),
@@ -43,6 +44,7 @@ function createSourceBody(input: CreateSourceInput) {
     platform: input.platform,
     ...(input.url ? { url: input.url } : {}),
     ...(input.frequency ? { frequency: input.frequency } : {}),
+    ...(input.stateCode !== undefined ? { stateCode: input.stateCode } : {}),
     ...(input.sections?.length ? { sections: input.sections } : {}),
     ...(input.keywordsGuide?.length
       ? { keywordsGuide: input.keywordsGuide }
@@ -58,6 +60,7 @@ function updateSourceBody(input: UpdateSourceInput) {
   if (input.platform !== undefined) body.platform = input.platform
   if (input.url !== undefined) body.url = input.url
   if (input.frequency !== undefined) body.frequency = input.frequency
+  if (input.stateCode !== undefined) body.stateCode = input.stateCode
   if (input.sections !== undefined) body.sections = input.sections
   if (input.keywordsGuide !== undefined) body.keywordsGuide = input.keywordsGuide
   return body

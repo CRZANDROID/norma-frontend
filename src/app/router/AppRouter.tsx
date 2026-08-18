@@ -13,6 +13,12 @@ import { LoginPage } from '@/features/auth'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { AlertsPage } from '@/pages/AlertsPage'
 
+const ClientAlertPolicyPage = lazy(() =>
+  import('@/features/clients/pages/ClientAlertPolicyPage').then((m) => ({
+    default: m.ClientAlertPolicyPage,
+  })),
+)
+
 const ClientsPage = lazy(() =>
   import('@/features/clients/pages/ClientsPage').then((m) => ({
     default: m.ClientsPage,
@@ -82,6 +88,14 @@ const router = createBrowserRouter([
                 element: (
                   <SuspensePage>
                     <ClientsPage />
+                  </SuspensePage>
+                ),
+              },
+              {
+                path: '/clientes/:clientId/semaforo',
+                element: (
+                  <SuspensePage>
+                    <ClientAlertPolicyPage />
                   </SuspensePage>
                 ),
               },

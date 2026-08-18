@@ -36,6 +36,7 @@ function updateClientBody(input: UpdateClientInput) {
   if (input.sourceIds !== undefined) body.sourceIds = input.sourceIds
   if (input.fiscal !== undefined) body.fiscal = input.fiscal
   if (input.contacts !== undefined) body.contacts = input.contacts
+  if (input.alertPolicy !== undefined) body.alertPolicy = input.alertPolicy
   return body
 }
 
@@ -64,6 +65,7 @@ export const clientsApi = {
       sources: asList(r.data.sources ?? []),
       fiscalData: r.data.fiscalData ?? null,
       contacts: asList(r.data.contacts ?? []),
+      alertPolicy: r.data.alertPolicy,
     }))
   },
 

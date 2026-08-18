@@ -5,6 +5,11 @@ import type {
   SourceClientRef,
   UpdateSourceInput,
 } from '@/features/sources/types/source'
+import { FEDERAL_STATE_VALUE } from '@/features/sources/lib/mexican-states'
+import {
+  serializeFrequency,
+  defaultFrequencySchedule,
+} from '@/features/sources/lib/frequency'
 import {
   linkSourceToClients,
   registerMockSourceRef,
@@ -21,6 +26,8 @@ function delay(ms = 280) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+const defaultFrequency = serializeFrequency(defaultFrequencySchedule())
+
 /** Seed alineado a `prisma/seed.ts` del backend (Sources v2). */
 let sources: Source[] = [
   {
@@ -30,7 +37,8 @@ let sources: Source[] = [
     category: 'OFFICIAL',
     platform: 'WEB',
     url: 'https://www.dof.gob.mx/',
-    frequency: 'daily',
+    frequency: defaultFrequency,
+    stateCode: null,
     sections: [
       ['Comunicados', 'Normatividad'],
       ['Avisos'],
@@ -47,7 +55,8 @@ let sources: Source[] = [
     category: 'OFFICIAL',
     platform: 'WEB',
     url: 'https://gaceta.diputados.gob.mx/',
-    frequency: 'daily',
+    frequency: defaultFrequency,
+    stateCode: null,
     sections: [['Gaceta', 'Iniciativas']],
     keywordsGuide: ['Ley General de Salud', 'bebidas azucaradas', 'etiquetado'],
     status: 'ACTIVE',
@@ -61,7 +70,8 @@ let sources: Source[] = [
     category: 'OFFICIAL',
     platform: 'WEB',
     url: 'https://www.congresojal.gob.mx/',
-    frequency: 'daily',
+    frequency: defaultFrequency,
+    stateCode: 'JAL',
     sections: [['Comunicados'], ['Sesiones']],
     keywordsGuide: ['bebidas', 'salud', 'publicidad', 'residuos'],
     status: 'ACTIVE',
@@ -95,6 +105,11 @@ export const sourcesMockApi = {
     }
     if (params?.platform) {
       rows = rows.filter((s) => s.platform === params.platform)
+    }
+    if (params?.stateCode === FEDERAL_STATE_VALUE) {
+      rows = rows.filter((s) => !s.stateCode)
+    } else if (params?.stateCode) {
+      rows = rows.filter((s) => s.stateCode === params.stateCode)
     }
     if (params?.clientId) {
       const clientId = params.clientId
@@ -134,7 +149,8 @@ export const sourcesMockApi = {
       category: input.category,
       platform: input.platform,
       url: input.url ?? null,
-      frequency: input.frequency ?? null,
+      frequency: input.frequency ?? defaultFrequency,
+      stateCode: input.stateCode ?? null,
       sections: input.sections ?? [],
       keywordsGuide: input.keywordsGuide ?? [],
       status: 'ACTIVE',

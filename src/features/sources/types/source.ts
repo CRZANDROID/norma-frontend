@@ -63,7 +63,10 @@ export type Source = {
   category: SourceCategory
   platform: SourcePlatform
   url: string | null
+  /** Disparador serializado: `07:00|1,2,3,4,5|America/Mexico_City` */
   frequency: string | null
+  /** ISO 3166-2:MX (`JAL`). `null` = federal. */
+  stateCode: string | null
   sections: SourceSectionPath[]
   keywordsGuide: string[]
   status: EntityStatus
@@ -79,6 +82,7 @@ export type CreateSourceInput = {
   platform: SourcePlatform
   url?: string
   frequency?: string
+  stateCode?: string | null
   sections?: SourceSectionPath[]
   keywordsGuide?: string[]
   /** Solo en create; PATCH no acepta clientIds. */
@@ -91,6 +95,7 @@ export type UpdateSourceInput = {
   platform?: SourcePlatform
   url?: string | null
   frequency?: string | null
+  stateCode?: string | null
   sections?: SourceSectionPath[]
   keywordsGuide?: string[]
 }
@@ -99,6 +104,8 @@ export type ListSourcesParams = {
   status?: EntityStatus
   category?: SourceCategory
   platform?: SourcePlatform
+  /** Código de estado, o `federal` para fuentes sin entidad. */
+  stateCode?: string
   q?: string
   clientId?: string
 }

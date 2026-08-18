@@ -55,6 +55,57 @@ export type Client = {
   sources?: ClientSourceRef[]
   fiscalData?: ClientFiscalData | null
   contacts?: ClientContact[]
+  alertPolicy?: AlertPolicy
+}
+
+export type AlertChannel = 'EMAIL' | 'WHATSAPP'
+
+export type AlertLevel = 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED'
+
+export type AlertLevelConfig = {
+  action: string
+  channels: AlertChannel[]
+}
+
+export type AlertPolicy = {
+  levels: Record<AlertLevel, AlertLevelConfig>
+}
+
+export const ALERT_LEVELS: AlertLevel[] = [
+  'GREEN',
+  'YELLOW',
+  'ORANGE',
+  'RED',
+]
+
+export const ALERT_LEVEL_LABELS: Record<AlertLevel, string> = {
+  GREEN: 'Verde',
+  YELLOW: 'Amarillo',
+  ORANGE: 'Naranja',
+  RED: 'Rojo',
+}
+
+export function defaultAlertPolicy(): AlertPolicy {
+  return {
+    levels: {
+      GREEN: {
+        action: 'Registrar en bitácora. Sin escalamiento.',
+        channels: ['EMAIL'],
+      },
+      YELLOW: {
+        action: 'Notificar al analista para seguimiento.',
+        channels: ['EMAIL'],
+      },
+      ORANGE: {
+        action: 'Escalar al responsable VCGA el mismo día.',
+        channels: ['EMAIL'],
+      },
+      RED: {
+        action: 'Alerta inmediata al responsable del cliente.',
+        channels: ['EMAIL'],
+      },
+    },
+  }
 }
 
 export type RegulatoryProfile = {
@@ -97,6 +148,7 @@ export type UpdateClientInput = {
   fiscal?: ClientFiscalInput
   /** Si se envía, reemplaza el set completo de contactos. */
   contacts?: ClientContactInput[]
+  alertPolicy?: AlertPolicy
 }
 
 export type CreateProfileInput = {

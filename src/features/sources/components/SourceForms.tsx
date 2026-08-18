@@ -11,6 +11,7 @@ import {
   StatusBadge,
 } from '@/features/sources/components/chips'
 import { SectionPathsEditor } from '@/features/sources/components/SectionPathsEditor'
+import { FrequencyFields } from '@/features/sources/components/FrequencyFields'
 import type {
   Source,
   SourceCategory,
@@ -24,6 +25,18 @@ import {
   SOURCE_PLATFORMS,
   sectionsEqual,
 } from '@/features/sources/types/source'
+import {
+  FEDERAL_STATE_VALUE,
+  MEXICAN_STATES,
+  stateCodeLabel,
+} from '@/features/sources/lib/mexican-states'
+import {
+  defaultFrequencySchedule,
+  frequencySchedulesEqual,
+  parseFrequency,
+  serializeFrequency,
+  formatFrequencyLabel,
+} from '@/features/sources/lib/frequency'
 import { UnsavedChangesGuard } from '@/shared/hooks/unsaved-changes-guard'
 import { mapApiError } from '@/shared/lib/api-error'
 import { focusFirstInvalid } from '@/shared/lib/form'
@@ -48,6 +61,19 @@ const PLATFORM_OPTIONS = SOURCE_PLATFORMS.map((p) => ({
   value: p,
   label: SOURCE_PLATFORM_LABELS[p],
 }))
+
+const STATE_OPTIONS = [
+  { value: FEDERAL_STATE_VALUE, label: 'Federal' },
+  ...MEXICAN_STATES.map((s) => ({ value: s.code, label: s.name })),
+]
+
+function stateSelectValue(stateCode: string | null | undefined): string {
+  return stateCode || FEDERAL_STATE_VALUE
+}
+
+function stateCodeFromSelect(value: string): string | null {
+  return value === FEDERAL_STATE_VALUE ? null : value
+}
 
 function clientToOption(client: Pick<Client, 'id' | 'name' | 'slug'>): EntityLinkOption {
   return {
@@ -89,8 +115,11 @@ export function SourceDetailHeader({ source }: { source: Source }) {
           <Badge variant="signal">
             {SOURCE_PLATFORM_LABELS[source.platform]}
           </Badge>
+          <Badge variant="active">{stateCodeLabel(source.stateCode)}</Badge>
           {source.frequency ? (
-            <span className="text-xs text-norma-muted">{source.frequency}</span>
+            <span className="text-xs text-norma-muted">
+              {formatFrequencyLabel(source.frequency)}
+            </span>
           ) : null}
         </div>
 
@@ -161,7 +190,10 @@ export function SourceDataForm({
   const [category, setCategory] = useState<SourceCategory>(source.category)
   const [platform, setPlatform] = useState<SourcePlatform>(source.platform)
   const [url, setUrl] = useState(source.url ?? '')
-  const [frequency, setFrequency] = useState(source.frequency ?? '')
+  const [stateCode, setStateCode] = useState<string | null>(source.stateCode)
+  const [schedule, setSchedule] = useState(() =>
+    parseFrequency(source.frequency),
+  )
   const [sections, setSections] = useState<SourceSectionPath[]>(source.sections)
   const [keywordsGuide, setKeywordsGuide] = useState(source.keywordsGuide)
   const [saving, setSaving] = useState(false)
@@ -173,7 +205,8 @@ export function SourceDataForm({
     setCategory(source.category)
     setPlatform(source.platform)
     setUrl(source.url ?? '')
-    setFrequency(source.frequency ?? '')
+    setStateCode(source.stateCode)
+    setSchedule(parseFrequency(source.frequency))
     setSections(source.sections)
     setKeywordsGuide(source.keywordsGuide)
   }, [source])
@@ -183,7 +216,8 @@ export function SourceDataForm({
     category !== source.category ||
     platform !== source.platform ||
     url !== (source.url ?? '') ||
-    frequency !== (source.frequency ?? '') ||
+    stateCode !== source.stateCode ||
+    !frequencySchedulesEqual(schedule, parseFrequency(source.frequency)) ||
     !sectionsEqual(sections, source.sections) ||
     keywordsGuide.join('\0') !== source.keywordsGuide.join('\0')
 
@@ -203,7 +237,8 @@ export function SourceDataForm({
         category,
         platform,
         url: url || null,
-        frequency: frequency || null,
+        frequency: serializeFrequency(schedule),
+        stateCode,
         sections,
         keywordsGuide,
       })
@@ -294,6 +329,16 @@ export function SourceDataForm({
               </div>
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="source-state">Entidad federativa</Label>
+              <Select
+                id="source-state"
+                value={stateSelectValue(stateCode)}
+                disabled={!canEdit}
+                onValueChange={(v) => setStateCode(stateCodeFromSelect(v))}
+                options={STATE_OPTIONS}
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="source-url">URL</Label>
               <Input
                 id="source-url"
@@ -308,19 +353,12 @@ export function SourceDataForm({
                 placeholder="https://ejemplo.com"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="source-frequency">Frecuencia</Label>
-              <Input
-                id="source-frequency"
-                name="frequency"
-                autoComplete="off"
-                spellCheck={false}
-                value={frequency}
-                disabled={!canEdit}
-                onChange={(e) => setFrequency(e.target.value)}
-                placeholder="daily, weekly…"
-              />
-            </div>
+            <FrequencyFields
+              idPrefix="source"
+              value={schedule}
+              disabled={!canEdit}
+              onChange={setSchedule}
+            />
           </div>
 
           <div className="min-w-0 w-full space-y-6 @[52rem]:sticky @[52rem]:top-4">
@@ -416,7 +454,8 @@ export function CreateSourceDialog({
   const [category, setCategory] = useState<SourceCategory>('OFFICIAL')
   const [platform, setPlatform] = useState<SourcePlatform>('WEB')
   const [url, setUrl] = useState('')
-  const [frequency, setFrequency] = useState('daily')
+  const [stateCode, setStateCode] = useState<string | null>(null)
+  const [schedule, setSchedule] = useState(defaultFrequencySchedule)
   const [sections, setSections] = useState<SourceSectionPath[]>([])
   const [keywordsGuide, setKeywordsGuide] = useState<string[]>([])
   const [clientIds, setClientIds] = useState<string[]>([])
@@ -432,7 +471,8 @@ export function CreateSourceDialog({
       setCategory('OFFICIAL')
       setPlatform('WEB')
       setUrl('')
-      setFrequency('daily')
+      setStateCode(null)
+      setSchedule(defaultFrequencySchedule())
       setSections([])
       setKeywordsGuide([])
       setClientIds([])
@@ -478,7 +518,8 @@ export function CreateSourceDialog({
         category,
         platform,
         url: url || undefined,
-        frequency: frequency || undefined,
+        frequency: serializeFrequency(schedule),
+        stateCode,
         sections,
         keywordsGuide,
         clientIds,
@@ -558,6 +599,15 @@ export function CreateSourceDialog({
           </div>
         </div>
         <div className="space-y-1.5">
+          <Label htmlFor="new-source-state">Entidad federativa</Label>
+          <Select
+            id="new-source-state"
+            value={stateSelectValue(stateCode)}
+            onValueChange={(v) => setStateCode(stateCodeFromSelect(v))}
+            options={STATE_OPTIONS}
+          />
+        </div>
+        <div className="space-y-1.5">
           <Label htmlFor="new-source-url">URL</Label>
           <Input
             id="new-source-url"
@@ -571,14 +621,11 @@ export function CreateSourceDialog({
             placeholder="https://ejemplo.com"
           />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="new-source-frequency">Frecuencia</Label>
-          <Input
-            id="new-source-frequency"
-            value={frequency}
-            onChange={(e) => setFrequency(e.target.value)}
-          />
-        </div>
+        <FrequencyFields
+          idPrefix="new-source"
+          value={schedule}
+          onChange={setSchedule}
+        />
         <SectionPathsEditor
           id="new-source-sections"
           paths={sections}

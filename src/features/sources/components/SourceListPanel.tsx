@@ -13,6 +13,11 @@ import {
   SOURCE_PLATFORM_LABELS,
   SOURCE_PLATFORMS,
 } from '@/features/sources/types/source'
+import {
+  FEDERAL_STATE_VALUE,
+  MEXICAN_STATES,
+  stateCodeLabel,
+} from '@/features/sources/lib/mexican-states'
 import { StatusBadge } from '@/features/sources/components/chips'
 import { duration, easeOut } from '@/shared/lib/motion'
 import { cn } from '@/shared/lib/utils'
@@ -33,12 +38,14 @@ export function SourceListPanel({
   includeInactive,
   categoryFilter,
   platformFilter,
+  stateFilter,
   canCreate,
   itemTo,
   onQueryChange,
   onIncludeInactiveChange,
   onCategoryFilterChange,
   onPlatformFilterChange,
+  onStateFilterChange,
   onCreate,
   maxHeight,
 }: {
@@ -49,12 +56,14 @@ export function SourceListPanel({
   includeInactive: boolean
   categoryFilter: SourceCategory | ''
   platformFilter: SourcePlatform | ''
+  stateFilter: string
   canCreate: boolean
   itemTo: (id: string) => string
   onQueryChange: (q: string) => void
   onIncludeInactiveChange: (v: boolean) => void
   onCategoryFilterChange: (v: SourceCategory | '') => void
   onPlatformFilterChange: (v: SourcePlatform | '') => void
+  onStateFilterChange: (v: string) => void
   onCreate: () => void
   /** Si la lista supera esta altura (p. ej. del detalle), hace scroll interno. */
   maxHeight?: number | null
@@ -175,6 +184,25 @@ export function SourceListPanel({
                 })),
               ]}
             />
+            <label className="sr-only" htmlFor="source-state-filter">
+              Entidad federativa
+            </label>
+            <Select
+              id="source-state-filter"
+              aria-label="Entidad federativa"
+              value={stateFilter || FILTER_ALL}
+              onValueChange={(v) =>
+                onStateFilterChange(v === FILTER_ALL ? '' : v)
+              }
+              options={[
+                { value: FILTER_ALL, label: 'Todas las entidades' },
+                { value: FEDERAL_STATE_VALUE, label: 'Federal' },
+                ...MEXICAN_STATES.map((s) => ({
+                  value: s.code,
+                  label: s.name,
+                })),
+              ]}
+            />
             <label className="flex min-h-9 cursor-pointer items-center gap-2 px-1 text-xs text-norma-muted">
               <input
                 type="checkbox"
@@ -267,6 +295,8 @@ export function SourceListPanel({
                                     : ''}
                                 </p>
                                 <p className="mt-0.5 truncate text-[11px] text-norma-muted">
+                                  {stateCodeLabel(source.stateCode)}
+                                  {' · '}
                                   {SOURCE_CATEGORY_LABELS[source.category]}
                                   {' · '}
                                   {SOURCE_PLATFORM_LABELS[source.platform]}
