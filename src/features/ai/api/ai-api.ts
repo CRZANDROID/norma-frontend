@@ -37,8 +37,8 @@ export const aiApi = {
 
   ask(input: AiAskInput): Promise<AiAskResult> {
     if (useApiMock) return aiMockApi.ask(input)
-    const body: AiAskInput = { question: input.question }
-    if (input.clientId) body.clientId = input.clientId
-    return api.post<unknown>('/ai/ask', body).then((r) => normalizeAsk(r.data))
+    return api
+      .post<unknown>('/ai/ask', { question: input.question })
+      .then((r) => normalizeAsk(r.data))
   },
 }

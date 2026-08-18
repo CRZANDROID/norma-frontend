@@ -5,7 +5,6 @@ export type AiStatus = {
 
 export type AiAskInput = {
   question: string
-  clientId?: string
 }
 
 export type AiCatalogStats = {

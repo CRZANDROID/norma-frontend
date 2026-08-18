@@ -12,11 +12,8 @@ export const aiMockApi = {
 
   async ask(input: AiAskInput): Promise<AiAskResult> {
     await delay()
-    const scope = input.clientId
-      ? 'el cliente seleccionado'
-      : 'el catálogo del piloto'
     return {
-      answer: `Consulta de prueba sobre ${scope}: «${input.question.trim()}». El asistente real responde con lo ya guardado en clientes, perfiles y fuentes.`,
+      answer: `Consulta de prueba sobre el catálogo del piloto: «${input.question.trim()}». El asistente real responde con lo ya guardado en clientes, perfiles y fuentes.`,
       catalog: { clients: 2, sources: 3, profiles: 1 },
       model: 'gpt-4o-mini',
     }

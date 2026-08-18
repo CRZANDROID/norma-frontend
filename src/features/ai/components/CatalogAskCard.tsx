@@ -11,15 +11,11 @@ import { toast } from 'sonner'
 import { aiApi } from '@/features/ai/api/ai-api'
 import { RevealedAnswer } from '@/features/ai/components/catalog-answer'
 import type { AiAskResult, AiStatus } from '@/features/ai/types/ai'
-import { clientsApi } from '@/features/clients/api/clients-api'
 import { duration, easeOut } from '@/shared/lib/motion'
 import { mapApiError } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/utils'
 import { NormaMark } from '@/shared/ui/norma-mark'
-import { Select } from '@/shared/ui/select'
 import { useAuthStore } from '@/store/auth-store'
-
-const ALL_CLIENTS = '__all__'
 
 const STARTERS = [
   '¿Qué fuentes tiene Arca vinculadas?',
@@ -139,10 +135,6 @@ export function CatalogAskCard() {
   const [status, setStatus] = useState<AiStatus | null>(null)
   const [statusError, setStatusError] = useState<string | null>(null)
   const [question, setQuestion] = useState('')
-  const [clientId, setClientId] = useState(ALL_CLIENTS)
-  const [clientOptions, setClientOptions] = useState<
-    { value: string; label: string }[]
-  >([{ value: ALL_CLIENTS, label: 'Todo el catálogo' }])
   const [asking, setAsking] = useState(false)
   const [turns, setTurns] = useState<Turn[]>([])
 
@@ -157,18 +149,6 @@ export function CatalogAskCard() {
         if (!cancelled) {
           setStatusError(mapApiError(err, 'No se pudo consultar el asistente.'))
         }
-      })
-    void clientsApi
-      .list({ status: 'ACTIVE' })
-      .then((rows) => {
-        if (cancelled) return
-        setClientOptions([
-          { value: ALL_CLIENTS, label: 'Todo el catálogo' },
-          ...rows.map((c) => ({ value: c.id, label: c.name })),
-        ])
-      })
-      .catch(() => {
-        /* selector opcional */
       })
     return () => {
       cancelled = true
@@ -200,10 +180,7 @@ export function CatalogAskCard() {
       { id: pendingId, role: 'assistant', content: '', pending: true },
     ])
     try {
-      const data = await aiApi.ask({
-        question: trimmed,
-        clientId: clientId === ALL_CLIENTS ? undefined : clientId,
-      })
+      const data = await aiApi.ask({ question: trimmed })
       setTurns((prev) =>
         prev.map((turn) =>
           turn.id === pendingId
@@ -245,7 +222,7 @@ export function CatalogAskCard() {
 
   return (
     <section className="flex h-full min-h-[36rem] flex-col overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface shadow-[0_22px_48px_-24px_rgba(13,27,42,0.4)]">
-      <header className="flex items-start gap-3 border-b-2 border-norma-border bg-[radial-gradient(ellipse_at_top_left,rgba(105,88,248,0.16),transparent_58%)] px-5 py-4">
+      <header className="flex items-center gap-3 border-b-2 border-norma-border bg-[radial-gradient(ellipse_at_top_left,rgba(105,88,248,0.16),transparent_58%)] px-5 py-4">
         <NormaMark className="size-11 rounded-2xl" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -267,9 +244,6 @@ export function CatalogAskCard() {
               </span>
             ) : null}
           </div>
-          <p className="mt-0.5 text-sm text-norma-muted">
-            Consulta el catálogo en lenguaje natural.
-          </p>
         </div>
         {turns.length > 0 ? (
           <button
@@ -401,7 +375,7 @@ export function CatalogAskCard() {
         onSubmit={onSubmit}
         className="border-t-2 border-norma-border bg-norma-surface/95 px-4 py-3 md:px-5"
       >
-        <div className="rounded-[1.35rem] border-2 border-norma-border bg-norma-raised px-2 pb-2 pt-2 focus-within:border-norma-accent focus-within:ring-2 focus-within:ring-norma-accent/25">
+        <div className="flex items-end gap-2 rounded-[1.35rem] border-2 border-norma-border bg-norma-raised px-2 py-2 focus-within:border-norma-accent focus-within:ring-2 focus-within:ring-norma-accent/25">
           <textarea
             ref={inputRef}
             id="catalog-question"
@@ -415,35 +389,20 @@ export function CatalogAskCard() {
                 ? 'Escribe una consulta…'
                 : 'El asistente no está disponible'
             }
-            className="field-sizing-content max-h-32 min-h-11 w-full resize-none bg-transparent px-3 py-2.5 text-sm leading-relaxed text-norma-fg outline-none placeholder:text-norma-subtle disabled:opacity-50"
+            className="field-sizing-content max-h-32 min-h-11 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm leading-relaxed text-norma-fg outline-none placeholder:text-norma-subtle disabled:opacity-50"
           />
-          <div className="flex items-center justify-between gap-2 px-1">
-            <div className="min-w-0 max-w-[16rem] flex-1">
-              <Select
-                id="catalog-client"
-                aria-label="Ámbito de la consulta"
-                value={clientId}
-                onValueChange={setClientId}
-                options={clientOptions}
-                disabled={!configured || asking}
-                className="h-8 rounded-xl border-norma-border/80 bg-norma-surface text-xs"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <p className="hidden text-[10px] text-norma-subtle sm:block">
-                Enter envía · Shift+Enter salto
-              </p>
-              <button
-                type="submit"
-                disabled={!canSend}
-                aria-label="Enviar consulta"
-                className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-norma-accent text-white shadow-[0_8px_20px_-10px_rgba(105,88,248,0.9)] transition-opacity hover:bg-norma-accent-soft disabled:opacity-35"
-              >
-                <ArrowUp className="size-4" aria-hidden />
-              </button>
-            </div>
-          </div>
+          <button
+            type="submit"
+            disabled={!canSend}
+            aria-label="Enviar consulta"
+            className="mb-0.5 inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-norma-accent text-white shadow-[0_8px_20px_-10px_rgba(105,88,248,0.9)] transition-opacity hover:bg-norma-accent-soft disabled:opacity-35"
+          >
+            <ArrowUp className="size-4" aria-hidden />
+          </button>
         </div>
+        <p className="mt-1.5 px-1 text-[10px] text-norma-subtle">
+          Enter envía · Shift+Enter salto
+        </p>
       </form>
     </section>
   )
