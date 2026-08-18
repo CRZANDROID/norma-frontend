@@ -32,9 +32,6 @@ export function FrequencyFields({
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-norma-subtle">
         Días de revisión
       </p>
-      <p className="text-xs text-norma-muted">
-        Corre a las 07:00, horario de la Ciudad de México.
-      </p>
       <fieldset className="space-y-1.5">
         <legend className="sr-only">Días de revisión</legend>
         <div className="flex flex-wrap gap-1.5">

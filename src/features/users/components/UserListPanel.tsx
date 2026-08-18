@@ -135,7 +135,7 @@ export function UserListPanel({
                         <p className="mt-0.5 truncate text-[11px] text-norma-muted">
                           {USER_ROLE_LABELS[user.role]}
                           {user.memberships.length > 0
-                            ? ` · ${user.memberships.length} membresía${user.memberships.length === 1 ? '' : 's'}`
+                            ? ` · ${user.memberships.length} cliente${user.memberships.length === 1 ? '' : 's'}`
                             : ''}
                         </p>
                       </div>

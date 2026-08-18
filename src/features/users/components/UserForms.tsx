@@ -197,7 +197,7 @@ function MembershipRow({
     try {
       const updated = await usersApi.updateMembership(membership.id, { role })
       onUpdated(updated)
-      toast.success('Membresía actualizada.')
+      toast.success('Acceso actualizado.')
     } catch (err) {
       toast.error(mapApiError(err, 'No se pudo guardar.'))
     } finally {
@@ -216,8 +216,8 @@ function MembershipRow({
       onUpdated(updated)
       toast.success(
         updated.status === 'ACTIVE'
-          ? 'Membresía activada.'
-          : 'Membresía desactivada.',
+          ? 'Acceso activado.'
+          : 'Acceso desactivado.',
       )
       setConfirmOff(false)
     } catch (err) {
@@ -289,7 +289,7 @@ function MembershipRow({
       <Modal
         open={confirmOff}
         onOpenChange={setConfirmOff}
-        title={`Desactivar membresía en ${membership.clientName}?`}
+        title={`Quitar acceso a ${membership.clientName}?`}
         description="El acceso a este cliente se corta. Puedes reactivar después."
       >
         <div className="flex justify-end gap-2">
@@ -334,17 +334,17 @@ export function UserMemberships({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="font-display text-lg font-semibold tracking-tight text-balance">
-            Membresías
+            Acceso a clientes
           </h3>
           <p className="mt-1 text-sm text-norma-muted">
-            Acceso por cliente y rol dentro de cada tenant.
+            Acceso por cliente y rol en cada uno.
           </p>
         </div>
         {canEdit ? (
           <Button
             size="sm"
             onClick={() => setCreateOpen(true)}
-            aria-label="Nueva membresía"
+            aria-label="Asignar cliente"
           >
             <Plus className="size-4" />
             Ligar a cliente
@@ -354,7 +354,7 @@ export function UserMemberships({
 
       {user.memberships.length === 0 ? (
         <p className="rounded-2xl border-2 border-dashed border-norma-border bg-norma-raised/40 px-4 py-6 text-sm text-norma-muted">
-          Este usuario aún no tiene membresías en clientes.
+          Este usuario aún no está asignado a ningún cliente.
         </p>
       ) : (
         <ul className="space-y-3">
@@ -476,7 +476,7 @@ function CreateMembershipDialog({
         clientId,
         role,
       })
-      toast.success('Membresía creada.')
+      toast.success('Cliente asignado.')
       onCreated(created)
       onOpenChange(false)
     } catch (err) {
@@ -536,7 +536,7 @@ function CreateMembershipDialog({
               submitting || loadingClients || availableClients.length === 0
             }
           >
-            {submitting ? 'Guardando…' : 'Crear membresía'}
+            {submitting ? 'Guardando…' : 'Asignar cliente'}
           </Button>
         </div>
       </form>

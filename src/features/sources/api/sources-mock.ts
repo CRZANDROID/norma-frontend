@@ -139,7 +139,7 @@ export const sourcesMockApi = {
   async create(input: CreateSourceInput): Promise<Source> {
     await delay()
     if (sources.some((s) => s.code === input.code)) {
-      throw new Error('Ese código ya está en uso. Prueba otro.')
+      throw new Error('Ese identificador ya está en uso. Prueba otro.')
     }
     const stamp = now()
     const source: Source = {

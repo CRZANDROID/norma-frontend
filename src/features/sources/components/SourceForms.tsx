@@ -295,7 +295,7 @@ export function SourceDataForm({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="source-code">Código</Label>
+              <Label htmlFor="source-code">Identificador</Label>
               <Input
                 id="source-code"
                 name="code"
@@ -561,7 +561,7 @@ export function CreateSourceDialog({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="new-source-code">Código</Label>
+          <Label htmlFor="new-source-code">Identificador</Label>
           <Input
             id="new-source-code"
             name="code"

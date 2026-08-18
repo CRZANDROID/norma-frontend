@@ -178,7 +178,7 @@ export const clientsMockApi = {
   async create(input: CreateClientInput): Promise<Client> {
     await delay()
     if (clients.some((c) => c.slug === input.slug)) {
-      throw new Error('Ese slug ya está en uso. Prueba otro.')
+      throw new Error('Ese identificador ya está en uso. Prueba otro.')
     }
     const stamp = now()
     const client: Client = {

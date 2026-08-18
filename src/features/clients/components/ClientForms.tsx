@@ -465,7 +465,7 @@ export function ClientDataForm({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="client-slug">Slug</Label>
+              <Label htmlFor="client-slug">Identificador</Label>
               <Input
                 id="client-slug"
                 name="slug"
@@ -530,7 +530,7 @@ export function ClientDataForm({
           loading={loadingSources}
           disabled={!canEdit}
           emptyLabel="Aún no hay fuentes activas. Crea una en Fuentes."
-          searchPlaceholder="Buscar por nombre, código o tipo…"
+          searchPlaceholder="Buscar por nombre o identificador…"
           defaultOpen
         />
 
@@ -774,7 +774,7 @@ export function CreateClientDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Nuevo cliente"
-      description="Define el tenant y el catálogo de fuentes a monitorear."
+      description="Nombre del cliente y las fuentes a monitorear."
     >
       <form
         className="max-h-[70vh] space-y-4 overflow-y-auto overscroll-contain pr-1"
@@ -797,7 +797,7 @@ export function CreateClientDialog({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="new-slug">Slug</Label>
+          <Label htmlFor="new-slug">Identificador</Label>
           <Input
             id="new-slug"
             name="slug"

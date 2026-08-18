@@ -137,7 +137,7 @@ export function SourceListPanel({
               autoComplete="off"
               spellCheck={false}
               aria-label="Buscar fuentes"
-              placeholder="Buscar por nombre o código…"
+              placeholder="Buscar por nombre o identificador…"
               value={query}
               onChange={(e) => onQueryChange(e.target.value)}
               onFocus={() => setListOpen(true)}

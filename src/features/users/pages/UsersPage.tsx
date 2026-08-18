@@ -174,7 +174,7 @@ export function UsersPage() {
         <PageHeader
           eyebrow="Administración"
           title="Usuarios"
-          description="Roles globales y membresías por cliente."
+          description="Roles y acceso por cliente."
         />
         <ErrorState message="Solo administradores pueden gestionar usuarios." />
       </div>
@@ -186,7 +186,7 @@ export function UsersPage() {
       <PageHeader
         eyebrow="Administración"
         title="Usuarios"
-        description="Roles globales y membresías por cliente del panel."
+        description="Roles y acceso por cliente del panel."
       />
 
       {listError ? (

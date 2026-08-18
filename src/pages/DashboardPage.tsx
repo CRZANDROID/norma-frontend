@@ -23,8 +23,7 @@ export function DashboardPage() {
         </div>
         <p className="mt-6 text-sm text-norma-subtle">
           Usa <span className="font-medium text-norma-fg">Clientes</span> para
-          administrar tenants y perfiles del agente (mock local hasta conectar
-          Nest).
+          administrar clientes y perfiles del piloto.
         </p>
       </div>
     </div>

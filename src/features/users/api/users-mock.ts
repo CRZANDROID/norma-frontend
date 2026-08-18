@@ -230,7 +230,7 @@ export const usersMockApi = {
     const client = clientById(input.clientId)
     if (!client) throw new Error('Cliente no encontrado')
     if (users[idx].memberships.some((m) => m.clientId === input.clientId)) {
-      throw new Error('Este usuario ya tiene membresía en ese cliente.')
+      throw new Error('Este usuario ya tiene acceso a ese cliente.')
     }
     const membership: UserMembership = {
       id: id('mem'),
@@ -255,7 +255,7 @@ export const usersMockApi = {
   ): Promise<UserMembership> {
     await delay()
     const found = findMembership(membershipId)
-    if (!found) throw new Error('Membresía no encontrada')
+    if (!found) throw new Error('Asignación no encontrada')
     const { userIdx, memIdx, membership } = found
     const nextMem: UserMembership = {
       ...membership,

@@ -107,7 +107,7 @@ export function ClientListPanel({
               autoComplete="off"
               spellCheck={false}
               aria-label="Buscar clientes"
-              placeholder="Buscar por nombre o slug…"
+              placeholder="Buscar por nombre o identificador…"
               value={query}
               onChange={(e) => onQueryChange(e.target.value)}
               onFocus={() => setListOpen(true)}

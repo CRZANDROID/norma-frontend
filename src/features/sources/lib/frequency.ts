@@ -65,7 +65,7 @@ export function formatFrequencyLabel(raw: string | null | undefined): string {
     .map((d) => WEEKDAY_OPTIONS.find((o) => o.value === d)?.label)
     .filter(Boolean)
     .join(', ')
-  return `07:00 CDMX · ${days}`
+  return days ? days : ''
 }
 
 export function frequencySchedulesEqual(
