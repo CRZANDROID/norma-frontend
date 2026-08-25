@@ -11,7 +11,7 @@ import { AppLayout } from '@/app/layouts/AppLayout'
 import { AuthLayout } from '@/app/layouts/AuthLayout'
 import { ProtectedRoute } from '@/app/router/ProtectedRoute'
 import { LoginPage } from '@/features/auth'
-import { DashboardPage } from '@/pages/DashboardPage'
+import { DashboardPage } from '@/features/dashboard'
 import { AlertsPage } from '@/pages/AlertsPage'
 
 const ClientsPage = lazy(() =>

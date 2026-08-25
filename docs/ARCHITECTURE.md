@@ -39,6 +39,8 @@ src/
     auth/
     clients/
     sources/
+    jobs/
+    documents/              # registro documental (S6; listado en panel de rastreo)
     findings/               # futuro inbox / alertas
     users/                  # admin usuarios / roles / membresías
     <feature>/

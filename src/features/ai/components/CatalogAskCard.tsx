@@ -126,7 +126,7 @@ function CopyAnswer({ text }: { text: string }) {
   )
 }
 
-export function CatalogAskCard() {
+export function CatalogAskCard({ className }: { className?: string }) {
   const reduceMotion = useReducedMotion()
   const profileName = useAuthStore((s) => s.profile?.name)
   const scrollerRef = useRef<HTMLDivElement>(null)
@@ -221,7 +221,12 @@ export function CatalogAskCard() {
   }
 
   return (
-    <section className="flex h-full min-h-[36rem] flex-col overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface shadow-[0_22px_48px_-24px_rgba(13,27,42,0.4)]">
+    <section
+      className={cn(
+        'flex h-full min-h-[28rem] flex-col overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface shadow-[0_22px_48px_-24px_rgba(13,27,42,0.4)]',
+        className,
+      )}
+    >
       <header className="flex items-center gap-3 border-b-2 border-norma-border bg-[radial-gradient(ellipse_at_top_left,rgba(105,88,248,0.16),transparent_58%)] px-5 py-4">
         <NormaMark className="size-11 rounded-2xl" />
         <div className="min-w-0 flex-1">
