@@ -1,5 +1,11 @@
+import { useEffect, useRef } from 'react'
 import { FileSearch, Radar } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
+import {
+  AnimatePresence,
+  motion,
+  useAnimationControls,
+  useReducedMotion,
+} from 'motion/react'
 import type { AgentSourceJourney, StepTone } from '@/features/dashboard/lib/agent-watch'
 import {
   clipHeadline,
@@ -92,6 +98,50 @@ function PhaseMeter({
   )
 }
 
+function StatusRailDot({ tone }: { tone: StepTone }) {
+  const reduceMotion = useReducedMotion()
+  const controls = useAnimationControls()
+  const prevTone = useRef(tone)
+  const hasMounted = useRef(false)
+
+  useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true
+      prevTone.current = tone
+      return
+    }
+    if (prevTone.current === tone) return
+    prevTone.current = tone
+
+    if (reduceMotion) {
+      if (tone !== 'live') {
+        void controls.start({
+          opacity: [1, 0.7, 1],
+          transition: { duration: duration.fast, ease: easeOut },
+        })
+      }
+      return
+    }
+
+    void controls.start({
+      transform: ['scale(1)', 'scale(1.18)', 'scale(1)'],
+      transition: { duration: duration.ui, ease: easeOut },
+    })
+  }, [tone, controls, reduceMotion])
+
+  return (
+    <motion.span
+      initial={false}
+      animate={controls}
+      className={cn(
+        'mt-1 size-2.5 shrink-0 origin-center rounded-full',
+        toneDot(tone),
+        tone === 'live' && 'motion-safe:animate-pulse',
+      )}
+    />
+  )
+}
+
 function StepRow({
   icon: Icon,
   title,
@@ -112,13 +162,7 @@ function StepRow({
   return (
     <li className="flex gap-3">
       <div className="flex w-5 flex-col items-center">
-        <span
-          className={cn(
-            'mt-1 size-2.5 shrink-0 rounded-full',
-            toneDot(tone),
-            tone === 'live' && 'motion-safe:animate-pulse',
-          )}
-        />
+        <StatusRailDot tone={tone} />
         {last ? null : (
           <span className="mt-1 w-px flex-1 bg-norma-border/80" />
         )}
@@ -129,7 +173,20 @@ function StepRow({
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-norma-subtle">
             {title}
           </p>
-          <Badge variant={badgeFor(tone)}>{label}</Badge>
+          <span className="inline-grid">
+            <AnimatePresence initial={false}>
+              <motion.span
+                key={`${tone}-${label}`}
+                className="col-start-1 row-start-1 inline-flex"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: duration.fast, ease: easeOut }}
+              >
+                <Badge variant={badgeFor(tone)}>{label}</Badge>
+              </motion.span>
+            </AnimatePresence>
+          </span>
           {meta ? (
             <p className="text-[11px] text-norma-subtle">{meta}</p>
           ) : null}
