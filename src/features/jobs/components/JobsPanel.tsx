@@ -5,6 +5,8 @@ import { toast } from 'sonner'
 import { jobsApi } from '@/features/jobs/api/jobs-api'
 import type { JobRun, JobsStatus } from '@/features/jobs/types/job'
 import { JOB_RUN_STATUS_LABELS } from '@/features/jobs/types/job'
+import { documentsApi, DocumentsRegistry } from '@/features/documents'
+import type { DocumentListItem } from '@/features/documents'
 import { mapApiError } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/utils'
 import { Badge } from '@/shared/ui/badge'
@@ -65,6 +67,8 @@ export function JobsPanel({
 }) {
   const [status, setStatus] = useState<JobsStatus | null>(null)
   const [runs, setRuns] = useState<JobRun[]>([])
+  const [documents, setDocuments] = useState<DocumentListItem[]>([])
+  const [documentsError, setDocumentsError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [crawling, setCrawling] = useState(false)
@@ -72,13 +76,25 @@ export function JobsPanel({
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
+    setDocumentsError(null)
     try {
       const nextStatus = await jobsApi.status()
       setStatus(nextStatus)
       if (canReadRuns) {
-        setRuns(await jobsApi.listRuns({ limit: 12 }))
+        const [nextRuns, nextDocs] = await Promise.all([
+          jobsApi.listRuns({ limit: 12 }),
+          documentsApi.list({ pilotOnly: true, limit: 8 }).catch((err) => {
+            setDocumentsError(
+              mapApiError(err, 'No se pudo cargar el registro documental.'),
+            )
+            return [] as DocumentListItem[]
+          }),
+        ])
+        setRuns(nextRuns)
+        setDocuments(nextDocs)
       } else {
         setRuns([])
+        setDocuments([])
       }
     } catch (err) {
       setError(mapApiError(err, 'No se pudo cargar el estado de rastreo.'))
@@ -131,7 +147,8 @@ export function JobsPanel({
               <PulseDot live={live} />
             </div>
             <p className="mt-1 text-sm text-white/70">
-              HTML y PDF crudo. La extracción llega después.
+              Tras un rastreo exitoso, NORMA deja texto y ficha en el registro
+              documental.
             </p>
           </div>
         </div>
@@ -218,6 +235,13 @@ export function JobsPanel({
                       )}
                     </p>
                   </div>
+                ) : null}
+
+                {canReadRuns ? (
+                  <DocumentsRegistry
+                    documents={documents}
+                    error={documentsError}
+                  />
                 ) : null}
 
                 {sortedRuns.length === 0 ? (

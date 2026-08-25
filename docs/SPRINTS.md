@@ -10,7 +10,8 @@ Plan completo y dependencias: repo backend `docs/SPRINTS.md` + GitHub Project **
 | 2 | Login Nest JWT, ProtectedRoute, Bearer en Axios, perfil en dashboard |
 | **3** | Pantallas Clients / Sources / Users contra API real (sin mocks) |
 | 4 | Manejo de errores/estados más robusto; alinear con contratos estables |
-| 5–7 | Monitoreo de jobs/docs/findings según APIs nuevas |
+| 5–6 | Panel de rastreo + registro documental (texto/ficha, no HTML crudo) |
+| 7 | Findings según APIs nuevas |
 | 8 | Inbox de hallazgos (avanzar / feedback / descartar) |
 
 ## Sprint 3 — criterio UI
@@ -35,3 +36,11 @@ Requisitos: Nest en `:3000`, front con `.env` real, seed `admin@norma.local` / `
 3. Perfiles: crear-editar (ADMIN|ANALYST); Off/On solo ADMIN
 4. Fuentes: listar + filtros / crear (`https://…`) / editar / pausar
 5. Usuarios: crear con password / rol / membresías
+
+## Sprint 6 — registro documental (UI)
+
+Listado mínimo en el panel de rastreo del dashboard (`JobsPanel`). No es un inbox.
+
+- [x] Cliente `src/features/documents/` contra `GET /documents?pilotOnly=true`
+- [x] Código de fuente, estado de pipeline, “duplicado de…”
+- [x] Copy de consultor: registro documental (no LLM); no pintar HTML crudo
