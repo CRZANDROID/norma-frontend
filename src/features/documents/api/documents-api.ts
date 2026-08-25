@@ -4,6 +4,8 @@ import { documentsMockApi } from '@/features/documents/api/documents-mock'
 import type {
   DocumentListItem,
   DocumentProcessingStatus,
+  DocumentProgressSource,
+  DocumentsProgress,
   ListDocumentsParams,
 } from '@/features/documents/types/document'
 
@@ -61,6 +63,37 @@ function normalizeDocument(raw: unknown): DocumentListItem | null {
   }
 }
 
+function unwrapSources(data: unknown): unknown[] {
+  if (isRecord(data) && Array.isArray(data.sources)) return data.sources
+  if (Array.isArray(data)) return data
+  return []
+}
+
+function normalizeProgressSource(raw: unknown): DocumentProgressSource | null {
+  if (!isRecord(raw)) return null
+  const sourceId = displayText(raw.sourceId)
+  const sourceName = displayText(raw.sourceName)
+  if (!sourceId || !sourceName) return null
+  return {
+    sourceId,
+    sourceName,
+    status: String(raw.status ?? '').trim() || 'unknown',
+    label: displayText(raw.label) ?? String(raw.status ?? 'En curso'),
+    headline: displayText(raw.headline),
+    note: displayText(raw.note),
+  }
+}
+
+function normalizeDocumentsProgress(raw: unknown): DocumentsProgress {
+  if (!isRecord(raw)) return { date: '', sources: [] }
+  return {
+    date: displayText(raw.date) ?? '',
+    sources: unwrapSources(raw)
+      .map(normalizeProgressSource)
+      .filter((row): row is DocumentProgressSource => !!row),
+  }
+}
+
 /** Registro documental S6 (`GET /documents`). No pinta HTML crudo. */
 export const documentsApi = {
   list(params?: ListDocumentsParams): Promise<DocumentListItem[]> {
@@ -72,5 +105,12 @@ export const documentsApi = {
           .map(normalizeDocument)
           .filter((row): row is DocumentListItem => !!row),
       )
+  },
+
+  progress(): Promise<DocumentsProgress> {
+    const raw = useApiMock
+      ? documentsMockApi.progress()
+      : api.get<unknown>('/documents/progress').then((r) => r.data)
+    return Promise.resolve(raw).then(normalizeDocumentsProgress)
   },
 }

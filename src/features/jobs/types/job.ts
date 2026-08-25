@@ -59,3 +59,18 @@ export type ListJobRunsParams = {
 export type CrawlInput =
   | { sourceId: string; sourceCode?: never }
   | { sourceCode: string; sourceId?: never }
+
+export type JobProgressSource = {
+  sourceId: string
+  sourceName: string
+  status: string
+  label: string
+  at: string | null
+  note: string | null
+  detail: { jobRunId?: string } | null
+}
+
+export type JobsProgress = {
+  date: string
+  sources: JobProgressSource[]
+}

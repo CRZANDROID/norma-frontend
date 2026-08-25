@@ -3,7 +3,7 @@ import { clearAccessToken, getAccessToken } from '@/shared/lib/auth-token'
 
 const apiBaseUrl =
   (import.meta.env.VITE_API_URL as string | undefined)?.trim() ||
-  'http://localhost:3000'
+  'http://localhost:3001'
 
 if (import.meta.env.DEV) {
   console.info('[norma] API baseURL →', apiBaseUrl)

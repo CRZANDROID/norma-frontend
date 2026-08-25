@@ -1,4 +1,8 @@
-import type { DocumentListItem, ListDocumentsParams } from '@/features/documents/types/document'
+import type {
+  DocumentListItem,
+  DocumentsProgress,
+  ListDocumentsParams,
+} from '@/features/documents/types/document'
 
 function delay(ms = 180) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -70,5 +74,40 @@ export const documentsMockApi = {
     }
     const limit = params?.limit ?? 20
     return next.slice(0, limit)
+  },
+
+  async progress(): Promise<DocumentsProgress> {
+    await delay()
+    return {
+      date: '2026-08-25',
+      sources: [
+        {
+          sourceId: 'seed-src-dof',
+          sourceName: 'Diario Oficial de la Federación',
+          status: 'ready',
+          label: 'Texto listo',
+          headline:
+            'DOF - Diario Oficial de la Federación Usuario Clave Entrar &iquest;Olvid&oacute;',
+          note: null,
+        },
+        {
+          sourceId: 'seed-src-diputados-gaceta',
+          sourceName: 'Gaceta Parlamentaria - Cámara de Diputados',
+          status: 'unread',
+          label: 'Rastreada, sin texto usable',
+          headline: null,
+          note: 'La página no trajo contenido suficiente para registrar.',
+        },
+        {
+          sourceId: 'cmsyzf8yw000l2rgk96zm07vf',
+          sourceName: 'Congreso de Jalisco',
+          status: 'ready',
+          label: 'Texto listo',
+          headline:
+            'Inicio | Sitio Web del Congreso de Jalisco Pasar al contenido principal Inicio B',
+          note: null,
+        },
+      ],
+    }
   },
 }

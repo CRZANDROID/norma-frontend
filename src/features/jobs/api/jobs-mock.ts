@@ -2,6 +2,7 @@ import type {
   CrawlEnqueueResult,
   CrawlInput,
   JobRun,
+  JobsProgress,
   ListJobRunsParams,
 } from '@/features/jobs/types/job'
 
@@ -104,5 +105,41 @@ export const jobsMockApi = {
       if (!enqueue(code).skipped) enqueued += 1
     }
     return { enqueued }
+  },
+
+  async progress(): Promise<JobsProgress> {
+    await delay()
+    return {
+      date: '2026-08-25',
+      sources: [
+        {
+          sourceId: 'seed-src-dof',
+          sourceName: 'Diario Oficial de la Federación',
+          status: 'crawled',
+          label: 'Rastreada',
+          at: '2026-08-25T19:00:59.890Z',
+          note: null,
+          detail: { jobRunId: 'cmt913nrb00092rok24wdf64j' },
+        },
+        {
+          sourceId: 'seed-src-diputados-gaceta',
+          sourceName: 'Gaceta Parlamentaria - Cámara de Diputados',
+          status: 'crawled',
+          label: 'Rastreada',
+          at: '2026-08-25T19:00:57.883Z',
+          note: null,
+          detail: { jobRunId: 'cmt913nky00072rokj3zppupn' },
+        },
+        {
+          sourceId: 'cmsyzf8yw000l2rgk96zm07vf',
+          sourceName: 'Congreso de Jalisco',
+          status: 'crawled',
+          label: 'Rastreada',
+          at: '2026-08-25T19:01:00.558Z',
+          note: null,
+          detail: { jobRunId: 'cmt913nvm000b2roka8f4fsp1' },
+        },
+      ],
+    }
   },
 }

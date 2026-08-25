@@ -5,8 +5,10 @@ import type {
   CrawlEnqueueResult,
   CrawlInput,
   JobConnector,
+  JobProgressSource,
   JobRun,
   JobRunStatus,
+  JobsProgress,
   JobsStatus,
   ListJobRunsParams,
 } from '@/features/jobs/types/job'
@@ -93,6 +95,44 @@ function unwrapRuns(data: unknown): unknown[] {
   return data ? [data] : []
 }
 
+function unwrapSources(data: unknown): unknown[] {
+  if (isRecord(data) && Array.isArray(data.sources)) return data.sources
+  if (Array.isArray(data)) return data
+  return []
+}
+
+function normalizeProgressSource(raw: unknown): JobProgressSource | null {
+  if (!isRecord(raw)) return null
+  const sourceId = displayText(raw.sourceId)
+  const sourceName = displayText(raw.sourceName)
+  if (!sourceId || !sourceName) return null
+  const detail = isRecord(raw.detail)
+    ? {
+        jobRunId:
+          typeof raw.detail.jobRunId === 'string' ? raw.detail.jobRunId : undefined,
+      }
+    : null
+  return {
+    sourceId,
+    sourceName,
+    status: String(raw.status ?? '').trim() || 'unknown',
+    label: displayText(raw.label) ?? String(raw.status ?? 'En curso'),
+    at: typeof raw.at === 'string' ? raw.at : null,
+    note: displayText(raw.note) ?? null,
+    detail,
+  }
+}
+
+function normalizeJobsProgress(raw: unknown): JobsProgress {
+  if (!isRecord(raw)) return { date: '', sources: [] }
+  return {
+    date: displayText(raw.date) ?? '',
+    sources: unwrapSources(raw)
+      .map(normalizeProgressSource)
+      .filter((row): row is JobProgressSource => !!row),
+  }
+}
+
 /** Jobs / crawl contra Nest (`docs/jobs-crawl.md`). */
 export const jobsApi = {
   status(): Promise<JobsStatus> {
@@ -117,5 +157,12 @@ export const jobsApi = {
   crawlAll(): Promise<unknown> {
     if (useApiMock) return jobsMockApi.crawlAll()
     return api.post('/jobs/crawl/all').then((r) => r.data)
+  },
+
+  progress(): Promise<JobsProgress> {
+    const raw = useApiMock
+      ? jobsMockApi.progress()
+      : api.get<unknown>('/jobs/progress').then((r) => r.data)
+    return Promise.resolve(raw).then(normalizeJobsProgress)
   },
 }

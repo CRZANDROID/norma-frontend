@@ -21,11 +21,11 @@ export function DocumentsRegistry({
   error: string | null
 }) {
   return (
-    <div className="mt-4 rounded-2xl border-2 border-norma-border bg-norma-raised/50 px-4 py-3">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-norma-subtle">
+    <div className="rounded-3xl border-2 border-norma-border bg-norma-surface px-5 py-4 shadow-[0_18px_40px_-22px_rgba(13,27,42,0.35)]">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-norma-subtle">
         Registro documental
       </p>
-      <p className="mt-1 text-xs text-norma-muted">
+      <p className="mt-1 text-sm text-norma-muted">
         Texto y ficha de las fuentes piloto. El original crudo no se muestra.
       </p>
       {error ? (

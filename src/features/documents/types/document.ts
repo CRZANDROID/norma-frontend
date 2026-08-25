@@ -50,3 +50,17 @@ export type ListDocumentsParams = {
   pilotOnly?: boolean
   limit?: number
 }
+
+export type DocumentProgressSource = {
+  sourceId: string
+  sourceName: string
+  status: string
+  label: string
+  headline: string | null
+  note: string | null
+}
+
+export type DocumentsProgress = {
+  date: string
+  sources: DocumentProgressSource[]
+}

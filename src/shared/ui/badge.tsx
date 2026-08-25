@@ -11,6 +11,8 @@ const badgeVariants = cva(
         inactive: 'bg-norma-navy/6 text-norma-subtle',
         signal: 'bg-norma-signal/12 text-norma-signal',
         accent: 'bg-norma-accent/12 text-norma-accent',
+        caution: 'bg-norma-amber/15 text-norma-amber',
+        danger: 'bg-norma-red/12 text-norma-red',
       },
     },
     defaultVariants: {
