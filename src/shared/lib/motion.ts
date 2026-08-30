@@ -46,6 +46,42 @@ export const detailCrossfade = {
 }
 
 /**
+ * Dashboard: el panel ya está en pantalla y se ensancha (morph).
+ * ease-in-out, misma duración que el chat; tween sin bounce.
+ */
+export const dashboardCoverLayout = {
+  type: 'tween' as const,
+  duration: duration.modal,
+  ease: easeInOut,
+}
+
+export const catalogChatCover = {
+  initial: {
+    opacity: 1,
+    transform: 'translateX(0px)',
+    filter: 'blur(0px)',
+  },
+  animate: {
+    opacity: 1,
+    transform: 'translateX(0px)',
+    filter: 'blur(0px)',
+    transition: dashboardCoverLayout,
+  },
+  exit: {
+    opacity: 0,
+    transform: 'translateX(12px)',
+    filter: 'blur(4px)',
+    transition: dashboardCoverLayout,
+  },
+}
+
+export const catalogChatCoverReduced = {
+  initial: { opacity: 1 },
+  animate: { opacity: 1, transition: { duration: 0 } },
+  exit: { opacity: 0, transition: { duration: 0 } },
+}
+
+/**
  * Panel de Select / dropdown (Emil: 150–250ms, scale ≥0.95, exit más rápido).
  * Solo opacity + transform; el positioning lo deja Radix en el Content externo.
  */

@@ -62,7 +62,7 @@ function updateClientBody(input: UpdateClientInput) {
 }
 
 /**
- * Clients + profiles contra Nest (`docs/POSTMAN-BACKEND.md` §§4–5).
+ * Clients + profiles contra Nest (backend `docs/postman-pruebas.md`).
  * Semáforo: `GET /clients/:id/delivery`.
  */
 export const clientsApi = {

@@ -5,7 +5,8 @@ alwaysApply: true
 
 # NORMA — Frontend Core
 
-Antes de codear: `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, `docs/SPRINTS.md`.
+Antes de codear: `docs/README.md`, `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, `docs/SPRINTS.md`.
+Contratos de API: repo `norma-backend` → `docs/README.md` (no copiar Postman en este repo).
 
 ## Arquitectura de archivos
 
@@ -26,4 +27,6 @@ No agregar pantallas nuevas en `src/pages/` plano. Ver `ARCHITECTURE.md`.
 
 ## Sprint actual
 
-Admin CRUD. Clientes/perfiles: `docs/DESIGN-CLIENTS-PROFILES.md` + brief backend S3.
+Siguiente: findings / inbox (S7–S8). Contratos: backend `docs/HANDOFF.md`.
+YouTube / X / Facebook = **MVP** (conectores de plataforma; el crawl WEB no los cubre): backend `docs/PRODUCT.md`.
+Admin CRUD: `docs/DESIGN-CLIENTS-PROFILES.md`. Fuentes: `schedule` + jurisdicción (backend `FRONTEND-SOURCES-V2.md`).

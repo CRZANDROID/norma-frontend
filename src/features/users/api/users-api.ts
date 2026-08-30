@@ -32,7 +32,7 @@ function createUserBody(input: CreateUserInput) {
   }
 }
 
-/** Users + memberships contra Nest (`docs/POSTMAN-BACKEND.md` §§7–8). */
+/** Users + memberships contra Nest (backend `docs/postman-pruebas.md`). */
 export const usersApi = {
   list(params?: ListUsersParams): Promise<NormaUser[]> {
     if (useApiMock) return usersMockApi.list(params)

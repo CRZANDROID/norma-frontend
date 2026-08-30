@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { documentsApi } from '@/features/documents'
-import type { DocumentsProgress } from '@/features/documents'
+import type { DocumentListItem, DocumentsProgress } from '@/features/documents'
 import { jobsApi } from '@/features/jobs'
 import type { JobsProgress } from '@/features/jobs'
 import {
+  groupPagesBySource,
   mergeJourneys,
   stepTone,
 } from '@/features/dashboard/lib/agent-watch'
@@ -15,13 +16,16 @@ const POLL_MS = 8000
 export function useAgentWatch(canRead: boolean) {
   const [crawl, setCrawl] = useState<JobsProgress | null>(null)
   const [extract, setExtract] = useState<DocumentsProgress | null>(null)
+  const [pages, setPages] = useState<DocumentListItem[]>([])
   const [crawlError, setCrawlError] = useState<string | null>(null)
   const [extractError, setExtractError] = useState<string | null>(null)
+  const [pagesError, setPagesError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [pagesLoading, setPagesLoading] = useState(true)
   const [crawling, setCrawling] = useState(false)
   const [updatedAt, setUpdatedAt] = useState<number | null>(null)
 
-  const load = useCallback(
+  const loadProgress = useCallback(
     async (quiet = false) => {
       if (!canRead) {
         setCrawl(null)
@@ -63,18 +67,53 @@ export function useAgentWatch(canRead: boolean) {
     [canRead],
   )
 
+  const loadPages = useCallback(
+    async (quiet = false) => {
+      if (!canRead) {
+        setPages([])
+        setPagesError(null)
+        setPagesLoading(false)
+        return
+      }
+      if (!quiet) setPagesLoading(true)
+      try {
+        const rows = await documentsApi.list({ pilotOnly: true, limit: 800 })
+        setPages(rows)
+        setPagesError(null)
+      } catch (err) {
+        setPagesError(
+          mapApiError(err, 'No se pudieron listar las páginas extraídas.'),
+        )
+        if (!quiet) setPages([])
+      } finally {
+        setUpdatedAt(Date.now())
+        setPagesLoading(false)
+      }
+    },
+    [canRead],
+  )
+
+  const load = useCallback(
+    async (quiet = false) => {
+      await Promise.all([loadProgress(quiet), loadPages(quiet)])
+    },
+    [loadProgress, loadPages],
+  )
+
   useEffect(() => {
-    void load()
-  }, [load])
+    void loadProgress()
+    void loadPages()
+  }, [loadProgress, loadPages])
 
   useEffect(() => {
     if (!canRead) return
     const id = window.setInterval(() => {
       if (document.hidden) return
-      void load(true)
+      void loadProgress(true)
+      void loadPages(true)
     }, POLL_MS)
     return () => window.clearInterval(id)
-  }, [canRead, load])
+  }, [canRead, loadProgress, loadPages])
 
   const crawlAll = useCallback(async () => {
     setCrawling(true)
@@ -89,6 +128,7 @@ export function useAgentWatch(canRead: boolean) {
     }
   }, [load])
 
+  const pagesBySource = useMemo(() => groupPagesBySource(pages), [pages])
   const journeys = useMemo(
     () => mergeJourneys(crawl, extract),
     [crawl, extract],
@@ -110,13 +150,17 @@ export function useAgentWatch(canRead: boolean) {
     crawl,
     extract,
     journeys,
+    pagesBySource,
+    pageCount: pages.length,
     date: crawl?.date || extract?.date || '',
     crawledCount,
     extractCount,
     live,
     crawlError,
     extractError,
+    pagesError,
     loading,
+    pagesLoading,
     crawling,
     updatedAt,
     load,

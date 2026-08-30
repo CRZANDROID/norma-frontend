@@ -39,10 +39,12 @@ src/
     auth/
     clients/
     sources/
+    users/
+    dashboard/              # panel operativo + JobsPanel
     jobs/
     documents/              # registro documental (S6; listado en panel de rastreo)
+    ai/                     # asistente de catálogo
     findings/               # futuro inbox / alertas
-    users/                  # admin usuarios / roles / membresías
     <feature>/
       api/                  # llamadas Axios de ESTE dominio
       types/                # contratos de ESTE dominio
@@ -85,12 +87,13 @@ src/
 
 | Feature | Pantallas (aprox.) | Sprint |
 |---------|--------------------|--------|
-| `auth` | Login, sesión | 2 (existente, migrar) |
-| `clients` | CRUD clientes + perfiles | 3 |
-| `sources` | CRUD fuentes | 3 |
+| `auth` | Login, sesión | 2 |
+| `clients` | CRUD clientes + perfiles + fiscales/contactos/delivery | 3 |
+| `sources` | CRUD fuentes (`schedule` + jurisdicción) | 3 |
 | `users` | Admin usuarios | 3 |
+| `dashboard` / `jobs` / `documents` | Panel de rastreo + registro documental | 5–6 |
+| `ai` | Asistente de catálogo | bloque OpenAI |
 | `findings` | Inbox / alertas | 7–8 |
-| `dashboard` | Resumen operativo | incremental |
 
 ### Code-splitting (desde ya en el router)
 
@@ -100,15 +103,7 @@ const SourcesPage = lazy(() => import('@/features/sources/pages/SourcesPage'))
 const UsersPage = lazy(() => import('@/features/users/pages/UsersPage'))
 ```
 
-Cada feature grande entra en su propio chunk. Obligatorio cuando haya >4 áreas de producto.
-
-## Migración desde la estructura actual
-
-1. Crear `app/`, `features/`, `shared/`.
-2. Mover axios/`cn` → `shared/lib`.
-3. Mover UI base → `shared/ui`.
-4. Implementar Clientes como **primer feature canónico** (`features/clients`).
-5. Ir migrando Auth, Fuentes, etc.; no reescribir todo el día 1, pero **código nuevo solo en esta estructura**.
+Cada feature grande entra en su propio chunk.
 
 ## Reglas de producto (resumen)
 

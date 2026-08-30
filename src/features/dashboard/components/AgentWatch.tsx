@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
-import { FileSearch, Radar } from 'lucide-react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { ChevronLeft, ChevronRight, FileSearch, Radar } from 'lucide-react'
 import {
   AnimatePresence,
   motion,
@@ -11,8 +11,11 @@ import {
   clipHeadline,
   formatClock,
   formatDay,
+  splitPagesByKind,
   stepTone,
 } from '@/features/dashboard/lib/agent-watch'
+import { ExtractedPageModal, ExtractedPages } from '@/features/dashboard/components/ExtractedPages'
+import { documentsApi, type DocumentListItem } from '@/features/documents'
 import { duration, easeOut } from '@/shared/lib/motion'
 import { cn } from '@/shared/lib/utils'
 import { Badge } from '@/shared/ui/badge'
@@ -202,9 +205,21 @@ function StepRow({
 function SourceCard({
   journey,
   index,
+  pageCount,
+  pdfCount,
+  wordCount,
+  htmlCount,
+  pagesLoading,
+  onOpen,
 }: {
   journey: AgentSourceJourney
   index: number
+  pageCount: number
+  pdfCount: number
+  wordCount: number
+  htmlCount: number
+  pagesLoading: boolean
+  onOpen: () => void
 }) {
   const reduceMotion = useReducedMotion()
   const crawlTone = stepTone('crawl', journey.crawl?.status)
@@ -223,33 +238,111 @@ function SourceCard({
         ease: easeOut,
         delay: reduceMotion ? 0 : Math.min(index * 0.04, 0.28),
       }}
-      className="rounded-2xl border-2 border-norma-border bg-norma-raised/80 px-4 py-3.5"
     >
-      <h3 className="font-display text-[0.95rem] font-semibold tracking-tight text-balance">
-        {journey.sourceName}
-      </h3>
-      <ol className="mt-3">
-        <StepRow
-          icon={Radar}
-          title="Rastreo"
-          label={journey.crawl?.label ?? 'En espera'}
-          tone={crawlTone}
-          meta={clock ? `a las ${clock}` : null}
-          body={journey.crawl?.note}
+      <button
+        type="button"
+        onClick={onOpen}
+        className="flex w-full items-stretch gap-2 rounded-2xl border-2 border-norma-border bg-norma-raised/80 px-4 py-3.5 text-left hover:border-norma-navy/25 hover:bg-norma-raised"
+      >
+        <div className="min-w-0 flex-1">
+          <h3 className="font-display text-[0.95rem] font-semibold tracking-tight text-balance">
+            {journey.sourceName}
+          </h3>
+          <ol className="mt-3">
+            <StepRow
+              icon={Radar}
+              title="Rastreo"
+              label={journey.crawl?.label ?? 'En espera'}
+              tone={crawlTone}
+              meta={clock ? `a las ${clock}` : null}
+              body={journey.crawl?.note}
+            />
+            <StepRow
+              icon={FileSearch}
+              title="Extracción"
+              label={journey.extract?.label ?? 'Esperando su turno'}
+              tone={extractTone}
+              body={
+                journey.extract?.note ??
+                (headline ? `Leyó: ${headline}` : null)
+              }
+              last
+            />
+          </ol>
+          <p className="mt-2 text-[12px] text-norma-subtle">
+            {pagesLoading && pageCount === 0
+              ? 'Cargando documentos…'
+              : pageCount === 0
+                ? 'Sin documentos aún'
+                : `${pdfCount} PDF${wordCount ? ` · ${wordCount} Word` : ''} · ${htmlCount} HTML`}
+          </p>
+        </div>
+        <ChevronRight
+          className="mt-1 size-4 shrink-0 text-norma-subtle"
+          aria-hidden
         />
-        <StepRow
-          icon={FileSearch}
-          title="Extracción"
-          label={journey.extract?.label ?? 'Esperando su turno'}
-          tone={extractTone}
-          body={
-            journey.extract?.note ??
-            (headline ? `Leyó: ${headline}` : null)
-          }
-          last
-        />
-      </ol>
+        <span className="sr-only">Ver documentos extraídos</span>
+      </button>
     </motion.article>
+  )
+}
+
+function SourceDetail({
+  journey,
+  pages,
+  pagesLoading,
+  onBack,
+  onOpenPage,
+}: {
+  journey: AgentSourceJourney
+  pages: DocumentListItem[]
+  pagesLoading: boolean
+  onBack: () => void
+  onOpenPage: (doc: DocumentListItem) => void
+}) {
+  const crawlTone = stepTone('crawl', journey.crawl?.status)
+  const extractTone = stepTone('extract', journey.extract?.status)
+  const clock = formatClock(journey.crawl?.at ?? null)
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="shrink-0 space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="ghost" size="sm" className="-ml-2" onClick={onBack}>
+            <ChevronLeft className="size-4" aria-hidden />
+            Fuentes
+          </Button>
+          <h3 className="min-w-0 flex-1 font-display text-xl font-semibold tracking-tight text-balance">
+            {journey.sourceName}
+          </h3>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={badgeFor(crawlTone)}>
+            {journey.crawl?.label ?? 'En espera'}
+          </Badge>
+          {clock ? (
+            <span className="text-xs text-norma-subtle">a las {clock}</span>
+          ) : null}
+          <Badge variant={badgeFor(extractTone)}>
+            {journey.extract?.label ?? 'Esperando su turno'}
+          </Badge>
+        </div>
+        {journey.crawl?.note || journey.extract?.note ? (
+          <p className="text-sm leading-relaxed text-norma-muted">
+            {[journey.crawl?.note, journey.extract?.note]
+              .filter(Boolean)
+              .join(' ')}
+          </p>
+        ) : null}
+      </div>
+      <div className="mt-4 min-h-0 flex-1 overflow-y-auto border-t border-norma-border/80 pt-4">
+        <ExtractedPages
+          pages={pages}
+          loading={pagesLoading}
+          onOpen={onOpenPage}
+        />
+      </div>
+    </div>
   )
 }
 
@@ -257,39 +350,117 @@ export function AgentWatch({
   canRead,
   canCrawl,
   journeys,
+  pagesBySource,
   date,
   crawledCount,
   extractCount,
+  pageCount,
   live,
   crawlError,
   extractError,
+  pagesError,
   loading,
+  pagesLoading,
   crawling,
   onRetry,
   onCrawl,
+  onDetailChange,
 }: {
   canRead: boolean
   canCrawl: boolean
   journeys: AgentSourceJourney[]
+  pagesBySource: Map<string, DocumentListItem[]>
   date: string
   crawledCount: number
   extractCount: number
+  pageCount: number
   live: boolean
   crawlError: string | null
   extractError: string | null
+  pagesError: string | null
   loading: boolean
+  pagesLoading: boolean
   crawling: boolean
   onRetry: () => void
   onCrawl: () => void
+  onDetailChange?: (sourceId: string | null) => void
 }) {
+  const [openDoc, setOpenDoc] = useState<DocumentListItem | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [fetchedSourcePages, setFetchedSourcePages] = useState<
+    DocumentListItem[] | null
+  >(null)
+  const reduceMotion = useReducedMotion()
   const day = formatDay(date)
   const total = journeys.length
   const fatal = Boolean(crawlError && extractError && journeys.length === 0)
+  const selected = selectedId
+    ? (journeys.find((row) => row.sourceId === selectedId) ?? null)
+    : null
+  const cachedPages = selected
+    ? (pagesBySource.get(selected.sourceId) ?? [])
+    : []
+  const selectedPages =
+    cachedPages.length > 0 ? cachedPages : (fetchedSourcePages ?? [])
+  const sourcePagesLoading =
+    Boolean(selected) && cachedPages.length === 0 && fetchedSourcePages === null
+
+  const selectSource = useCallback(
+    (id: string | null) => {
+      setSelectedId(id)
+      onDetailChange?.(id)
+    },
+    [onDetailChange],
+  )
+
+  useEffect(() => {
+    if (!selectedId) {
+      setFetchedSourcePages(null)
+      return
+    }
+    const cached = pagesBySource.get(selectedId) ?? []
+    if (cached.length > 0) {
+      setFetchedSourcePages(null)
+      return
+    }
+    let cancelled = false
+    void documentsApi
+      .list({ sourceId: selectedId, limit: 80 })
+      .then((rows) => {
+        if (!cancelled) setFetchedSourcePages(rows)
+      })
+      .catch(() => {
+        if (!cancelled) setFetchedSourcePages([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedId, pagesBySource])
+
+  useEffect(() => {
+    if (!selectedId) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !openDoc) {
+        selectSource(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selectedId, openDoc, selectSource])
 
   return (
-    <section className="flex h-[min(78dvh,48rem)] min-h-[32rem] flex-col overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface shadow-[0_22px_48px_-24px_rgba(13,27,42,0.4)]">
+    <section
+      className={cn(
+        'flex h-[min(calc(100dvh-13rem),52rem)] min-h-[28rem] flex-col overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface shadow-[0_22px_48px_-24px_rgba(13,27,42,0.4)]',
+      )}
+    >
       <header className="shrink-0 overflow-hidden bg-norma-navy text-white">
-        <div className="bg-[radial-gradient(ellipse_80%_60%_at_12%_-20%,rgba(0,190,208,0.28),transparent_55%),radial-gradient(ellipse_at_90%_0%,rgba(105,88,248,0.32),transparent_50%)] px-5 py-4">
+        <div
+          className={cn(
+            'bg-[radial-gradient(ellipse_80%_60%_at_12%_-20%,rgba(0,190,208,0.28),transparent_55%),radial-gradient(ellipse_at_90%_0%,rgba(105,88,248,0.32),transparent_50%)] px-5',
+            selected ? 'py-3' : 'py-4',
+          )}
+        >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -301,14 +472,19 @@ export function AgentWatch({
                   {live ? 'Trabajando' : 'En mesa'}
                 </span>
               </div>
-              {day ? (
+              {selected ? null : day ? (
                 <p className="mt-2 text-[11px] capitalize text-white/45">
                   Ronda del {day}
                 </p>
               ) : null}
-              <p className="mt-1 text-[10px] text-white/40">
-                Se actualiza solo, sin recargar.
-              </p>
+              {selected ? null : (
+                <p className="mt-1 text-[10px] text-white/40">
+                  {pagesLoading && pageCount === 0
+                    ? 'Cargando documentos de la ronda…'
+                    : `${pageCount} documento${pageCount === 1 ? '' : 's'} en la ronda.`}{' '}
+                  Abre una fuente para ver PDF, Word y HTML.
+                </p>
+              )}
             </div>
             {canCrawl ? (
               <Button
@@ -324,12 +500,12 @@ export function AgentWatch({
             ) : null}
           </div>
 
-          {loading && canRead ? (
+          {selected || !canRead ? null : loading ? (
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               <Skeleton className="h-[4.75rem] w-full bg-white/10" />
               <Skeleton className="h-[4.75rem] w-full bg-white/10" />
             </div>
-          ) : canRead ? (
+          ) : (
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               <PhaseMeter
                 label="Agente de rastreo"
@@ -344,11 +520,13 @@ export function AgentWatch({
                 accent="accent"
               />
             </div>
-          ) : null}
+          )}
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-5">
+      <div
+        className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-4 md:px-5"
+      >
         {!canRead ? (
           <p className="text-sm text-norma-subtle">
             El seguimiento de los agentes está disponible para analistas y
@@ -377,20 +555,84 @@ export function AgentWatch({
                 {extractError}
               </p>
             ) : null}
+            {pagesError ? (
+              <p className="mb-3 rounded-2xl border border-norma-coral/25 bg-norma-coral/8 px-3 py-2 text-sm text-norma-coral" role="alert">
+                {pagesError}
+              </p>
+            ) : null}
             {total === 0 ? (
               <p className="text-sm leading-relaxed text-norma-subtle">
                 Aún no hay fuentes en la ronda de hoy. Cuando el agente salga a
                 rastrear, aquí verás cada visita y si pudo extraer texto.
               </p>
             ) : (
-              <ul className="space-y-2.5">
-                {journeys.map((journey, index) => (
-                  <li key={journey.sourceId}>
-                    <SourceCard journey={journey} index={index} />
-                  </li>
-                ))}
-              </ul>
+              <div className="relative min-h-0 flex-1">
+                <AnimatePresence initial={false}>
+                  {selected ? (
+                    <motion.div
+                      key="source-detail"
+                      className="absolute inset-0 flex flex-col overflow-hidden"
+                      initial={reduceMotion ? false : { opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={reduceMotion ? undefined : { opacity: 0 }}
+                      transition={
+                        reduceMotion
+                          ? { duration: 0 }
+                          : { duration: duration.ui, ease: easeOut }
+                      }
+                    >
+                      <SourceDetail
+                        journey={selected}
+                        pages={selectedPages}
+                        pagesLoading={sourcePagesLoading}
+                        onBack={() => selectSource(null)}
+                        onOpenPage={setOpenDoc}
+                      />
+                    </motion.div>
+                  ) : (
+                    <motion.ul
+                      key="source-list"
+                      className="absolute inset-0 space-y-2.5 overflow-y-auto"
+                      initial={reduceMotion ? false : { opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={reduceMotion ? undefined : { opacity: 0 }}
+                      transition={
+                        reduceMotion
+                          ? { duration: 0 }
+                          : { duration: duration.ui, ease: easeOut }
+                      }
+                    >
+                      {journeys.map((journey, index) => {
+                        const pages = pagesBySource.get(journey.sourceId) ?? []
+                        const kinds = splitPagesByKind(pages)
+                        return (
+                          <li key={journey.sourceId}>
+                            <SourceCard
+                              journey={journey}
+                              index={index}
+                              pageCount={
+                                kinds.pdf.length +
+                                kinds.word.length +
+                                kinds.html.length
+                              }
+                              pdfCount={kinds.pdf.length}
+                              wordCount={kinds.word.length}
+                              htmlCount={kinds.html.length}
+                              pagesLoading={pagesLoading}
+                              onOpen={() => selectSource(journey.sourceId)}
+                            />
+                          </li>
+                        )
+                      })}
+                    </motion.ul>
+                  )}
+                </AnimatePresence>
+              </div>
             )}
+            <ExtractedPageModal
+              doc={openDoc}
+              onClose={() => setOpenDoc(null)}
+            />
           </>
         )}
       </div>

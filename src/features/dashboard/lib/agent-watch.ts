@@ -1,4 +1,8 @@
-import type { DocumentProgressSource, DocumentsProgress } from '@/features/documents'
+import type {
+  DocumentListItem,
+  DocumentProgressSource,
+  DocumentsProgress,
+} from '@/features/documents'
 import type { JobProgressSource, JobsProgress } from '@/features/jobs'
 
 export type AgentSourceJourney = {
@@ -85,6 +89,100 @@ export function mergeJourneys(
     if (row) ordered.push(row)
   }
   return ordered
+}
+
+export function groupPagesBySource(
+  documents: DocumentListItem[],
+): Map<string, DocumentListItem[]> {
+  const grouped = new Map<string, DocumentListItem[]>()
+  for (const doc of documents) {
+    const key = doc.sourceId || doc.sourceCode || 'unknown'
+    const bucket = grouped.get(key)
+    if (bucket) {
+      bucket.push(doc)
+    } else {
+      grouped.set(key, [doc])
+    }
+  }
+  return grouped
+}
+
+export function isPdfPage(doc: DocumentListItem): boolean {
+  const name = (doc.filename || '').toLowerCase()
+  const mime = (doc.mimeType || '').toLowerCase()
+  const url = (doc.url || '').toLowerCase()
+  return (
+    name.endsWith('.pdf') ||
+    mime.includes('pdf') ||
+    /\.pdf(?:$|\?)/i.test(url)
+  )
+}
+
+export function isWordPage(doc: DocumentListItem): boolean {
+  if (isPdfPage(doc)) return false
+  const name = (doc.filename || '').toLowerCase()
+  const mime = (doc.mimeType || '').toLowerCase()
+  const url = (doc.url || '').toLowerCase()
+  return (
+    name.endsWith('.docx') ||
+    name.endsWith('.doc') ||
+    mime.includes('msword') ||
+    mime.includes('wordprocessingml') ||
+    mime.includes('officedocument.word') ||
+    /nota_to_doc\.php/i.test(url) ||
+    /\.docx?(?:$|\?)/i.test(url)
+  )
+}
+
+export function splitPagesByKind(pages: DocumentListItem[]): {
+  pdf: DocumentListItem[]
+  word: DocumentListItem[]
+  html: DocumentListItem[]
+  other: DocumentListItem[]
+} {
+  const pdf: DocumentListItem[] = []
+  const word: DocumentListItem[] = []
+  const html: DocumentListItem[] = []
+  const other: DocumentListItem[] = []
+  for (const doc of pages) {
+    if (doc.processingStatus === 'DISCARDED') {
+      continue
+    }
+    if (isPdfPage(doc)) {
+      pdf.push(doc)
+      continue
+    }
+    if (isWordPage(doc)) {
+      word.push(doc)
+      continue
+    }
+    const name = (doc.filename || '').toLowerCase()
+    const mime = (doc.mimeType || '').toLowerCase()
+    if (
+      name.endsWith('.json') ||
+      mime.includes('json') ||
+      mime.includes('xml') ||
+      name.endsWith('.xml')
+    ) {
+      other.push(doc)
+      continue
+    }
+    html.push(doc)
+  }
+  return { pdf, word, html, other }
+}
+
+export function pagePathLabel(url: string | null, filename: string): string {
+  if (!url) return filename
+  try {
+    const parsed = new URL(url)
+    const path = `${parsed.pathname}${parsed.search}`
+    if (path === '/' || path === '') return parsed.hostname.replace(/^www\./, '')
+    const clipped = path.length > 110 ? `${path.slice(0, 109)}…` : path
+    return clipped
+  } catch {
+    return filename
+  }
 }
 
 export function decodeHtml(value: string): string {
