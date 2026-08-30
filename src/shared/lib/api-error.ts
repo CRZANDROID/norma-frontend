@@ -31,10 +31,16 @@ export function mapApiError(
     if (status === 400 || status === 409) {
       return message || 'Revisa los datos e inténtalo de nuevo.'
     }
+    if (status === 429) {
+      return 'El servidor recibió demasiadas peticiones. El panel esperará antes de volver a preguntar.'
+    }
+    if (status === 502 || status === 504) {
+      return 'El API no respondió a tiempo. En Render gratuito suele pasar si el panel pide demasiado seguido.'
+    }
     if (status === 503) {
       return (
         message ||
-        'Falta infraestructura en el servidor (Storage, OpenAI o Redis).'
+        'El API no está disponible ahora. En Render gratuito se duerme o se satura; espera y reintenta.'
       )
     }
     if (message) return message
@@ -43,4 +49,11 @@ export function mapApiError(
 
   if (error instanceof Error && error.message) return error.message
   return fallback
+}
+
+export function isApiCapacityError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false
+  const status = error.response?.status
+  if (!error.response) return true
+  return status === 429 || status === 502 || status === 503 || status === 504
 }
