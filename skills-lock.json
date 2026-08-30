@@ -109,6 +109,12 @@
       "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md",
       "computedHash": "ce0af583006d2fd4731663adc50c0a5df1121f0d49a5bb9c308eca4ee295c60a"
     },
+    "web-animation-design": {
+      "source": "vercel-labs/open-agents",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/web-animation-design/SKILL.md",
+      "computedHash": "dcd3f6da245643cd00ef93ad73ea62edc3ae925c6d7763c0675892441d6ba6c3"
+    },
     "web-design-guidelines": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",

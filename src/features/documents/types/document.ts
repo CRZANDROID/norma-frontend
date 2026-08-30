@@ -2,6 +2,11 @@ export const PILOT_SOURCE_CODES = [
   'dof',
   'diputados-gaceta',
   'jalisco-congreso',
+  'congreso-agu',
+  'congreso-bcn',
+  'congreso-bcs',
+  'congreso-cam',
+  'congreso-chh',
 ] as const
 
 export type PilotSourceCode = (typeof PILOT_SOURCE_CODES)[number]
@@ -40,15 +45,22 @@ export type DocumentListItem = {
   lastError: string | null
   jobRunId: string | null
   textPreview: string | null
+  url: string | null
   createdAt: string
   updatedAt: string
 }
 
+export type DocumentDetail = DocumentListItem & {
+  extractedText: string | null
+}
+
 export type ListDocumentsParams = {
+  sourceId?: string
   sourceCode?: string
   processingStatus?: DocumentProcessingStatus
   pilotOnly?: boolean
   limit?: number
+  date?: string
 }
 
 export type DocumentProgressSource = {

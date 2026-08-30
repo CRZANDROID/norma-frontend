@@ -27,7 +27,7 @@ Si en deploy (Vercel/Netlify) un refresh en `/login` o `/clientes` da `404`, hac
 ```
 src/
   app/           # providers, router, layouts
-  features/      # auth, clients, sources, users…
+  features/      # auth, clients, sources, users, jobs, documents, dashboard, ai
   shared/        # ui, lib (axios, auth-token, cn)
   store/         # Zustand (sesión)
 ```
@@ -78,7 +78,7 @@ Tablero: [NORMA — Piloto Arca](https://github.com/users/CRZANDROID/projects/1)
 | Archivo | Contenido |
 |---------|-----------|
 | [AGENTS.md](./AGENTS.md) | Índice de entrada para cualquier agente |
+| [docs/README.md](./docs/README.md) | Qué leer aquí vs contratos en backend |
 | [docs/PRODUCT.md](./docs/PRODUCT.md) | Límites de producto del frontend |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Stack, carpeta `app/`+`features/`+`shared/` |
 | [docs/SPRINTS.md](./docs/SPRINTS.md) | Qué hace el frontend por sprint |
-| [docs/POSTMAN-BACKEND.md](./docs/POSTMAN-BACKEND.md) | Contrato API / pruebas Postman |

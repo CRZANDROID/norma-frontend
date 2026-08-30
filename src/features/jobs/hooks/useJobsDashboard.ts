@@ -25,7 +25,7 @@ export function useJobsDashboard(canReadRuns: boolean) {
       if (canReadRuns) {
         const [nextRuns, nextDocs] = await Promise.all([
           jobsApi.listRuns({ limit: 12 }),
-          documentsApi.list({ pilotOnly: true, limit: 8 }).catch((err) => {
+          documentsApi.list({ pilotOnly: true, limit: 80 }).catch((err) => {
             setDocumentsError(
               mapApiError(err, 'No se pudo cargar el registro documental.'),
             )

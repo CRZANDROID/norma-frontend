@@ -1,4 +1,5 @@
 import type {
+  DocumentDetail,
   DocumentListItem,
   DocumentsProgress,
   ListDocumentsParams,
@@ -25,6 +26,7 @@ const rows: DocumentListItem[] = [
     jobRunId: 'run_dof_ok',
     textPreview:
       'Decreto por el que se reforman disposiciones en materia de comercio exterior (mock).',
+    url: 'https://www.dof.gob.mx/nota_detalle.php?codigo=1',
     createdAt: '2026-08-18T12:01:10.000Z',
     updatedAt: now,
   },
@@ -41,6 +43,7 @@ const rows: DocumentListItem[] = [
     lastError: null,
     jobRunId: 'run_diputados_ok',
     textPreview: 'Misma ficha que un registro anterior (mock).',
+    url: 'https://gaceta.diputados.gob.mx/',
     createdAt: '2026-08-18T12:02:10.000Z',
     updatedAt: now,
   },
@@ -57,6 +60,7 @@ const rows: DocumentListItem[] = [
     lastError: null,
     jobRunId: 'run_jalisco_ok',
     textPreview: 'Gaceta del Congreso de Jalisco con iniciativas del día (mock).',
+    url: 'https://www.congresojal.gob.mx/gaceta',
     createdAt: '2026-08-18T12:03:10.000Z',
     updatedAt: now,
   },
@@ -74,6 +78,18 @@ export const documentsMockApi = {
     }
     const limit = params?.limit ?? 20
     return next.slice(0, limit)
+  },
+
+  async get(id: string): Promise<DocumentDetail> {
+    await delay()
+    const row = rows.find((item) => item.id === id)
+    if (!row) {
+      throw new Error('Documento no encontrado')
+    }
+    return {
+      ...row,
+      extractedText: row.textPreview,
+    }
   },
 
   async progress(): Promise<DocumentsProgress> {

@@ -74,7 +74,16 @@ export const jobsMockApi = {
       worker: 'up',
       scheduler: 'up',
       storage: 'local',
-      connectors: ['dof', 'diputados-gaceta', 'jalisco-congreso'],
+      connectors: [
+        'dof',
+        'diputados-gaceta',
+        'jalisco-congreso',
+        'congreso-agu',
+        'congreso-bcn',
+        'congreso-bcs',
+        'congreso-cam',
+        'congreso-chh',
+      ],
     }
   },
 
@@ -99,7 +108,16 @@ export const jobsMockApi = {
 
   async crawlAll(): Promise<{ enqueued: number }> {
     await delay()
-    const codes = ['dof', 'diputados-gaceta', 'jalisco-congreso']
+    const codes = [
+      'dof',
+      'diputados-gaceta',
+      'jalisco-congreso',
+      'congreso-agu',
+      'congreso-bcn',
+      'congreso-bcs',
+      'congreso-cam',
+      'congreso-chh',
+    ]
     let enqueued = 0
     for (const code of codes) {
       if (!enqueue(code).skipped) enqueued += 1

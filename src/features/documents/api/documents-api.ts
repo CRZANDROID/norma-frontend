@@ -2,6 +2,7 @@ import { api } from '@/shared/lib/axios'
 import { useApiMock } from '@/shared/lib/utils'
 import { documentsMockApi } from '@/features/documents/api/documents-mock'
 import type {
+  DocumentDetail,
   DocumentListItem,
   DocumentProcessingStatus,
   DocumentProgressSource,
@@ -58,6 +59,7 @@ function normalizeDocument(raw: unknown): DocumentListItem | null {
     lastError: displayText(raw.lastError),
     jobRunId: displayText(raw.jobRunId),
     textPreview: displayText(raw.textPreview),
+    url: displayText(raw.url) ?? displayText(raw.finalUrl),
     createdAt: displayText(raw.createdAt) ?? '',
     updatedAt: displayText(raw.updatedAt) ?? '',
   }
@@ -112,5 +114,19 @@ export const documentsApi = {
       ? documentsMockApi.progress()
       : api.get<unknown>('/documents/progress').then((r) => r.data)
     return Promise.resolve(raw).then(normalizeDocumentsProgress)
+  },
+
+  get(id: string): Promise<DocumentDetail> {
+    if (useApiMock) return documentsMockApi.get(id)
+    return api.get<unknown>(`/documents/${id}`).then((r) => {
+      const item = normalizeDocument(r.data)
+      if (!item) {
+        throw new Error('Documento inválido')
+      }
+      const extracted = isRecord(r.data)
+        ? displayText(r.data.extractedText)
+        : null
+      return { ...item, extractedText: extracted }
+    })
   },
 }

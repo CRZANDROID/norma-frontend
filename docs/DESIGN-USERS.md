@@ -3,7 +3,7 @@
 **Estado:** CRUD conectado a Nest (`VITE_USE_API_MOCK=false`); mock solo para preview UI  
 **Alcance:** Admin Sprint 3 Users (crear / listar / rol / activar-desactivar / membresías)  
 **Firma visual:** misma shell que Clientes y Fuentes (aurora navy, master-detail, Select compartido)  
-**Contrato API:** [POSTMAN-BACKEND.md](./POSTMAN-BACKEND.md) §§7–8  
+**Contrato API:** backend `docs/postman-pruebas.md` (users / memberships)  
 
 Tokens, tipografía y motion: heredar de [DESIGN-CLIENTS-PROFILES.md](./DESIGN-CLIENTS-PROFILES.md).
 

@@ -3,7 +3,7 @@
 **Estado:** CRUD conectado a Nest (`VITE_USE_API_MOCK=false`); mock solo para preview UI  
 **Alcance:** CRUD Sources v2 (categoría / plataforma / secciones / URL)  
 **Firma visual:** misma shell que Clientes (aurora navy, chips de señal, master-detail)  
-**Contrato API:** [POSTMAN-BACKEND.md](./POSTMAN-BACKEND.md) §6 · handoff backend `docs/FRONTEND-SOURCES-V2.md`
+**Contrato API:** repo backend `docs/FRONTEND-SOURCES-V2.md` (y `docs/postman-pruebas.md`). **No** `frequency`.
 
 Tokens, tipografía y motion: heredar de [DESIGN-CLIENTS-PROFILES.md](./DESIGN-CLIENTS-PROFILES.md).
 
@@ -24,10 +24,10 @@ Tokens, tipografía y motion: heredar de [DESIGN-CLIENTS-PROFILES.md](./DESIGN-C
 +----------------------+-------------------------------------------+
 | FUENTES         [+]  |  Diario Oficial…            ● Activa     |
 | Buscar…              |  code: dof                                |
-| [Categoría ▾]        |  [Oficial] [Web]  daily                   |
+| [Categoría ▾]        |  [Oficial] [Web]  lun–vie 07:00          |
 | [Plataforma ▾]       |  ---------------------------------------  |
 | [Incluir pausadas]   |  Nombre / Categoría / Plataforma / URL    |
-|                      |  Frecuencia / Secciones (paths)           |
+|                      |  Jurisdicción / Horario de rastreo        |
 | > DOF                |  Palabras guía (chips)                    |
 |   dof · Oficial·Web  |  [Guardar]  [Pausar fuente]               |
 |   ● Activa           |                                           |
@@ -66,4 +66,5 @@ Tokens, tipografía y motion: heredar de [DESIGN-CLIENTS-PROFILES.md](./DESIGN-C
 Roles: mutaciones solo `ADMIN`; lectura `ADMIN` \| `ANALYST` \| `VIEWER`.
 
 `code` de solo lectura tras crear. Soft-status; sin hard-delete.  
-Secciones: `string[][]` (paths). Relación N:N con clientes sin cambios (`clientIds` create / `sourceIds` en cliente).
+Secciones: `string[][]` (paths). Relación N:N con clientes (`clientIds` al crear / `sourceIds` en cliente).  
+Forma de fuente: `jurisdiction` + `stateCode` + `schedule` (`time`, `timezone`, `weekdays`). No mandar `frequency`.
