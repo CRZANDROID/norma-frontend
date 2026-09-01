@@ -32,6 +32,7 @@ export type JobRun = {
   jobRunId?: string
   sourceId?: string | null
   sourceCode: string
+  sourceName?: string | null
   status: JobRunStatus
   message: string | null
   createdAt: string

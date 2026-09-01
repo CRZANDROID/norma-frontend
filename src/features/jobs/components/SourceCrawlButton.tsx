@@ -6,11 +6,11 @@ import { Button } from '@/shared/ui/button'
 
 export function SourceCrawlButton({
   sourceId,
-  sourceCode,
+  sourceName,
   disabled,
 }: {
   sourceId: string
-  sourceCode: string
+  sourceName: string
   disabled?: boolean
 }) {
   const [busy, setBusy] = useState(false)
@@ -29,7 +29,7 @@ export function SourceCrawlButton({
       }
       toast.success(
         result.enqueued
-          ? `Rastreo encolado (${sourceCode}).`
+          ? `Rastreo encolado (${sourceName}).`
           : 'Solicitud de rastreo enviada.',
       )
     } catch (err) {

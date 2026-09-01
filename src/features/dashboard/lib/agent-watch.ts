@@ -30,7 +30,7 @@ const DONE_CRAWL = new Set([
   'complete',
   'completed',
 ])
-const DONE_EXTRACT = new Set(['ready', 'extracted', 'ok', 'done'])
+const DONE_EXTRACT = new Set(['ready', 'extracted', 'classified', 'ok', 'done'])
 const WARN_EXTRACT = new Set(['unread', 'empty', 'skipped', 'thin'])
 const FAIL = new Set(['failed', 'error', 'fail'])
 

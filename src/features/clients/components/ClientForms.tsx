@@ -214,7 +214,8 @@ function sourceToOption(
   return {
     id: source.id,
     title: source.name,
-    subtitle: source.code,
+    subtitle:
+      SOURCE_CATEGORY_LABELS[source.category as SourceCategory] ?? source.category,
     meta: `${SOURCE_CATEGORY_LABELS[source.category as SourceCategory] ?? source.category} · ${SOURCE_PLATFORM_LABELS[source.platform as SourcePlatform] ?? source.platform}`,
   }
 }
@@ -274,7 +275,6 @@ export function ClientDetailHeader({
                 className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-norma-signal/12 px-2.5 py-1 text-[11px] font-semibold text-norma-signal ring-1 ring-norma-signal/15 transition-colors hover:bg-norma-signal/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45"
               >
                 <span className="truncate">{source.name}</span>
-                <span className="font-mono text-[10px] opacity-70">{source.code}</span>
               </Link>
             ))}
           </div>

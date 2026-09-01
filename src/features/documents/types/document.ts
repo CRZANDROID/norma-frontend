@@ -18,6 +18,7 @@ export type DocumentProcessingStatus =
   | 'HASHED'
   | 'DEDUPED'
   | 'READY_FOR_AI'
+  | 'CLASSIFIED'
   | 'FAILED'
   | 'DISCARDED'
 
@@ -28,6 +29,7 @@ export const DOCUMENT_STATUS_LABELS: Record<DocumentProcessingStatus, string> = 
   HASHED: 'Con huella',
   DEDUPED: 'Duplicado',
   READY_FOR_AI: 'Registrado',
+  CLASSIFIED: 'Clasificada',
   FAILED: 'Falló',
   DISCARDED: 'Descartado',
 }

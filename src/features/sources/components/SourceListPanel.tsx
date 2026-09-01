@@ -137,7 +137,7 @@ export function SourceListPanel({
               autoComplete="off"
               spellCheck={false}
               aria-label="Buscar fuentes"
-              placeholder="Buscar por nombre o identificador…"
+              placeholder="Buscar por nombre…"
               value={query}
               onChange={(e) => onQueryChange(e.target.value)}
               onFocus={() => setListOpen(true)}
@@ -288,12 +288,12 @@ export function SourceListPanel({
                                 <p className="truncate text-sm font-semibold">
                                   {source.name}
                                 </p>
-                                <p className="truncate font-mono text-[11px] text-norma-subtle">
-                                  {source.code}
-                                  {clients.length > 0
-                                    ? ` · ${clients.length} cliente${clients.length === 1 ? '' : 's'}`
-                                    : ''}
-                                </p>
+                                {clients.length > 0 ? (
+                                  <p className="truncate text-[11px] text-norma-subtle">
+                                    {clients.length} cliente
+                                    {clients.length === 1 ? '' : 's'}
+                                  </p>
+                                ) : null}
                                 <p className="mt-0.5 truncate text-[11px] text-norma-muted">
                                   {stateCodeLabel(source.stateCode)}
                                   {' · '}

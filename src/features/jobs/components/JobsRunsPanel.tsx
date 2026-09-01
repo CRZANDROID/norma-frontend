@@ -72,7 +72,9 @@ export function JobsRunsPanel({
                   Última corrida
                 </p>
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-mono text-xs">{latest.sourceCode || '—'}</p>
+                  <p className="text-sm">
+                    {latest.sourceName || latest.sourceCode || '—'}
+                  </p>
                   <Badge variant={statusVariant(latest.status)}>
                     {JOB_RUN_STATUS_LABELS[latest.status]}
                   </Badge>
@@ -105,8 +107,8 @@ export function JobsRunsPanel({
                     </div>
                     <div className="min-w-0 flex-1 border-b border-norma-border/70 py-1.5 pb-3">
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <p className="font-mono text-xs">
-                          {run.sourceCode || '—'}
+                        <p className="text-xs">
+                          {run.sourceName || run.sourceCode || '—'}
                         </p>
                         <p className="text-[11px] text-norma-subtle">
                           {formatWhen(

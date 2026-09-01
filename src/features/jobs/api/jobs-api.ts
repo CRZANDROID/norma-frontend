@@ -36,6 +36,9 @@ function normalizeRun(raw: unknown): JobRun | null {
     jobRunId: typeof raw.jobRunId === 'string' ? raw.jobRunId : id,
     sourceId: typeof raw.sourceId === 'string' ? raw.sourceId : null,
     sourceCode: displayText(raw.sourceCode) ?? '',
+    sourceName:
+      displayText(raw.sourceName) ??
+      (isRecord(raw.source) ? displayText(raw.source.name) : undefined),
     status,
     message: displayText(raw.message) ?? null,
     createdAt: String(raw.createdAt ?? ''),

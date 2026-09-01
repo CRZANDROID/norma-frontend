@@ -10,7 +10,7 @@ const { version } = JSON.parse(
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
-  const apiUrl = (env.VITE_API_URL || 'http://localhost:3001').trim()
+  const apiUrl = (env.VITE_API_URL || 'http://localhost:3000').trim()
   console.info(`[vite] VITE_API_URL = ${apiUrl}`)
 
   return {
