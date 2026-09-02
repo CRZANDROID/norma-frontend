@@ -12,7 +12,6 @@ import { AuthLayout } from '@/app/layouts/AuthLayout'
 import { ProtectedRoute } from '@/app/router/ProtectedRoute'
 import { LoginPage } from '@/features/auth'
 import { DashboardPage } from '@/features/dashboard'
-import { AlertsPage } from '@/pages/AlertsPage'
 
 const ClientsPage = lazy(() =>
   import('@/features/clients/pages/ClientsPage').then((m) => ({
@@ -29,6 +28,12 @@ const SourcesPage = lazy(() =>
 const UsersPage = lazy(() =>
   import('@/features/users/pages/UsersPage').then((m) => ({
     default: m.UsersPage,
+  })),
+)
+
+const FindingsPage = lazy(() =>
+  import('@/features/findings/pages/FindingsPage').then((m) => ({
+    default: m.FindingsPage,
   })),
 )
 
@@ -83,7 +88,22 @@ const router = createBrowserRouter([
             element: <AppLayout />,
             children: [
               { path: '/dashboard', element: <DashboardPage /> },
-              { path: '/alertas', element: <AlertsPage /> },
+              {
+                path: '/alertas',
+                element: (
+                  <SuspensePage>
+                    <FindingsPage />
+                  </SuspensePage>
+                ),
+              },
+              {
+                path: '/alertas/:findingId',
+                element: (
+                  <SuspensePage>
+                    <FindingsPage />
+                  </SuspensePage>
+                ),
+              },
               {
                 path: '/clientes',
                 element: (

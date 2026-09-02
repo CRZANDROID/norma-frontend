@@ -2,9 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { documentsApi } from '@/features/documents'
 import type { DocumentListItem, DocumentsProgress } from '@/features/documents'
+import { findingsApi } from '@/features/findings'
+import type { FindingsProgress } from '@/features/findings'
 import { jobsApi } from '@/features/jobs'
 import type { JobsProgress } from '@/features/jobs'
 import {
+  crawlBecameTerminal,
   groupPagesBySource,
   mergeJourneys,
   stepTone,
@@ -13,15 +16,19 @@ import { isApiCapacityError, mapApiError } from '@/shared/lib/api-error'
 
 const POLL_LIVE_MS = 15_000
 const POLL_IDLE_MS = 45_000
+const POLL_FOLLOWUP_MS = 500
+const HANDOFF_MS = 20_000
 const BACKOFF_START_MS = 20_000
 const BACKOFF_MAX_MS = 120_000
 
 export function useAgentWatch(canRead: boolean) {
   const [crawl, setCrawl] = useState<JobsProgress | null>(null)
   const [extract, setExtract] = useState<DocumentsProgress | null>(null)
+  const [analysis, setAnalysis] = useState<FindingsProgress | null>(null)
   const [pages, setPages] = useState<DocumentListItem[]>([])
   const [crawlError, setCrawlError] = useState<string | null>(null)
   const [extractError, setExtractError] = useState<string | null>(null)
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [pagesError, setPagesError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [pagesLoading, setPagesLoading] = useState(true)
@@ -30,6 +37,9 @@ export function useAgentWatch(canRead: boolean) {
   const inFlight = useRef(false)
   const backoffMs = useRef(0)
   const backoffUntil = useRef(0)
+  const crawlSnapshot = useRef<JobsProgress | null>(null)
+  const followUp = useRef(false)
+  const handoffUntil = useRef(0)
 
   const markCapacity = useCallback(() => {
     const next = backoffMs.current
@@ -49,24 +59,38 @@ export function useAgentWatch(canRead: boolean) {
       if (!canRead) {
         setCrawl(null)
         setExtract(null)
+        setAnalysis(null)
         setCrawlError(null)
         setExtractError(null)
+        setAnalysisError(null)
+        crawlSnapshot.current = null
+        followUp.current = false
+        handoffUntil.current = 0
         setLoading(false)
         return
       }
       if (!quiet) setLoading(true)
-      const [crawlResult, extractResult] = await Promise.allSettled([
-        jobsApi.progress(),
-        documentsApi.progress(),
-      ])
+      const [crawlResult, extractResult, analysisResult] =
+        await Promise.allSettled([
+          jobsApi.progress(),
+          documentsApi.progress(),
+          findingsApi.progress(),
+        ])
 
       const capacity =
         (crawlResult.status === 'rejected' &&
           isApiCapacityError(crawlResult.reason)) ||
         (extractResult.status === 'rejected' &&
-          isApiCapacityError(extractResult.reason))
+          isApiCapacityError(extractResult.reason)) ||
+        (analysisResult.status === 'rejected' &&
+          isApiCapacityError(analysisResult.reason))
 
       if (crawlResult.status === 'fulfilled') {
+        if (crawlBecameTerminal(crawlSnapshot.current, crawlResult.value)) {
+          followUp.current = true
+          handoffUntil.current = Date.now() + HANDOFF_MS
+        }
+        crawlSnapshot.current = crawlResult.value
         setCrawl(crawlResult.value)
         setCrawlError(null)
       } else {
@@ -86,10 +110,21 @@ export function useAgentWatch(canRead: boolean) {
         if (!quiet) setExtract(null)
       }
 
+      if (analysisResult.status === 'fulfilled') {
+        setAnalysis(analysisResult.value)
+        setAnalysisError(null)
+      } else {
+        setAnalysisError(
+          mapApiError(analysisResult.reason, 'No se pudo seguir el análisis.'),
+        )
+        if (!quiet) setAnalysis(null)
+      }
+
       if (capacity) markCapacity()
       else if (
         crawlResult.status === 'fulfilled' &&
-        extractResult.status === 'fulfilled'
+        extractResult.status === 'fulfilled' &&
+        analysisResult.status === 'fulfilled'
       ) {
         clearCapacity()
       }
@@ -141,19 +176,30 @@ export function useAgentWatch(canRead: boolean) {
   }, [loadProgress, loadPages])
 
   const journeys = useMemo(
-    () => mergeJourneys(crawl, extract),
-    [crawl, extract],
+    () => mergeJourneys(crawl, extract, analysis),
+    [crawl, extract, analysis],
   )
   const live = journeys.some(
     (row) =>
       stepTone('crawl', row.crawl?.status) === 'live' ||
-      stepTone('extract', row.extract?.status) === 'live',
+      stepTone('extract', row.extract?.status) === 'live' ||
+      stepTone('analysis', row.analysis?.status) === 'live',
   )
+  const liveRef = useRef(live)
+  liveRef.current = live
 
   useEffect(() => {
     if (!canRead) return
     let cancelled = false
     let timer = 0
+
+    const nextDelay = () => {
+      if (followUp.current) return POLL_FOLLOWUP_MS
+      const retryWait = Math.max(0, backoffUntil.current - Date.now())
+      if (retryWait > 0) return retryWait
+      const hot = liveRef.current || Date.now() < handoffUntil.current
+      return hot ? POLL_LIVE_MS : POLL_IDLE_MS
+    }
 
     const schedule = (ms: number) => {
       window.clearTimeout(timer)
@@ -164,6 +210,7 @@ export function useAgentWatch(canRead: boolean) {
 
     const tick = async () => {
       if (cancelled) return
+      followUp.current = false
       if (document.hidden) {
         schedule(POLL_IDLE_MS)
         return
@@ -182,16 +229,11 @@ export function useAgentWatch(canRead: boolean) {
         await loadProgress(true)
       } finally {
         inFlight.current = false
-        if (!cancelled) {
-          const retryWait = Math.max(0, backoffUntil.current - Date.now())
-          schedule(
-            retryWait > 0 ? retryWait : live ? POLL_LIVE_MS : POLL_IDLE_MS,
-          )
-        }
+        if (!cancelled) schedule(nextDelay())
       }
     }
 
-    schedule(live ? POLL_LIVE_MS : POLL_IDLE_MS)
+    schedule(nextDelay())
     return () => {
       cancelled = true
       window.clearTimeout(timer)
@@ -219,19 +261,25 @@ export function useAgentWatch(canRead: boolean) {
   const extractCount = journeys.filter(
     (row) => stepTone('extract', row.extract?.status) !== 'wait',
   ).length
+  const analysisCount = journeys.filter(
+    (row) => stepTone('analysis', row.analysis?.status) === 'done',
+  ).length
 
   return {
     crawl,
     extract,
+    analysis,
     journeys,
     pagesBySource,
     pageCount: pages.length,
-    date: crawl?.date || extract?.date || '',
+    date: crawl?.date || extract?.date || analysis?.date || '',
     crawledCount,
     extractCount,
+    analysisCount,
     live,
     crawlError,
     extractError,
+    analysisError,
     pagesError,
     loading,
     pagesLoading,

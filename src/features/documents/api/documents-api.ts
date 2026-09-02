@@ -17,6 +17,7 @@ const STATUSES: DocumentProcessingStatus[] = [
   'HASHED',
   'DEDUPED',
   'READY_FOR_AI',
+  'CLASSIFIED',
   'FAILED',
   'DISCARDED',
 ]

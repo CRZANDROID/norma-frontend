@@ -12,7 +12,7 @@ import { Modal } from '@/shared/ui/modal'
 import { Skeleton } from '@/shared/ui/skeleton'
 
 function pageBadge(status: DocumentListItem['processingStatus']) {
-  if (status === 'READY_FOR_AI') return 'active' as const
+  if (status === 'CLASSIFIED' || status === 'READY_FOR_AI') return 'active' as const
   if (status === 'FAILED') return 'danger' as const
   if (status === 'DEDUPED') return 'inactive' as const
   return 'signal' as const

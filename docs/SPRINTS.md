@@ -14,7 +14,7 @@ El piloto son **8 iteraciones semanales** (S1–S8), no sprints de 4 semanas.
 | 3 | Clients / Sources / Users contra API real | Hecho |
 | 4 | Errores/estados; contratos estables | Hecho |
 | 5–6 | Panel de rastreo + registro documental | Hecho |
-| 7 | Findings según APIs nuevas | Pendiente |
+| 7 | Findings / semáforo operativo en Alertas | Hecho |
 | 8 | Inbox de hallazgos | Pendiente (#4) |
 
 ## Sprint 3 — criterio UI
@@ -47,3 +47,12 @@ Listado mínimo en el panel de rastreo del dashboard (`JobsPanel`). No es un inb
 - [x] Copy de consultor: registro documental; no pintar HTML crudo
 
 Contrato: backend `docs/FRONTEND-TRACKING.md`.
+
+## Sprint 7 — semáforo de hallazgos (UI)
+
+Issue de front: no hay ticket S7 (el `#4` es inbox S8). Contrato: backend `docs/FRONTEND-FINDINGS.md`.
+
+- [x] `/alertas` lista `GET /findings` (color + título + cliente + fuente)
+- [x] Detalle `GET /findings/:id` con justificación; sin ACK/correo
+- [x] `CLASSIFIED` en el registro documental
+- [ ] Inbox / cambio de status (S8)

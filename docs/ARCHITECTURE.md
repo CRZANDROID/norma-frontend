@@ -44,7 +44,7 @@ src/
     jobs/
     documents/              # registro documental (S6; listado en panel de rastreo)
     ai/                     # asistente de catálogo
-    findings/               # futuro inbox / alertas
+    findings/               # alertas / semáforo (inbox S8)
     <feature>/
       api/                  # llamadas Axios de ESTE dominio
       types/                # contratos de ESTE dominio
@@ -93,7 +93,7 @@ src/
 | `users` | Admin usuarios | 3 |
 | `dashboard` / `jobs` / `documents` | Panel de rastreo + registro documental | 5–6 |
 | `ai` | Asistente de catálogo | bloque OpenAI |
-| `findings` | Inbox / alertas | 7–8 |
+| `findings` | Alertas / semáforo operativo (inbox en S8) | 7–8 |
 
 ### Code-splitting (desde ya en el router)
 

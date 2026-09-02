@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { aiApi } from '@/features/ai/api/ai-api'
 import { RevealedAnswer } from '@/features/ai/components/catalog-answer'
 import type { AiAskResult, AiStatus } from '@/features/ai/types/ai'
+import { NormaThinkingOrb } from '@/shared/ui/thinking-orb'
 import { duration, easeOut } from '@/shared/lib/motion'
 import { mapApiError } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/utils'
@@ -76,23 +77,13 @@ function ThinkingDots() {
   }, [])
 
   return (
-    <div className="space-y-2" aria-label="Consultando el catálogo">
+    <div className="flex items-center gap-2.5" aria-label="Consultando el catálogo">
+      <NormaThinkingOrb
+        state="searching"
+        size={20}
+        aria-hidden
+      />
       <p className="text-[13px] text-norma-muted">{THINKING[phrase]}</p>
-      <span className="inline-flex items-center gap-1.5">
-        {[0, 1, 2].map((i) => (
-          <motion.span
-            key={i}
-            className="size-1.5 rounded-full bg-norma-accent"
-            animate={{ opacity: [0.25, 1, 0.25], y: [0, -3, 0] }}
-            transition={{
-              duration: 0.9,
-              repeat: Infinity,
-              delay: i * 0.12,
-              ease: 'easeInOut',
-            }}
-          />
-        ))}
-      </span>
     </div>
   )
 }

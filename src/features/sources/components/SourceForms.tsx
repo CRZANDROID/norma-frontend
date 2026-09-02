@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
@@ -437,7 +437,7 @@ export function SourceDataForm({
             {source.status === 'ACTIVE' ? (
               <SourceCrawlButton
                 sourceId={source.id}
-                sourceCode={source.code}
+                sourceName={source.name}
                 disabled={busyStatus}
               />
             ) : null}

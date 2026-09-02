@@ -33,7 +33,10 @@ export function ErrorState({
   onRetry?: () => void
 }) {
   return (
-    <div className="rounded-3xl border border-norma-red/25 bg-norma-red/5 p-6">
+    <div
+      role="alert"
+      className="rounded-3xl border border-norma-red/25 bg-norma-red/5 p-6"
+    >
       <p className="text-sm text-norma-red">{message}</p>
       {onRetry ? (
         <Button variant="outline" className="mt-4" onClick={onRetry}>

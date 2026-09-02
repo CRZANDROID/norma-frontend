@@ -3,7 +3,7 @@ import type { DocumentListItem } from '@/features/documents/types/document'
 import { DOCUMENT_STATUS_LABELS } from '@/features/documents/types/document'
 
 function statusVariant(status: DocumentListItem['processingStatus']) {
-  if (status === 'READY_FOR_AI') return 'active' as const
+  if (status === 'CLASSIFIED' || status === 'READY_FOR_AI') return 'active' as const
   if (status === 'FAILED') return 'accent' as const
   if (status === 'DEDUPED') return 'inactive' as const
   return 'signal' as const
@@ -42,7 +42,7 @@ export function DocumentsRegistry({
               className="flex flex-wrap items-baseline justify-between gap-2"
             >
               <div className="min-w-0">
-                <p className="font-mono text-xs">{doc.sourceCode || '—'}</p>
+                <p className="truncate text-sm">{doc.sourceName || 'Fuente'}</p>
                 {doc.processingStatus === 'DEDUPED' && doc.canonicalDocumentId ? (
                   <p className="text-[11px] text-norma-subtle">
                     Duplicado de {shortId(doc.canonicalDocumentId)}
