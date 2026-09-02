@@ -1,6 +1,7 @@
 import type {
   FindingDetail,
   FindingListItem,
+  FindingsProgress,
   ListFindingsParams,
 } from '@/features/findings/types/finding'
 
@@ -134,7 +135,58 @@ function toListItem(row: FindingDetail): FindingListItem {
   }
 }
 
+const emptyCounts = { red: 0, orange: 0, yellow: 0, green: 0 }
+
 export const findingsMockApi = {
+  async progress(): Promise<FindingsProgress> {
+    await delay()
+    return {
+      date: '2026-09-02',
+      sources: [
+        {
+          sourceId: 'seed-src-dof',
+          sourceName: 'Diario Oficial de la Federación',
+          status: 'classified',
+          label: 'Analizada',
+          counts: { red: 0, orange: 0, yellow: 0, green: 75 },
+          note: null,
+        },
+        {
+          sourceId: 'seed-src-diputados-gaceta',
+          sourceName: 'Gaceta Parlamentaria - Cámara de Diputados',
+          status: 'classified',
+          label: 'Analizada',
+          counts: { red: 0, orange: 0, yellow: 0, green: 5 },
+          note: null,
+        },
+        {
+          sourceId: 'cmsyzf8yw000l2rgk96zm07vf',
+          sourceName: 'Congreso de Jalisco',
+          status: 'skipped',
+          label: 'Sin análisis',
+          counts: emptyCounts,
+          note: 'La fuente no tiene clientes vinculados; no hay hallazgos.',
+        },
+        {
+          sourceId: 'cmsyzf83c00092rgksxb948h2',
+          sourceName: 'Congreso de Baja California Sur',
+          status: 'classifying',
+          label: 'Analizando',
+          counts: { red: 0, orange: 1, yellow: 0, green: 4 },
+          note: 'Hay hallazgos. Sigue el análisis de otras páginas.',
+        },
+        {
+          sourceId: 'cmsyzf80l00082rgk20mun617',
+          sourceName: 'Congreso de Baja California',
+          status: 'pending',
+          label: 'Sin análisis aún',
+          counts: emptyCounts,
+          note: null,
+        },
+      ],
+    }
+  },
+
   async list(params?: ListFindingsParams): Promise<FindingListItem[]> {
     await delay()
     let next = rows.map(toListItem)

@@ -8,11 +8,13 @@ export function ImpactLamp({
   size = 'md',
   showLabel = false,
   lit = true,
+  glow = false,
 }: {
   impact: FindingImpact
   size?: 'sm' | 'md' | 'lg'
   showLabel?: boolean
   lit?: boolean
+  glow?: boolean
 }) {
   const lamp = IMPACT_LAMP[impact]
   const well = size === 'sm' ? 'size-7' : size === 'lg' ? 'size-12' : 'size-10'
@@ -22,10 +24,10 @@ export function ImpactLamp({
     <span className="inline-flex items-center gap-2">
       <span
         className={cn(
-          'grid place-items-center rounded-full bg-black/30 ring-2',
+          'grid place-items-center rounded-full bg-norma-navy/8 ring-2',
           well,
           lamp.ring,
-          lit && lamp.glow,
+          glow && lit && lamp.glow,
         )}
         aria-hidden
       >

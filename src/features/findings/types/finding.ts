@@ -14,11 +14,19 @@ export const FINDING_IMPACTS: FindingImpact[] = [
 ]
 
 export const FINDING_IMPACT_LABELS: Record<FindingImpact, string> = {
-  GREEN: 'Verde',
-  YELLOW: 'Amarillo',
-  ORANGE: 'Naranja',
-  RED: 'Rojo',
+  GREEN: 'Informativo',
+  YELLOW: 'Medio',
+  ORANGE: 'Alto',
+  RED: 'Crítico',
 }
+
+/** Orden del semáforo en filtros (más grave primero). */
+export const FINDING_IMPACT_FILTER_ORDER: FindingImpact[] = [
+  'RED',
+  'ORANGE',
+  'YELLOW',
+  'GREEN',
+]
 
 export const FINDING_IMPACT_HINTS: Record<FindingImpact, string> = {
   GREEN: 'Contexto / poco impacto',
@@ -75,4 +83,25 @@ export type ListFindingsParams = {
   impact?: FindingImpact
   status?: FindingStatus
   limit?: number
+}
+
+export type FindingImpactCounts = {
+  red: number
+  orange: number
+  yellow: number
+  green: number
+}
+
+export type FindingProgressSource = {
+  sourceId: string
+  sourceName: string
+  status: string
+  label: string
+  note: string | null
+  counts: FindingImpactCounts
+}
+
+export type FindingsProgress = {
+  date: string
+  sources: FindingProgressSource[]
 }

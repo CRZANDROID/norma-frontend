@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom'
+import { ChevronRight, Sparkles } from 'lucide-react'
 import type { FindingListItem } from '@/features/findings/types/finding'
 import { FINDING_IMPACT_LABELS } from '@/features/findings/types/finding'
+import { formatFindingWhen } from '@/features/findings/lib/format'
 import { IMPACT_LAMP } from '@/features/findings/lib/impact'
 import { cn } from '@/shared/lib/utils'
 import { Skeleton } from '@/shared/ui/skeleton'
 
 const rowFocus =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45 focus-visible:ring-inset'
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45 focus-visible:ring-offset-2 focus-visible:ring-offset-norma-surface'
 
 export function FindingListPanel({
   items,
@@ -20,75 +22,110 @@ export function FindingListPanel({
   itemTo: (id: string) => string
 }) {
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col bg-norma-surface">
-      <div className="shrink-0 border-b border-norma-border px-3 py-2.5">
-        <h2 className="font-display text-sm font-semibold tracking-tight">
-          Hallazgos
-        </h2>
-        <p className="mt-0.5 font-mono text-xs tabular-nums text-norma-subtle">
-          {loading ? 'Cargando…' : items.length}
+    <div
+      className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5"
+      aria-label="Hallazgos"
+      aria-busy={loading}
+    >
+      {loading ? (
+        <div
+          className="space-y-2.5"
+          aria-busy="true"
+          aria-label="Cargando hallazgos"
+        >
+          <Skeleton className="h-28 w-full rounded-2xl" />
+          <Skeleton className="h-28 w-full rounded-2xl" />
+          <Skeleton className="h-28 w-full rounded-2xl" />
+        </div>
+      ) : items.length === 0 ? (
+        <p className="text-sm leading-relaxed text-norma-subtle">
+          Nada con ese impacto en esta ronda.
         </p>
-      </div>
-      <div
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
-        aria-label="Hallazgos"
-        aria-busy={loading}
-      >
-        {loading ? (
-          <div
-            className="space-y-2 p-3"
-            aria-busy="true"
-            aria-label="Cargando hallazgos"
-          >
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-          </div>
-        ) : items.length === 0 ? (
-          <p className="p-4 text-sm text-norma-muted">
-            No hay hallazgos con ese filtro.
-          </p>
-        ) : (
-          <ul>
-            {items.map((item) => {
-              const active = item.id === selectedId
-              const lamp = IMPACT_LAMP[item.impact]
-              return (
-                <li key={item.id} className="[content-visibility:auto]">
-                  <Link
-                    to={itemTo(item.id)}
-                    aria-current={active ? 'page' : undefined}
+      ) : (
+        <ul className="space-y-2.5">
+          {items.map((item) => {
+            const active = item.id === selectedId
+            const lamp = IMPACT_LAMP[item.impact]
+            return (
+              <li key={item.id} className="[content-visibility:auto]">
+                <Link
+                  to={itemTo(item.id)}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'relative flex w-full items-stretch gap-2 overflow-hidden rounded-2xl border-2 py-3.5 pr-3 pl-4 text-left transition-[background-color,border-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
+                    rowFocus,
+                    active
+                      ? 'border-norma-navy/30 bg-norma-raised'
+                      : 'border-norma-border bg-norma-raised/80 hover:border-norma-navy/25 hover:bg-norma-raised',
+                  )}
+                >
+                  <span
                     className={cn(
-                      'flex min-h-11 items-center gap-2.5 border-b border-norma-border/70 px-3 py-2 text-left transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
-                      rowFocus,
-                      active
-                        ? 'bg-norma-raised'
-                        : 'hover:bg-norma-raised/70',
+                      'absolute inset-y-0 left-0 w-1',
+                      lamp.fill,
                     )}
-                  >
-                    <span
-                      className={cn(
-                        'size-2 shrink-0 rounded-full',
-                        lamp.fill,
-                      )}
-                      aria-hidden
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium">
-                        {item.title}
-                      </span>
-                      <span className="mt-0.5 block truncate text-xs text-norma-subtle">
+                    aria-hidden
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                          lamp.badge,
+                        )}
+                      >
+                        <span
+                          className={cn('size-1.5 rounded-full', lamp.fill)}
+                          aria-hidden
+                        />
                         {FINDING_IMPACT_LABELS[item.impact]}
-                        {item.source ? ` · ${item.source.name}` : ''}
+                      </span>
+                      {item.source?.code ? (
+                        <span
+                          className="font-mono text-[10px] uppercase tracking-wide text-norma-subtle"
+                          translate="no"
+                        >
+                          {item.source.code}
+                        </span>
+                      ) : null}
+                      <span className="font-mono text-[10px] uppercase tracking-wide text-norma-subtle">
+                        {item.status}
                       </span>
                     </span>
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </div>
+                    <span className="mt-2 block font-display text-[0.95rem] font-semibold tracking-tight text-pretty">
+                      {item.title}
+                    </span>
+                    {item.justificationShort ? (
+                      <span className="mt-1.5 block line-clamp-2 text-sm leading-relaxed text-norma-muted">
+                        {item.justificationShort}
+                      </span>
+                    ) : null}
+                    <span className="mt-2 flex items-center justify-between gap-2">
+                      {item.suggestedAction ? (
+                        <span className="flex min-w-0 items-center gap-1.5 text-[12px] font-medium text-norma-accent">
+                          <Sparkles className="size-3 shrink-0" aria-hidden />
+                          <span className="truncate">{item.suggestedAction}</span>
+                        </span>
+                      ) : (
+                        <span />
+                      )}
+                      {item.createdAt ? (
+                        <span className="shrink-0 text-[12px] text-norma-subtle">
+                          {formatFindingWhen(item.createdAt)}
+                        </span>
+                      ) : null}
+                    </span>
+                  </span>
+                  <ChevronRight
+                    className="mt-1 size-4 shrink-0 text-norma-subtle"
+                    aria-hidden
+                  />
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { motion, useReducedMotion } from 'motion/react'
 import { clientsApi } from '@/features/clients/api/clients-api'
 import type { Client } from '@/features/clients/types/client'
 import { findingsApi } from '@/features/findings/api/findings-api'
@@ -14,11 +15,7 @@ import type {
   FindingListItem,
 } from '@/features/findings/types/finding'
 import { FINDING_IMPACTS } from '@/features/findings/types/finding'
-import {
-  countLabel,
-  formatFindingWhen,
-  latestCreatedAt,
-} from '@/features/findings/lib/format'
+import { countLabel } from '@/features/findings/lib/format'
 import { IMPACT_LAMP } from '@/features/findings/lib/impact'
 import { mapApiError } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/utils'
@@ -28,6 +25,30 @@ import { Select } from '@/shared/ui/select'
 import { Skeleton } from '@/shared/ui/skeleton'
 
 const FILTER_ALL_SOURCES = '__all__'
+
+const selectOnNavy =
+  'border-white/20 bg-white/8 text-white shadow-none hover:bg-white/14 hover:text-white focus-visible:border-norma-accent-soft focus-visible:ring-white/20 data-[state=open]:border-norma-accent-soft data-[state=open]:bg-white/12 data-[state=open]:ring-white/15 [&[data-placeholder]]:text-white/45 [&_svg]:text-white/70'
+
+function PulseDot({ live }: { live: boolean }) {
+  const reduceMotion = useReducedMotion()
+  return (
+    <span className="relative inline-flex size-2.5" aria-hidden>
+      {live && !reduceMotion ? (
+        <motion.span
+          className="absolute inset-0 rounded-full bg-norma-signal"
+          animate={{ opacity: [0.2, 0.55, 0.2], scale: [1, 1.9, 1] }}
+          transition={{ duration: 2.1, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      ) : null}
+      <span
+        className={cn(
+          'relative size-2.5 rounded-full',
+          live ? 'bg-norma-signal' : 'bg-white/45',
+        )}
+      />
+    </span>
+  )
+}
 
 function asImpactParam(value: string | null): FindingImpact | null {
   if (!value) return null
@@ -49,6 +70,7 @@ export function FindingsPage() {
   const [sources, setSources] = useState<Source[]>([])
   const [clientId, setClientId] = useState(clientFromUrl)
   const [sourceId, setSourceId] = useState(sourceFromUrl)
+  const [profileName, setProfileName] = useState<string | null>(null)
   const [items, setItems] = useState<FindingListItem[]>([])
   const [detail, setDetail] = useState<FindingDetail | null>(null)
   const [loadingClients, setLoadingClients] = useState(true)
@@ -72,11 +94,8 @@ export function FindingsPage() {
     return items.filter((row) => row.impact === impactFilter)
   }, [items, impactFilter])
 
-  const redCount = useMemo(
-    () => items.filter((row) => row.impact === 'RED').length,
-    [items],
-  )
-  const lastClassified = useMemo(() => latestCreatedAt(items), [items])
+  const selectedClient = clients.find((row) => row.id === clientId)
+  const selectedName = selectedClient?.name ?? 'cliente'
 
   const patchSearch = useCallback(
     (patch: Record<string, string | null>) => {
@@ -139,6 +158,7 @@ export function FindingsPage() {
       setSourceId('')
       setLoadingSources(false)
       setSourcesError(null)
+      setProfileName(null)
       return
     }
     let cancelled = false
@@ -164,6 +184,18 @@ export function FindingsPage() {
       })
       .finally(() => {
         if (!cancelled) setLoadingSources(false)
+      })
+    void clientsApi
+      .get(clientId)
+      .then((detailRow) => {
+        if (cancelled) return
+        const profile =
+          detailRow.profiles.find((row) => row.status === 'ACTIVE') ??
+          detailRow.profiles[0]
+        setProfileName(profile?.name ?? null)
+      })
+      .catch(() => {
+        if (!cancelled) setProfileName(null)
       })
     return () => {
       cancelled = true
@@ -249,6 +281,15 @@ export function FindingsPage() {
     }
   }, [findingId])
 
+  useEffect(() => {
+    if (loadingList) return
+    if (visibleItems.length === 0) return
+    if (findingId && visibleItems.some((row) => row.id === findingId)) return
+    const first = visibleItems[0]
+    if (!first) return
+    navigate(`/alertas/${first.id}${listQueryString}`, { replace: true })
+  }, [findingId, listQueryString, loadingList, navigate, visibleItems])
+
   function onClientChange(id: string) {
     setClientId(id)
     setSourceId('')
@@ -287,14 +328,26 @@ export function FindingsPage() {
   const emptyImpact =
     !loadingList && items.length > 0 && visibleItems.length === 0
   const dossierWash = detail ? IMPACT_LAMP[detail.impact].wash : null
-  const dossierBar = detail ? IMPACT_LAMP[detail.impact].fill : null
+  const shiftLabel = loadingList
+    ? 'Leyendo'
+    : items.length > 0
+      ? 'En turno'
+      : 'En mesa'
 
   return (
-    <div>
+    <div className="flex flex-col gap-4">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-norma-accent">
+          Sala de agentes
+        </p>
+        <h1 className="mt-1 font-display text-[2rem] font-semibold tracking-tight text-balance md:text-[2.35rem]">
+          Clasificación
+        </h1>
+      </div>
 
       {loadingClients ? (
         <div aria-busy="true" aria-label="Cargando clientes">
-          <Skeleton className="h-[70vh] w-full rounded-3xl" />
+          <Skeleton className="h-[min(calc(100dvh-13rem),52rem)] min-h-[28rem] w-full rounded-3xl" />
         </div>
       ) : clientsError && clients.length === 0 ? (
         <ErrorState
@@ -306,199 +359,191 @@ export function FindingsPage() {
           title="No hay clientes activos"
           description="Cuando exista un cliente con fuentes en rastreo, las clasificaciones aparecerán aquí."
         />
+      ) : listError ? (
+        <ErrorState
+          message={listError}
+          onRetry={() => setListEpoch((n) => n + 1)}
+        />
       ) : (
-        <div className="flex h-[calc(100dvh-8.5rem)] max-h-[calc(100dvh-8.5rem)] flex-col overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface">
-          <header className="shrink-0 border-b-2 border-norma-border px-4 py-3 md:px-5">
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="mr-auto min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-norma-accent">
-                  Alertas
-                </p>
-                <p className="font-display text-lg font-semibold tracking-tight">
-                  Semáforo
-                </p>
-              </div>
-              <div className="grid min-w-0 flex-1 gap-3 sm:max-w-xl sm:grid-cols-2">
-                <div className="space-y-1">
-                  <Label htmlFor="finding-client">Cliente</Label>
-                  <Select
-                    id="finding-client"
-                    name="cliente"
-                    value={clientId}
-                    onValueChange={onClientChange}
-                    options={clientOptions}
-                  />
+        <div className="flex h-[min(calc(100dvh-13rem),52rem)] min-h-[28rem] flex-col overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface shadow-[0_22px_48px_-24px_rgba(13,27,42,0.4)]">
+          <header className="shrink-0 overflow-hidden bg-norma-navy text-white">
+            <div className="bg-[radial-gradient(ellipse_80%_60%_at_12%_-20%,rgba(0,190,208,0.28),transparent_55%),radial-gradient(ellipse_at_90%_0%,rgba(105,88,248,0.32),transparent_50%)] px-5 py-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-norma-accent-soft">
+                      Agente de clasificación
+                    </p>
+                    <PulseDot live={!loadingList && items.length > 0} />
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/80">
+                      {shiftLabel}
+                    </span>
+                  </div>
+                  <p className="mt-2 font-display text-lg font-semibold tracking-tight">
+                    Hallazgos para {selectedName}
+                  </p>
+                  <p
+                    className="mt-1 text-[11px] text-white/45"
+                    aria-live="polite"
+                  >
+                    {loadingList
+                      ? 'Leyendo la clasificación de esta ronda…'
+                      : [
+                          countLabel(
+                            items.length,
+                            'documento clasificado',
+                            'documentos clasificados',
+                          ),
+                          profileName ? `perfil: ${profileName}` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                  </p>
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="finding-source">Fuente</Label>
-                  <Select
-                    id="finding-source"
-                    name="fuente"
-                    value={sourceId || FILTER_ALL_SOURCES}
-                    onValueChange={onSourceChange}
-                    options={sourceOptions}
-                    disabled={loadingSources}
-                  />
+                <div className="grid min-w-0 w-full gap-3 sm:max-w-xl sm:grid-cols-2 lg:w-[28rem]">
+                  <div className="space-y-1">
+                    <Label htmlFor="finding-client" className="text-white/50">
+                      Cliente
+                    </Label>
+                    <Select
+                      id="finding-client"
+                      name="cliente"
+                      value={clientId}
+                      onValueChange={onClientChange}
+                      options={clientOptions}
+                      className={selectOnNavy}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="finding-source" className="text-white/50">
+                      Fuente
+                    </Label>
+                    <Select
+                      id="finding-source"
+                      name="fuente"
+                      value={sourceId || FILTER_ALL_SOURCES}
+                      onValueChange={onSourceChange}
+                      options={sourceOptions}
+                      disabled={loadingSources}
+                      className={selectOnNavy}
+                    />
+                  </div>
                 </div>
               </div>
-              <p
-                className="w-full font-mono text-xs leading-relaxed text-norma-muted lg:w-auto lg:max-w-xs lg:text-right"
-                aria-live="polite"
-              >
-                {loadingList
-                  ? 'Cargando hallazgos…'
-                  : [
-                      countLabel(items.length, 'abierto', 'abiertos'),
-                      countLabel(redCount, 'alerta', 'alertas'),
-                      lastClassified
-                        ? formatFindingWhen(lastClassified)
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-              </p>
+              {loadingSources ? (
+                <p className="mt-2 text-[11px] text-white/40">
+                  Cargando fuentes…
+                </p>
+              ) : sourcesError ? (
+                <p className="mt-2 text-[11px] text-norma-coral">
+                  {sourcesError}
+                </p>
+              ) : sources.length === 0 ? (
+                <p className="mt-2 text-[11px] text-white/40">
+                  Este cliente no tiene fuentes en turno.
+                </p>
+              ) : null}
             </div>
-            {loadingSources ? (
-              <p className="mt-2 text-xs text-norma-subtle">Cargando fuentes…</p>
-            ) : sourcesError ? (
-              <p className="mt-2 text-xs text-norma-red">{sourcesError}</p>
-            ) : sources.length === 0 ? (
-              <p className="mt-2 text-xs text-norma-subtle">
-                Este cliente no tiene fuentes activas.
-              </p>
-            ) : null}
           </header>
 
-          <p className="sr-only" aria-live="polite">
-            {loadingList
-              ? 'Cargando hallazgos…'
-              : `${visibleItems.length} hallazgos visibles`}
-          </p>
-
-          {listError ? (
-            <div className="min-h-0 flex-1 overflow-auto p-5">
-              <ErrorState
-                message={listError}
-                onRetry={() => setListEpoch((n) => n + 1)}
+          <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,42%)_minmax(0,1fr)] lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,1fr)] lg:grid-rows-none">
+            <section className="flex min-h-0 min-w-0 flex-col border-b-2 border-norma-border lg:border-r-2 lg:border-b-0">
+            <div className="shrink-0 border-b border-norma-border px-4 py-2.5 md:px-5">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-norma-subtle">
+                Impacto
+              </p>
+              <ImpactFilter
+                items={items}
+                selected={impactFilter}
+                loading={loadingList}
+                onSelect={(impact) =>
+                  patchSearch({ impacto: impact ?? null })
+                }
               />
             </div>
-          ) : (
-            <>
-              <div className="shrink-0 bg-norma-navy text-white">
-                <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2">
-                  <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-norma-accent-soft">
-                    Distribución
-                  </h2>
-                  <p className="hidden font-mono text-[11px] text-white/55 sm:block">
-                    Elige un color para filtrar la lista
-                  </p>
-                </div>
-                <ImpactFilter
-                  items={items}
-                  selected={impactFilter}
-                  onSelect={(impact) =>
-                    patchSearch({ impacto: impact ?? null })
-                  }
-                />
-              </div>
+            <FindingListPanel
+              items={visibleItems}
+              selectedId={findingId}
+              loading={loadingList}
+              itemTo={itemTo}
+            />
+          </section>
 
-              <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,38%)_minmax(0,1fr)] lg:grid-cols-[minmax(240px,20rem)_minmax(0,1fr)] lg:grid-rows-none">
-                <FindingListPanel
-                  items={visibleItems}
-                  selectedId={findingId}
-                  loading={loadingList}
-                  itemTo={itemTo}
-                />
-
-                <section
-                  aria-labelledby="finding-classification-heading"
-                  className={cn(
-                    'relative min-h-0 overflow-y-auto overscroll-contain border-t-2 border-norma-border p-5 md:p-8 lg:border-l-2 lg:border-t-0',
-                    dossierWash ?? 'bg-norma-bg',
-                  )}
-                >
-                  {dossierBar ? (
-                    <span
-                      className={cn(
-                        'absolute inset-y-0 left-0 hidden w-1 lg:block',
-                        dossierBar,
-                      )}
-                      aria-hidden
-                    />
-                  ) : null}
-                  <h2
-                    id="finding-classification-heading"
-                    className="mb-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-norma-subtle"
-                  >
-                    Clasificación
-                  </h2>
-                {loadingList && !findingId ? (
-                  <div
-                    className="space-y-4"
-                    aria-busy="true"
-                    aria-label="Cargando clasificación"
-                  >
-                    <Skeleton className="h-8 w-40" />
-                    <Skeleton className="h-10 w-3/4" />
-                    <Skeleton className="h-32 w-full" />
-                  </div>
-                ) : emptyList ? (
-                  <EmptyState
-                    title="Aún no hay clasificaciones"
-                    description={
-                      sourceId
-                        ? 'NORMA no ha clasificado normas abiertas en esa fuente.'
-                        : 'Cuando el rastreo clasifique documentos de este cliente, aparecerán aquí.'
-                    }
-                  />
-                ) : emptyImpact ? (
-                  <EmptyState
-                    title="Nada con ese impacto"
-                    description="No hay hallazgos abiertos de ese color con el cliente y la fuente actuales."
-                  />
-                ) : !findingId ? (
-                  <p className="max-w-sm text-sm leading-relaxed text-norma-muted">
-                    Elige un hallazgo. La clasificación de NORMA se lee aquí,
-                    junto al documento original.
-                  </p>
-                ) : loadingDetail ? (
-                  <div
-                    className="space-y-4"
-                    aria-busy="true"
-                    aria-label="Cargando clasificación"
-                  >
-                    <Skeleton className="h-8 w-40" />
-                    <Skeleton className="h-10 w-3/4" />
-                    <Skeleton className="h-32 w-full" />
-                  </div>
-                ) : detailError && !detail ? (
-                  <ErrorState
-                    message={detailError}
-                    onRetry={() => {
-                      setDetailError(null)
-                      setLoadingDetail(true)
-                      void findingsApi
-                        .get(findingId)
-                        .then(setDetail)
-                        .catch((err) => {
-                          setDetail(null)
-                          setDetailError(
-                            mapApiError(
-                              err,
-                              'No se pudo cargar el hallazgo. Reintenta.',
-                            ),
-                          )
-                        })
-                        .finally(() => setLoadingDetail(false))
-                    }}
-                  />
-                ) : detail ? (
-                  <FindingDetailCard finding={detail} />
-                ) : null}
-              </section>
+          <section
+            aria-labelledby="finding-classification-heading"
+            className={cn(
+              'min-h-0 overflow-y-auto overscroll-contain p-5 md:p-7',
+              dossierWash ?? 'bg-norma-bg/60',
+            )}
+          >
+            <h2 id="finding-classification-heading" className="sr-only">
+              Clasificación
+            </h2>
+            {loadingList && !findingId ? (
+              <div
+                className="space-y-4"
+                aria-busy="true"
+                aria-label="Cargando clasificación"
+              >
+                <Skeleton className="h-8 w-40" />
+                <Skeleton className="h-10 w-3/4" />
+                <Skeleton className="h-32 w-full" />
               </div>
-            </>
-          )}
+            ) : emptyList ? (
+              <EmptyState
+                title="Aún no hay clasificaciones"
+                description={
+                  sourceId
+                    ? 'El agente no ha clasificado normas abiertas en esa fuente.'
+                    : 'Cuando el agente clasifique documentos de este cliente, aparecerán aquí.'
+                }
+              />
+            ) : emptyImpact ? (
+              <EmptyState
+                title="Nada con ese impacto"
+                description="No hay hallazgos abiertos de ese color con el cliente y la fuente actuales."
+              />
+            ) : !findingId ? (
+              <p className="max-w-sm text-sm leading-relaxed text-norma-muted">
+                Elige un hallazgo. Aquí se lee lo que el agente clasificó y la
+                acción que sugiere, junto al documento original.
+              </p>
+            ) : loadingDetail ? (
+              <div
+                className="space-y-4"
+                aria-busy="true"
+                aria-label="Cargando clasificación"
+              >
+                <Skeleton className="h-8 w-40" />
+                <Skeleton className="h-10 w-3/4" />
+                <Skeleton className="h-32 w-full" />
+              </div>
+            ) : detailError && !detail ? (
+              <ErrorState
+                message={detailError}
+                onRetry={() => {
+                  setDetailError(null)
+                  setLoadingDetail(true)
+                  void findingsApi
+                    .get(findingId)
+                    .then(setDetail)
+                    .catch((err) => {
+                      setDetail(null)
+                      setDetailError(
+                        mapApiError(
+                          err,
+                          'No se pudo cargar el hallazgo. Reintenta.',
+                        ),
+                      )
+                    })
+                    .finally(() => setLoadingDetail(false))
+                }}
+              />
+            ) : detail ? (
+              <FindingDetailCard finding={detail} />
+            ) : null}
+          </section>
+          </div>
         </div>
       )}
     </div>

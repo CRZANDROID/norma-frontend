@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import {
-  Bell,
   Building2,
-  LayoutDashboard,
   LogOut,
   Menu,
+  Radar,
   Radio,
+  ScanSearch,
   Users,
   X,
 } from 'lucide-react'
@@ -24,8 +24,8 @@ import { Button } from '@/shared/ui/button'
 import { NormaMark } from '@/shared/ui/norma-mark'
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/alertas', label: 'Alertas', icon: Bell },
+  { to: '/dashboard', label: 'Agentes', icon: Radar },
+  { to: '/alertas', label: 'Clasificación', icon: ScanSearch },
   { to: '/clientes', label: 'Clientes', icon: Building2 },
   { to: '/fuentes', label: 'Fuentes', icon: Radio },
   { to: '/usuarios', label: 'Usuarios', icon: Users },

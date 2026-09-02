@@ -45,10 +45,6 @@ export function DashboardPage() {
           <h1 className="mt-1 font-display text-[2rem] font-semibold tracking-tight text-balance md:text-[2.35rem]">
             {firstName ? `${hello}, ${firstName}` : hello}
           </h1>
-          <p className="mt-1.5 max-w-xl text-pretty text-sm leading-relaxed text-norma-muted">
-            Sigue el rastreo por fuente. Entra a cada una para ver los PDF, Word
-            y HTML extraídos. A un lado, el chat del catálogo.
-          </p>
         </div>
 
         <div className="relative flex flex-col items-stretch gap-4 overflow-hidden xl:flex-row">
@@ -71,10 +67,12 @@ export function DashboardPage() {
                 date={watch.date}
                 crawledCount={watch.crawledCount}
                 extractCount={watch.extractCount}
+                analysisCount={watch.analysisCount}
                 pageCount={watch.pageCount}
                 live={watch.live}
                 crawlError={watch.crawlError}
                 extractError={watch.extractError}
+                analysisError={watch.analysisError}
                 pagesError={watch.pagesError}
                 loading={watch.loading}
                 pagesLoading={watch.pagesLoading}

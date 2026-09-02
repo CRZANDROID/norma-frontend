@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { ChevronLeft, ChevronRight, FileSearch, Radar } from 'lucide-react'
+import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react'
+import { ChevronLeft, ChevronRight, FileSearch, Radar, Sparkles } from 'lucide-react'
 import {
   AnimatePresence,
   motion,
@@ -11,17 +11,20 @@ import {
   clipHeadline,
   formatClock,
   formatDay,
+  hasImpactCounts,
   splitPagesByKind,
   stepTone,
 } from '@/features/dashboard/lib/agent-watch'
 import { ExtractedPageModal, ExtractedPages } from '@/features/dashboard/components/ExtractedPages'
 import { documentsApi, type DocumentListItem } from '@/features/documents'
+import type { FindingImpactCounts } from '@/features/findings'
 import { duration, easeOut } from '@/shared/lib/motion'
 import { cn } from '@/shared/lib/utils'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { ErrorState } from '@/shared/ui/page'
 import { Skeleton } from '@/shared/ui/skeleton'
+import { NormaThinkingOrb } from '@/shared/ui/thinking-orb'
 
 function PulseDot({ live }: { live: boolean }) {
   const reduceMotion = useReducedMotion()
@@ -60,43 +63,96 @@ function badgeFor(tone: StepTone) {
   return 'inactive' as const
 }
 
+const IMPACT_COUNT_DOTS: {
+  key: keyof FindingImpactCounts
+  fill: string
+  label: string
+}[] = [
+  { key: 'red', fill: 'bg-norma-red', label: 'Críticos' },
+  { key: 'orange', fill: 'bg-norma-coral', label: 'Altos' },
+  { key: 'yellow', fill: 'bg-norma-amber', label: 'Medios' },
+  { key: 'green', fill: 'bg-norma-green', label: 'Informativos' },
+]
+
+function ImpactCountStrip({ counts }: { counts: FindingImpactCounts }) {
+  if (!hasImpactCounts(counts)) return null
+  return (
+    <ul className="mt-1.5 flex flex-wrap gap-x-2.5 gap-y-1" aria-label="Hallazgos del día">
+      {IMPACT_COUNT_DOTS.map((item) => {
+        const n = counts[item.key]
+        if (n === 0) return null
+        return (
+          <li
+            key={item.key}
+            className="inline-flex items-center gap-1.5 text-[11px] text-norma-muted"
+          >
+            <span className={cn('size-1.5 rounded-full', item.fill)} aria-hidden />
+            <span className="tabular-nums">{n}</span>
+            <span>{item.label}</span>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 function PhaseMeter({
   label,
   done,
   total,
   accent,
+  orb,
 }: {
   label: string
   done: number
   total: number
   accent: 'signal' | 'accent'
+  orb?: 'searching' | 'weaving' | 'solving' | 'working'
 }) {
   const reduceMotion = useReducedMotion()
   const ratio = total === 0 ? 0 : done / total
   return (
-    <div className="rounded-2xl border border-white/12 bg-white/6 px-3.5 py-3">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
-        {label}
-      </p>
-      <p className="mt-1 font-display text-lg font-semibold tabular-nums">
-        {done}
-        <span className="text-white/45"> / {total || '—'}</span>
-      </p>
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/12">
-        <motion.span
-          className={cn(
-            'block h-full w-full origin-left rounded-full',
-            accent === 'signal' ? 'bg-norma-signal' : 'bg-norma-accent-soft',
-          )}
-          initial={false}
-          animate={{ scaleX: ratio }}
-          transition={
-            reduceMotion
-              ? { duration: 0 }
-              : { duration: duration.modal, ease: easeOut }
+    <div className="flex min-h-[5.5rem] items-center gap-3 rounded-2xl border border-white/12 bg-white/6 px-3.5 py-3">
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
+          {label}
+        </p>
+        <p className="mt-1 font-display text-lg font-semibold tabular-nums">
+          {done}
+          <span className="text-white/45"> / {total || '—'}</span>
+        </p>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/12">
+          <motion.span
+            className={cn(
+              'block h-full w-full origin-left rounded-full',
+              accent === 'signal' ? 'bg-norma-signal' : 'bg-norma-accent-soft',
+            )}
+            initial={false}
+            animate={{ scaleX: ratio }}
+            transition={
+              reduceMotion
+                ? { duration: 0 }
+                : { duration: duration.modal, ease: easeOut }
+            }
+          />
+        </div>
+      </div>
+      {orb ? (
+        <NormaThinkingOrb
+          state={orb}
+          size={64}
+          className="shrink-0"
+          aria-label={
+            orb === 'searching'
+              ? 'Rastreando fuentes'
+              : orb === 'solving'
+                ? 'Extrayendo documentos'
+                : orb === 'working'
+                  ? 'Analizando hallazgos'
+                  : 'Agente en mesa'
           }
         />
-      </div>
+      ) : null}
     </div>
   )
 }
@@ -152,6 +208,7 @@ function StepRow({
   tone,
   meta,
   body,
+  aside,
   last,
 }: {
   icon: typeof Radar
@@ -160,6 +217,7 @@ function StepRow({
   tone: StepTone
   meta?: string | null
   body?: string | null
+  aside?: ReactNode
   last?: boolean
 }) {
   return (
@@ -197,6 +255,7 @@ function StepRow({
         {body ? (
           <p className="mt-1.5 text-sm leading-relaxed text-norma-muted">{body}</p>
         ) : null}
+        {aside}
       </div>
     </li>
   )
@@ -224,6 +283,7 @@ function SourceCard({
   const reduceMotion = useReducedMotion()
   const crawlTone = stepTone('crawl', journey.crawl?.status)
   const extractTone = stepTone('extract', journey.extract?.status)
+  const analysisTone = stepTone('analysis', journey.analysis?.status)
   const clock = formatClock(journey.crawl?.at ?? null)
   const headline = journey.extract?.headline
     ? clipHeadline(journey.extract.headline)
@@ -263,8 +323,24 @@ function SourceCard({
               label={journey.extract?.label ?? 'Esperando su turno'}
               tone={extractTone}
               body={
-                journey.extract?.note ??
-                (headline ? `Leyó: ${headline}` : null)
+                [
+                  journey.extract?.note,
+                  headline ? `Leyó: ${headline}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' ') || null
+              }
+            />
+            <StepRow
+              icon={Sparkles}
+              title="Análisis"
+              label={journey.analysis?.label ?? 'Sin análisis aún'}
+              tone={analysisTone}
+              body={journey.analysis?.note}
+              aside={
+                journey.analysis ? (
+                  <ImpactCountStrip counts={journey.analysis.counts} />
+                ) : null
               }
               last
             />
@@ -302,7 +378,17 @@ function SourceDetail({
 }) {
   const crawlTone = stepTone('crawl', journey.crawl?.status)
   const extractTone = stepTone('extract', journey.extract?.status)
+  const analysisTone = stepTone('analysis', journey.analysis?.status)
   const clock = formatClock(journey.crawl?.at ?? null)
+  const headline = journey.extract?.headline
+    ? clipHeadline(journey.extract.headline)
+    : null
+  const notes = [
+    journey.crawl?.note,
+    journey.extract?.note,
+    headline ? `Leyó: ${headline}` : null,
+    journey.analysis?.note,
+  ].filter(Boolean)
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -326,12 +412,16 @@ function SourceDetail({
           <Badge variant={badgeFor(extractTone)}>
             {journey.extract?.label ?? 'Esperando su turno'}
           </Badge>
+          <Badge variant={badgeFor(analysisTone)}>
+            {journey.analysis?.label ?? 'Sin análisis aún'}
+          </Badge>
         </div>
-        {journey.crawl?.note || journey.extract?.note ? (
+        {journey.analysis ? (
+          <ImpactCountStrip counts={journey.analysis.counts} />
+        ) : null}
+        {notes.length > 0 ? (
           <p className="text-sm leading-relaxed text-norma-muted">
-            {[journey.crawl?.note, journey.extract?.note]
-              .filter(Boolean)
-              .join(' ')}
+            {notes.join(' ')}
           </p>
         ) : null}
       </div>
@@ -354,10 +444,12 @@ export function AgentWatch({
   date,
   crawledCount,
   extractCount,
+  analysisCount,
   pageCount,
   live,
   crawlError,
   extractError,
+  analysisError,
   pagesError,
   loading,
   pagesLoading,
@@ -373,10 +465,12 @@ export function AgentWatch({
   date: string
   crawledCount: number
   extractCount: number
+  analysisCount: number
   pageCount: number
   live: boolean
   crawlError: string | null
   extractError: string | null
+  analysisError: string | null
   pagesError: string | null
   loading: boolean
   pagesLoading: boolean
@@ -393,7 +487,18 @@ export function AgentWatch({
   const reduceMotion = useReducedMotion()
   const day = formatDay(date)
   const total = journeys.length
-  const fatal = Boolean(crawlError && extractError && journeys.length === 0)
+  const crawlLive =
+    crawling ||
+    journeys.some((row) => stepTone('crawl', row.crawl?.status) === 'live')
+  const extractLive = journeys.some(
+    (row) => stepTone('extract', row.extract?.status) === 'live',
+  )
+  const analysisLive = journeys.some(
+    (row) => stepTone('analysis', row.analysis?.status) === 'live',
+  )
+  const fatal = Boolean(
+    crawlError && extractError && analysisError && journeys.length === 0,
+  )
   const selected = selectedId
     ? (journeys.find((row) => row.sourceId === selectedId) ?? null)
     : null
@@ -469,7 +574,7 @@ export function AgentWatch({
                 </p>
                 <PulseDot live={live} />
                 <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/80">
-                  {live ? 'Trabajando' : 'En mesa'}
+                  {live || crawling ? 'Trabajando' : 'En mesa'}
                 </span>
               </div>
               {selected ? null : day ? (
@@ -501,23 +606,33 @@ export function AgentWatch({
           </div>
 
           {selected || !canRead ? null : loading ? (
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              <Skeleton className="h-[4.75rem] w-full bg-white/10" />
               <Skeleton className="h-[4.75rem] w-full bg-white/10" />
               <Skeleton className="h-[4.75rem] w-full bg-white/10" />
             </div>
           ) : (
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
               <PhaseMeter
                 label="Agente de rastreo"
                 done={crawledCount}
                 total={total}
                 accent="signal"
+                orb={crawlLive ? 'searching' : 'weaving'}
               />
               <PhaseMeter
                 label="Agente de extracción"
                 done={extractCount}
                 total={total}
                 accent="accent"
+                orb={extractLive ? 'solving' : 'weaving'}
+              />
+              <PhaseMeter
+                label="Agente de análisis"
+                done={analysisCount}
+                total={total}
+                accent="accent"
+                orb={analysisLive ? 'working' : 'weaving'}
               />
             </div>
           )}
@@ -540,7 +655,12 @@ export function AgentWatch({
           </div>
         ) : fatal ? (
           <ErrorState
-            message={crawlError ?? extractError ?? 'No se pudo seguir a los agentes.'}
+            message={
+              crawlError ??
+              extractError ??
+              analysisError ??
+              'No se pudo seguir a los agentes.'
+            }
             onRetry={onRetry}
           />
         ) : (
@@ -555,6 +675,11 @@ export function AgentWatch({
                 {extractError}
               </p>
             ) : null}
+            {analysisError ? (
+              <p className="mb-3 rounded-2xl border border-norma-coral/25 bg-norma-coral/8 px-3 py-2 text-sm text-norma-coral" role="alert">
+                {analysisError}
+              </p>
+            ) : null}
             {pagesError ? (
               <p className="mb-3 rounded-2xl border border-norma-coral/25 bg-norma-coral/8 px-3 py-2 text-sm text-norma-coral" role="alert">
                 {pagesError}
@@ -563,7 +688,8 @@ export function AgentWatch({
             {total === 0 ? (
               <p className="text-sm leading-relaxed text-norma-subtle">
                 Aún no hay fuentes en la ronda de hoy. Cuando el agente salga a
-                rastrear, aquí verás cada visita y si pudo extraer texto.
+                rastrear, aquí verás cada visita, si pudo extraer texto y si ya
+                hay análisis.
               </p>
             ) : (
               <div className="relative min-h-0 flex-1">

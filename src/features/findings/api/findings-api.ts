@@ -6,9 +6,12 @@ import type {
   FindingDetail,
   FindingDocumentRef,
   FindingImpact,
+  FindingImpactCounts,
   FindingListItem,
+  FindingProgressSource,
   FindingRef,
   FindingStatus,
+  FindingsProgress,
   ListFindingsParams,
 } from '@/features/findings/types/finding'
 import { FINDING_IMPACTS } from '@/features/findings/types/finding'
@@ -112,8 +115,62 @@ function normalizeDetail(raw: unknown): FindingDetail | null {
   }
 }
 
+function asCounts(value: unknown): FindingImpactCounts {
+  const row = isRecord(value) ? value : {}
+  const n = (key: string) => {
+    const raw = row[key]
+    return typeof raw === 'number' && Number.isFinite(raw)
+      ? Math.max(0, Math.floor(raw))
+      : 0
+  }
+  return {
+    red: n('red'),
+    orange: n('orange'),
+    yellow: n('yellow'),
+    green: n('green'),
+  }
+}
+
+function unwrapSources(data: unknown): unknown[] {
+  if (isRecord(data) && Array.isArray(data.sources)) return data.sources
+  if (Array.isArray(data)) return data
+  return []
+}
+
+function normalizeProgressSource(raw: unknown): FindingProgressSource | null {
+  if (!isRecord(raw)) return null
+  const sourceId = text(raw.sourceId)
+  const sourceName = text(raw.sourceName)
+  if (!sourceId || !sourceName) return null
+  return {
+    sourceId,
+    sourceName,
+    status: String(raw.status ?? '').trim() || 'unknown',
+    label: text(raw.label) ?? String(raw.status ?? 'En curso'),
+    note: text(raw.note),
+    counts: asCounts(raw.counts),
+  }
+}
+
+function normalizeFindingsProgress(raw: unknown): FindingsProgress {
+  if (!isRecord(raw)) return { date: '', sources: [] }
+  return {
+    date: text(raw.date) ?? '',
+    sources: unwrapSources(raw)
+      .map(normalizeProgressSource)
+      .filter((row): row is FindingProgressSource => !!row),
+  }
+}
+
 /** Lista: array JSON. No hay `{ items }`. */
 export const findingsApi = {
+  progress(): Promise<FindingsProgress> {
+    const raw = useApiMock
+      ? findingsMockApi.progress()
+      : api.get<unknown>('/findings/progress').then((r) => r.data)
+    return Promise.resolve(raw).then(normalizeFindingsProgress)
+  },
+
   list(params?: ListFindingsParams): Promise<FindingListItem[]> {
     if (useApiMock) return findingsMockApi.list(params)
     return api

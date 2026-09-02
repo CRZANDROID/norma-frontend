@@ -3,6 +3,11 @@ import type {
   DocumentProgressSource,
   DocumentsProgress,
 } from '@/features/documents'
+import type {
+  FindingImpactCounts,
+  FindingProgressSource,
+  FindingsProgress,
+} from '@/features/findings'
 import type { JobProgressSource, JobsProgress } from '@/features/jobs'
 
 export type AgentSourceJourney = {
@@ -10,6 +15,7 @@ export type AgentSourceJourney = {
   sourceName: string
   crawl: JobProgressSource | null
   extract: DocumentProgressSource | null
+  analysis: FindingProgressSource | null
 }
 
 export type StepTone = 'done' | 'live' | 'warn' | 'fail' | 'wait'
@@ -21,6 +27,7 @@ const LIVE = new Set([
   'extracting',
   'processing',
   'in_progress',
+  'classifying',
 ])
 const DONE_CRAWL = new Set([
   'crawled',
@@ -30,12 +37,31 @@ const DONE_CRAWL = new Set([
   'complete',
   'completed',
 ])
-const DONE_EXTRACT = new Set(['ready', 'extracted', 'classified', 'ok', 'done'])
+const DONE_EXTRACT = new Set([
+  'ready',
+  'extracted',
+  'classified',
+  'unchanged',
+  'ok',
+  'done',
+])
 const WARN_EXTRACT = new Set(['unread', 'empty', 'skipped', 'thin'])
+const DONE_ANALYSIS = new Set(['classified'])
+const WARN_ANALYSIS = new Set(['skipped'])
 const FAIL = new Set(['failed', 'error', 'fail'])
+const CRAWL_TERMINAL = new Set([
+  'crawled',
+  'failed',
+  'skipped',
+  'success',
+  'done',
+  'ok',
+  'complete',
+  'completed',
+])
 
 export function stepTone(
-  kind: 'crawl' | 'extract',
+  kind: 'crawl' | 'extract' | 'analysis',
   status: string | undefined,
 ): StepTone {
   if (!status) return 'wait'
@@ -45,21 +71,51 @@ export function stepTone(
   if (kind === 'crawl' && DONE_CRAWL.has(value)) return 'done'
   if (kind === 'extract' && DONE_EXTRACT.has(value)) return 'done'
   if (kind === 'extract' && WARN_EXTRACT.has(value)) return 'warn'
+  if (kind === 'analysis' && DONE_ANALYSIS.has(value)) return 'done'
+  if (kind === 'analysis' && WARN_ANALYSIS.has(value)) return 'warn'
   return 'wait'
+}
+
+/** Crawl de una fuente acaba de cerrar: hay que pedir extract/análisis ya, no en el próximo ciclo. */
+export function crawlBecameTerminal(
+  prev: JobsProgress | null,
+  next: JobsProgress | null,
+): boolean {
+  if (!prev || !next) return false
+  const before = new Map(
+    prev.sources.map((row) => [row.sourceId, row.status.toLowerCase()]),
+  )
+  return next.sources.some((row) => {
+    const prior = before.get(row.sourceId)
+    if (!prior || CRAWL_TERMINAL.has(prior)) return false
+    return CRAWL_TERMINAL.has(row.status.toLowerCase())
+  })
+}
+
+function emptyJourney(
+  sourceId: string,
+  sourceName: string,
+): AgentSourceJourney {
+  return {
+    sourceId,
+    sourceName,
+    crawl: null,
+    extract: null,
+    analysis: null,
+  }
 }
 
 export function mergeJourneys(
   crawl: JobsProgress | null,
   extract: DocumentsProgress | null,
+  analysis: FindingsProgress | null,
 ): AgentSourceJourney[] {
   const byId = new Map<string, AgentSourceJourney>()
 
   for (const source of crawl?.sources ?? []) {
     byId.set(source.sourceId, {
-      sourceId: source.sourceId,
-      sourceName: source.sourceName,
+      ...emptyJourney(source.sourceId, source.sourceName),
       crawl: source,
-      extract: null,
     })
   }
 
@@ -69,10 +125,20 @@ export function mergeJourneys(
       existing.extract = source
     } else {
       byId.set(source.sourceId, {
-        sourceId: source.sourceId,
-        sourceName: source.sourceName,
-        crawl: null,
+        ...emptyJourney(source.sourceId, source.sourceName),
         extract: source,
+      })
+    }
+  }
+
+  for (const source of analysis?.sources ?? []) {
+    const existing = byId.get(source.sourceId)
+    if (existing) {
+      existing.analysis = source
+    } else {
+      byId.set(source.sourceId, {
+        ...emptyJourney(source.sourceId, source.sourceName),
+        analysis: source,
       })
     }
   }
@@ -82,6 +148,7 @@ export function mergeJourneys(
   for (const id of [
     ...(crawl?.sources ?? []).map((row) => row.sourceId),
     ...(extract?.sources ?? []).map((row) => row.sourceId),
+    ...(analysis?.sources ?? []).map((row) => row.sourceId),
   ]) {
     if (seen.has(id)) continue
     seen.add(id)
@@ -89,6 +156,13 @@ export function mergeJourneys(
     if (row) ordered.push(row)
   }
   return ordered
+}
+
+export function hasImpactCounts(
+  counts: FindingImpactCounts | null | undefined,
+): boolean {
+  if (!counts) return false
+  return counts.red + counts.orange + counts.yellow + counts.green > 0
 }
 
 export function groupPagesBySource(
