@@ -44,7 +44,8 @@ src/
     jobs/
     documents/              # registro documental (S6; listado en panel de rastreo)
     ai/                     # asistente de catálogo
-    findings/               # alertas / semáforo (inbox S8)
+    findings/               # /alertas — semáforo; S8 edita / excluye
+    reports/                # S9–S10: PDF, envío, portal cliente (aún no)
     <feature>/
       api/                  # llamadas Axios de ESTE dominio
       types/                # contratos de ESTE dominio
@@ -69,7 +70,7 @@ src/
 | Enfoque | Veredicto para NORMA |
 |---------|----------------------|
 | `pages/` + `components/` + `api/` planos | Falla a las 15–20 pantallas: imports cruzados, “shared” basura |
-| **Features por dominio** | Escala con Clientes → Fuentes → Findings → Inbox → Admin |
+| **Features por dominio** | Escala con Clientes → Fuentes → Findings → Informes → Admin |
 | Microfrontends | Overkill para un solo producto y un equipo pequeño |
 | Clean Architecture pesada (domain/use-cases en front) | Ruido en SPA; la lógica de negocio vive en Nest |
 
@@ -93,7 +94,8 @@ src/
 | `users` | Admin usuarios | 3 |
 | `dashboard` / `jobs` / `documents` | Panel de rastreo + registro documental | 5–6 |
 | `ai` | Asistente de catálogo | bloque OpenAI |
-| `findings` | Alertas / semáforo operativo (inbox en S8) | 7–8 |
+| `findings` | Clasificación en `/alertas` (S8: editar / IA / excluir) | 7–8 |
+| `reports` | PDF, envío, historial del cliente | 9–10 |
 
 ### Code-splitting (desde ya en el router)
 

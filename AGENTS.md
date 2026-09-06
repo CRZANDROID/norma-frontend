@@ -7,7 +7,8 @@
 3. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — **`app/` + `features/` + `shared/`**
 4. [docs/SPRINTS.md](docs/SPRINTS.md)
 5. UI: [docs/DESIGN-CLIENTS-PROFILES.md](docs/DESIGN-CLIENTS-PROFILES.md), [docs/DESIGN-SOURCES.md](docs/DESIGN-SOURCES.md), [docs/DESIGN-USERS.md](docs/DESIGN-USERS.md)
-6. **Contratos de API:** repo `norma-backend` → `docs/README.md` (no hay Postman copiado aquí)
+6. **Contratos de API:** repo `norma-backend` → `docs/README.md` (Swagger `/docs`)
+7. Informe S8–S10: backend `docs/FRONTEND-ALERTAS.md` (`/alertas` es el loop; no inbox)
 
 ## Verdades fijas
 

@@ -27,6 +27,6 @@ No agregar pantallas nuevas en `src/pages/` plano. Ver `ARCHITECTURE.md`.
 
 ## Sprint actual
 
-Siguiente: findings / inbox (S7–S8). Contratos: backend `docs/HANDOFF.md`.
-YouTube / X / Facebook = **MVP** (conectores de plataforma; el crawl WEB no los cubre): backend `docs/PRODUCT.md`.
-Admin CRUD: `docs/DESIGN-CLIENTS-PROFILES.md`. Fuentes: `schedule` + jurisdicción (backend `FRONTEND-SOURCES-V2.md`).
+Siguiente: S8 loop en `/alertas` (editar / IA / excluir; **sin PDF**). Contrato: backend `docs/FRONTEND-ALERTAS.md`.
+YouTube / X / Facebook = **MVP después de S10**: backend `docs/PRODUCT.md`.
+Admin: `docs/DESIGN-CLIENTS-PROFILES.md`. Contrato API: backend `docs/FRONTEND-ADMIN.md`.
