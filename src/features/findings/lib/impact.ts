@@ -1,4 +1,42 @@
-import type { FindingImpact } from '@/features/findings/types/finding'
+import type {
+  FindingImpact,
+  FindingImpactCounts,
+  FindingsListCounts,
+} from '@/features/findings/types/finding'
+
+export const IMPACT_COUNT_KEY: Record<FindingImpact, keyof FindingImpactCounts> =
+  {
+    RED: 'red',
+    ORANGE: 'orange',
+    YELLOW: 'yellow',
+    GREEN: 'green',
+  }
+
+export function emptyImpactCounts(): FindingImpactCounts {
+  return { red: 0, orange: 0, yellow: 0, green: 0 }
+}
+
+export function emptyListCounts(): FindingsListCounts {
+  return { total: 0, red: 0, orange: 0, yellow: 0, green: 0 }
+}
+
+export function totalImpactCounts(counts: FindingImpactCounts): number {
+  return counts.red + counts.orange + counts.yellow + counts.green
+}
+
+export function sumImpactCounts(
+  rows: FindingImpactCounts[],
+): FindingImpactCounts {
+  return rows.reduce(
+    (acc, row) => ({
+      red: acc.red + row.red,
+      orange: acc.orange + row.orange,
+      yellow: acc.yellow + row.yellow,
+      green: acc.green + row.green,
+    }),
+    emptyImpactCounts(),
+  )
+}
 
 export const IMPACT_LAMP: Record<
   FindingImpact,

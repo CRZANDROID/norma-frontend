@@ -1,30 +1,29 @@
 import { cn } from '@/shared/lib/utils'
-import type { FindingImpact, FindingListItem } from '@/features/findings/types/finding'
+import type {
+  FindingImpact,
+  FindingsListCounts,
+} from '@/features/findings/types/finding'
 import {
   FINDING_IMPACT_FILTER_ORDER,
   FINDING_IMPACT_HINTS,
   FINDING_IMPACT_LABELS,
 } from '@/features/findings/types/finding'
-import { IMPACT_LAMP } from '@/features/findings/lib/impact'
+import {
+  IMPACT_COUNT_KEY,
+  IMPACT_LAMP,
+} from '@/features/findings/lib/impact'
 
 export function ImpactFilter({
-  items,
+  counts,
   selected,
   onSelect,
   loading = false,
 }: {
-  items: FindingListItem[]
+  counts: FindingsListCounts
   selected: FindingImpact | null
   onSelect: (impact: FindingImpact | null) => void
   loading?: boolean
 }) {
-  const counts = Object.fromEntries(
-    FINDING_IMPACT_FILTER_ORDER.map((impact) => [
-      impact,
-      items.filter((row) => row.impact === impact).length,
-    ]),
-  ) as Record<FindingImpact, number>
-
   const allOn = selected === null
   const chipFocus =
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45'
@@ -38,7 +37,7 @@ export function ImpactFilter({
       <button
         type="button"
         aria-pressed={allOn}
-        aria-label={`Todos. ${loading ? 'Cargando' : `${items.length} hallazgos`}`}
+        aria-label={`Todos. ${loading ? 'Cargando' : `${counts.total} hallazgos`}`}
         onClick={() => onSelect(null)}
         className={cn(
           'inline-flex min-h-8 items-center gap-1.5 rounded-full border-2 px-3 py-1 text-xs font-semibold transition-[background-color,border-color,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
@@ -51,13 +50,13 @@ export function ImpactFilter({
       >
         Todos
         <span className="font-mono tabular-nums">
-          {loading ? '…' : items.length}
+          {loading ? '…' : counts.total}
         </span>
       </button>
       {FINDING_IMPACT_FILTER_ORDER.map((impact) => {
         const lamp = IMPACT_LAMP[impact]
         const isOn = selected === impact
-        const count = counts[impact]
+        const count = counts[IMPACT_COUNT_KEY[impact]]
         const hallazgos = count === 1 ? '1 hallazgo' : `${count} hallazgos`
         return (
           <button

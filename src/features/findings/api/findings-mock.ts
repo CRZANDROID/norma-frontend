@@ -1,6 +1,8 @@
+import { civilDateFromIso, civilDateToday } from '@/features/findings/lib/civil-date'
 import type {
   FindingDetail,
   FindingListItem,
+  FindingsListPage,
   FindingsProgress,
   ListFindingsParams,
 } from '@/features/findings/types/finding'
@@ -9,7 +11,7 @@ function delay(ms = 180) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-const now = '2026-09-01T18:00:00.000Z'
+const now = '2026-09-07T18:00:00.000Z'
 
 const rows: FindingDetail[] = [
   {
@@ -79,8 +81,8 @@ const rows: FindingDetail[] = [
       promptVersion: 'classify-v1',
       relevant: true,
     },
-    createdAt: '2026-09-01T16:40:00.000Z',
-    updatedAt: '2026-09-01T16:40:00.000Z',
+    createdAt: '2026-09-07T16:40:00.000Z',
+    updatedAt: '2026-09-07T16:40:00.000Z',
   },
   {
     id: 'finding_green_contexto',
@@ -114,8 +116,8 @@ const rows: FindingDetail[] = [
       promptVersion: 'classify-v1',
       relevant: false,
     },
-    createdAt: '2026-08-31T12:00:00.000Z',
-    updatedAt: '2026-08-31T12:00:00.000Z',
+    createdAt: '2026-09-02T12:00:00.000Z',
+    updatedAt: '2026-09-02T12:00:00.000Z',
   },
 ]
 
@@ -138,11 +140,48 @@ function toListItem(row: FindingDetail): FindingListItem {
 const emptyCounts = { red: 0, orange: 0, yellow: 0, green: 0 }
 
 export const findingsMockApi = {
-  async progress(): Promise<FindingsProgress> {
+  async progress(params?: { date?: string }): Promise<FindingsProgress> {
     await delay()
+    const date = params?.date && params.date !== 'all' ? params.date : civilDateToday()
+    const dayRows = rows.filter((row) => civilDateFromIso(row.createdAt) === date)
+    const bySource = new Map<
+      string,
+      { name: string; red: number; orange: number; yellow: number; green: number }
+    >()
+    for (const row of dayRows) {
+      const sourceId = row.source?.id
+      if (!sourceId || !row.source) continue
+      const bucket =
+        bySource.get(sourceId) ?? {
+          name: row.source.name,
+          red: 0,
+          orange: 0,
+          yellow: 0,
+          green: 0,
+        }
+      if (row.impact === 'RED') bucket.red += 1
+      if (row.impact === 'ORANGE') bucket.orange += 1
+      if (row.impact === 'YELLOW') bucket.yellow += 1
+      if (row.impact === 'GREEN') bucket.green += 1
+      bySource.set(sourceId, bucket)
+    }
+    const fromFindings = [...bySource.entries()].map(([sourceId, bucket]) => ({
+      sourceId,
+      sourceName: bucket.name,
+      status: 'classified',
+      label: 'Analizada',
+      counts: {
+        red: bucket.red,
+        orange: bucket.orange,
+        yellow: bucket.yellow,
+        green: bucket.green,
+      },
+      note: null,
+    }))
     return {
-      date: '2026-09-02',
+      date,
       sources: [
+        ...fromFindings,
         {
           sourceId: 'seed-src-dof',
           sourceName: 'Diario Oficial de la Federación',
@@ -187,23 +226,55 @@ export const findingsMockApi = {
     }
   },
 
-  async list(params?: ListFindingsParams): Promise<FindingListItem[]> {
+  async list(params?: ListFindingsParams): Promise<FindingsListPage> {
     await delay()
-    let next = rows.map(toListItem)
+    let scoped = rows.map(toListItem)
     if (params?.clientId) {
-      next = next.filter((row) => row.client.id === params.clientId)
+      scoped = scoped.filter((row) => row.client.id === params.clientId)
     }
     if (params?.sourceId) {
-      next = next.filter((row) => row.source?.id === params.sourceId)
+      scoped = scoped.filter((row) => row.source?.id === params.sourceId)
     }
+    if (params?.status) {
+      scoped = scoped.filter((row) => row.status === params.status)
+    }
+    if (params?.dateFrom) {
+      scoped = scoped.filter(
+        (row) => civilDateFromIso(row.createdAt) >= params.dateFrom!,
+      )
+    }
+    if (params?.dateTo) {
+      scoped = scoped.filter(
+        (row) => civilDateFromIso(row.createdAt) <= params.dateTo!,
+      )
+    }
+    const counts = {
+      total: scoped.length,
+      red: scoped.filter((row) => row.impact === 'RED').length,
+      orange: scoped.filter((row) => row.impact === 'ORANGE').length,
+      yellow: scoped.filter((row) => row.impact === 'YELLOW').length,
+      green: scoped.filter((row) => row.impact === 'GREEN').length,
+    }
+    let next = scoped
     if (params?.impact) {
       next = next.filter((row) => row.impact === params.impact)
     }
-    if (params?.status) {
-      next = next.filter((row) => row.status === params.status)
-    }
     const limit = params?.limit ?? 50
-    return next.slice(0, limit)
+    const page = Math.max(1, params?.page ?? 1)
+    const total = next.length
+    const totalPages = Math.max(1, Math.ceil(total / limit) || 1)
+    const start = (page - 1) * limit
+    const slice = next.slice(start, start + limit)
+    return {
+      dateFrom: params?.dateFrom ?? null,
+      dateTo: params?.dateTo ?? null,
+      page,
+      limit,
+      total,
+      totalPages,
+      counts,
+      items: slice,
+    }
   },
 
   async get(id: string): Promise<FindingDetail> {

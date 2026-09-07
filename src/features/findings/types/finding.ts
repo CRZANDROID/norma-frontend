@@ -83,6 +83,30 @@ export type ListFindingsParams = {
   impact?: FindingImpact
   status?: FindingStatus
   limit?: number
+  page?: number
+  /** Inicio de rango YYYY-MM-DD. Omitir = sin piso. */
+  dateFrom?: string
+  /** Fin de rango YYYY-MM-DD (inclusive). Omitir = sin techo. */
+  dateTo?: string
+}
+
+export type FindingsListCounts = {
+  total: number
+  red: number
+  orange: number
+  yellow: number
+  green: number
+}
+
+export type FindingsListPage = {
+  dateFrom: string | null
+  dateTo: string | null
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+  counts: FindingsListCounts
+  items: FindingListItem[]
 }
 
 export type FindingImpactCounts = {

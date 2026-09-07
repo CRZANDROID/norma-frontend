@@ -11,6 +11,8 @@ import type {
   FindingProgressSource,
   FindingRef,
   FindingStatus,
+  FindingsListCounts,
+  FindingsListPage,
   FindingsProgress,
   ListFindingsParams,
 } from '@/features/findings/types/finding'
@@ -137,6 +139,67 @@ function unwrapSources(data: unknown): unknown[] {
   return []
 }
 
+function asInt(value: unknown, fallback: number): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.max(0, Math.floor(value))
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed)) return Math.max(0, Math.floor(parsed))
+  }
+  return fallback
+}
+
+function asDateField(value: unknown): string | null {
+  const raw = text(value)
+  if (!raw || raw === 'null') return null
+  return raw
+}
+
+function asListCounts(value: unknown): FindingsListCounts {
+  const colors = asCounts(value)
+  const row = isRecord(value) ? value : {}
+  return {
+    ...colors,
+    total: asInt(row.total, colors.red + colors.orange + colors.yellow + colors.green),
+  }
+}
+
+function unwrapListPage(data: unknown): FindingsListPage {
+  const itemsRaw = Array.isArray(data)
+    ? data
+    : isRecord(data) && Array.isArray(data.items)
+      ? data.items
+      : []
+  const items = itemsRaw
+    .map(normalizeListItem)
+    .filter((row): row is FindingListItem => !!row)
+  if (!isRecord(data) || Array.isArray(data)) {
+    return {
+      dateFrom: null,
+      dateTo: null,
+      page: 1,
+      limit: items.length || 50,
+      total: items.length,
+      totalPages: 1,
+      counts: asListCounts(null),
+      items,
+    }
+  }
+  const limit = Math.max(1, asInt(data.limit, 50))
+  const total = asInt(data.total, items.length)
+  return {
+    dateFrom: asDateField(data.dateFrom),
+    dateTo: asDateField(data.dateTo),
+    page: Math.max(1, asInt(data.page, 1)),
+    limit,
+    total,
+    totalPages: Math.max(1, asInt(data.totalPages, Math.ceil(total / limit) || 1)),
+    counts: asListCounts(data.counts),
+    items,
+  }
+}
+
 function normalizeProgressSource(raw: unknown): FindingProgressSource | null {
   if (!isRecord(raw)) return null
   const sourceId = text(raw.sourceId)
@@ -162,16 +225,20 @@ function normalizeFindingsProgress(raw: unknown): FindingsProgress {
   }
 }
 
-/** Lista: array JSON. No hay `{ items }`. */
+/** Lista: `{ dateFrom, dateTo, page, limit, total, totalPages, counts, items }`. */
 export const findingsApi = {
-  progress(): Promise<FindingsProgress> {
+  progress(params?: { date?: string }): Promise<FindingsProgress> {
     const raw = useApiMock
-      ? findingsMockApi.progress()
-      : api.get<unknown>('/findings/progress').then((r) => r.data)
+      ? findingsMockApi.progress(params)
+      : api
+          .get<unknown>('/findings/progress', {
+            params: params?.date ? { date: params.date } : undefined,
+          })
+          .then((r) => r.data)
     return Promise.resolve(raw).then(normalizeFindingsProgress)
   },
 
-  list(params?: ListFindingsParams): Promise<FindingListItem[]> {
+  list(params?: ListFindingsParams): Promise<FindingsListPage> {
     if (useApiMock) return findingsMockApi.list(params)
     return api
       .get<unknown>('/findings', {
@@ -180,16 +247,18 @@ export const findingsApi = {
           ...(params?.sourceId ? { sourceId: params.sourceId } : {}),
           ...(params?.documentId ? { documentId: params.documentId } : {}),
           ...(params?.impact ? { impact: params.impact } : {}),
+          ...(params?.dateFrom && !params?.documentId
+            ? { dateFrom: params.dateFrom }
+            : {}),
+          ...(params?.dateTo && !params?.documentId
+            ? { dateTo: params.dateTo }
+            : {}),
+          ...(params?.page && params.page > 1 ? { page: params.page } : {}),
           status: params?.status ?? 'OPEN',
-          limit: params?.limit ?? 200,
+          limit: params?.limit ?? 50,
         },
       })
-      .then((r) => {
-        const rows = Array.isArray(r.data) ? r.data : []
-        return rows
-          .map(normalizeListItem)
-          .filter((row): row is FindingListItem => !!row)
-      })
+      .then((r) => unwrapListPage(r.data))
   },
 
   get(id: string): Promise<FindingDetail> {
