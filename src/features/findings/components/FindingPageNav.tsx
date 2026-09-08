@@ -25,7 +25,7 @@ export function FindingPageNav({
         type="button"
         variant="outline"
         size="sm"
-        className="size-8 px-0"
+        className="size-9 px-0"
         disabled={disabled || page <= 1}
         aria-label="Página anterior"
         onClick={onPrev}
@@ -42,7 +42,7 @@ export function FindingPageNav({
         type="button"
         variant="outline"
         size="sm"
-        className="size-8 px-0"
+        className="size-9 px-0"
         disabled={disabled || page >= totalPages}
         aria-label="Página siguiente"
         onClick={onNext}

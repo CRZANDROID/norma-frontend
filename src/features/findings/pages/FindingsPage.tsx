@@ -13,6 +13,7 @@ import {
 import { FindingDetailCard } from '@/features/findings/components/FindingDetailCard'
 import { FindingListPanel } from '@/features/findings/components/FindingListPanel'
 import { FindingPageNav } from '@/features/findings/components/FindingPageNav'
+import { FINDING_REWRITE_HINT_HOST_ID } from '@/features/findings/components/FindingRewriteNotice'
 import { ImpactFilter } from '@/features/findings/components/ImpactFilter'
 import type {
   FindingDetail,
@@ -26,8 +27,9 @@ import {
   formatCivilDateLabel,
   isCivilDate,
 } from '@/features/findings/lib/civil-date'
+import { toFindingListItem } from '@/features/findings/lib/finding-row'
 import { countLabel } from '@/features/findings/lib/format'
-import { emptyListCounts, IMPACT_LAMP } from '@/features/findings/lib/impact'
+import { emptyListCounts, IMPACT_LAMP, shiftListCounts } from '@/features/findings/lib/impact'
 import { mapApiError } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/utils'
 import { Label } from '@/shared/ui/label'
@@ -132,6 +134,7 @@ export function FindingsPage() {
     () => orderedRange(dateFrom, dateTo),
     [dateFrom, dateTo],
   )
+  const excludedOnly = searchParams.get('excluido') === 'true'
   const pageSize = parsePageSize(searchParams.get('tamano'))
   const paged = pageSize !== 'all'
   const requestedPage = paged
@@ -181,12 +184,13 @@ export function FindingsPage() {
       clientId,
       sourceId: sourceId || undefined,
       impact: impactFilter ?? undefined,
+      excluded: excludedOnly ? true : undefined,
       status: 'OPEN' as const,
       limit: apiLimit,
       dateFrom: dateRange.dateFrom ?? undefined,
       dateTo: dateRange.dateTo ?? undefined,
     }),
-    [clientId, sourceId, impactFilter, apiLimit, dateRange],
+    [clientId, sourceId, impactFilter, excludedOnly, apiLimit, dateRange],
   )
 
   const patchSearch = useCallback(
@@ -214,6 +218,7 @@ export function FindingsPage() {
       desde?: string | null
       hasta?: string | null
       tamano?: string | null
+      excluido?: string | null
     }) => {
       const cliente = overrides.cliente ?? clientId
       const fuente =
@@ -228,6 +233,12 @@ export function FindingsPage() {
         overrides.tamano === undefined
           ? tamanoQueryValue(pageSize)
           : overrides.tamano
+      const excluido =
+        overrides.excluido === undefined
+          ? excludedOnly
+            ? 'true'
+            : null
+          : overrides.excluido
       const next = new URLSearchParams()
       if (cliente) next.set('cliente', cliente)
       if (fuente) next.set('fuente', fuente)
@@ -235,10 +246,11 @@ export function FindingsPage() {
       if (desde) next.set('desde', desde)
       if (hasta) next.set('hasta', hasta)
       if (tamano) next.set('tamano', tamano)
+      if (excluido) next.set('excluido', excluido)
       const qs = next.toString()
       return qs ? `?${qs}` : ''
     },
-    [clientId, sourceId, impactFilter, dateRange, pageSize],
+    [clientId, sourceId, impactFilter, excludedOnly, dateRange, pageSize],
   )
 
   useEffect(() => {
@@ -441,10 +453,65 @@ export function FindingsPage() {
     if (loadingList) return
     if (findingRows.length === 0) return
     if (findingId && findingRows.some((row) => row.id === findingId)) return
+    if (
+      excludedOnly &&
+      findingId &&
+      detail?.id === findingId &&
+      !detail.excludedFromNextReport
+    ) {
+      return
+    }
+    if (
+      impactFilter &&
+      findingId &&
+      detail?.id === findingId &&
+      detail.impact !== impactFilter
+    ) {
+      return
+    }
     const first = findingRows[0]
     if (!first) return
     navigate(`/alertas/${first.id}${listQueryString}`, { replace: true })
-  }, [findingId, listQueryString, loadingList, navigate, findingRows])
+  }, [
+    findingId,
+    listQueryString,
+    loadingList,
+    navigate,
+    findingRows,
+    excludedOnly,
+    impactFilter,
+    detail,
+  ])
+
+  const applyFindingUpdate = useCallback(
+    (next: FindingDetail) => {
+      setDetail(next)
+      setItems((prev) => {
+        const rows = asFindingRows(prev)
+        const previous = rows.find((row) => row.id === next.id)
+        if (previous && previous.impact !== next.impact) {
+          setCounts((counts) =>
+            shiftListCounts(counts, previous.impact, next.impact),
+          )
+        }
+        const leavesExcluded =
+          excludedOnly && !next.excludedFromNextReport
+        const leavesImpact =
+          Boolean(impactFilter) && next.impact !== impactFilter
+        if (leavesExcluded || leavesImpact) {
+          const remaining = rows.filter((row) => row.id !== next.id)
+          if (remaining.length !== rows.length) {
+            setTotal((n) => Math.max(0, n - 1))
+          }
+          return remaining
+        }
+        return rows.map((row) =>
+          row.id === next.id ? toFindingListItem(next) : row,
+        )
+      })
+    },
+    [excludedOnly, impactFilter],
+  )
 
   function onClientChange(id: string) {
     setClientId(id)
@@ -522,9 +589,15 @@ export function FindingsPage() {
     { value: 'all', label: 'Todos' },
   ]
 
-  const emptyList = !loadingList && findingRows.length === 0 && !impactFilter
+  const emptyList =
+    !loadingList &&
+    findingRows.length === 0 &&
+    !impactFilter &&
+    !excludedOnly
   const emptyImpact =
-    !loadingList && findingRows.length === 0 && Boolean(impactFilter)
+    !loadingList &&
+    findingRows.length === 0 &&
+    Boolean(impactFilter || excludedOnly)
   const dossierWash = detail ? IMPACT_LAMP[detail.impact].wash : null
   const shiftLabel = loadingList
     ? 'Leyendo'
@@ -584,43 +657,43 @@ export function FindingsPage() {
         <div className="flex h-[min(calc(100dvh-13rem),52rem)] min-h-[28rem] flex-col overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface shadow-[0_22px_48px_-24px_rgba(13,27,42,0.4)]">
           <header className="shrink-0 overflow-hidden bg-norma-navy text-white">
             <div className="bg-[radial-gradient(ellipse_80%_60%_at_12%_-20%,rgba(0,190,208,0.28),transparent_55%),radial-gradient(ellipse_at_90%_0%,rgba(105,88,248,0.32),transparent_50%)] px-5 py-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-norma-accent-soft">
-                      Agente de clasificación
-                    </p>
-                    <PulseDot live={!loadingList && findingRows.length > 0} />
-                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/80">
-                      {shiftLabel}
-                    </span>
-                  </div>
-                  <p className="mt-2 font-display text-lg font-semibold tracking-tight">
-                    Hallazgos para {selectedName}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-norma-accent-soft">
+                    Agente de clasificación
                   </p>
-                  <p
-                    className="mt-1 text-[11px] text-white/45"
-                    aria-live="polite"
-                  >
-                    {loadingList
-                      ? 'Leyendo la clasificación…'
-                      : [
-                          scopeLabel,
-                          countLabel(
-                            total,
-                            'documento clasificado',
-                            'documentos clasificados',
-                          ),
-                          findingRows.length < total
-                            ? `${findingRows.length} en pantalla`
-                            : null,
-                          profileName ? `perfil: ${profileName}` : null,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                  </p>
+                  <PulseDot live={!loadingList && findingRows.length > 0} />
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/80">
+                    {shiftLabel}
+                  </span>
                 </div>
-                <div className="grid min-w-0 w-full gap-3 sm:max-w-xl sm:grid-cols-2 lg:w-[28rem]">
+                <p className="mt-2 font-display text-lg font-semibold tracking-tight">
+                  Hallazgos para {selectedName}
+                </p>
+                <p
+                  className="mt-1 text-[11px] text-white/45"
+                  aria-live="polite"
+                >
+                  {loadingList
+                    ? 'Leyendo la clasificación…'
+                    : [
+                        scopeLabel,
+                        countLabel(
+                          total,
+                          'documento clasificado',
+                          'documentos clasificados',
+                        ),
+                        findingRows.length < total
+                          ? `${findingRows.length} en pantalla`
+                          : null,
+                        profileName ? `perfil: ${profileName}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                </p>
+              </div>
+              <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+                <div className="grid min-w-0 w-full gap-3 sm:grid-cols-2 xl:max-w-md">
                   <div className="space-y-1">
                     <Label htmlFor="finding-client" className="text-white/50">
                       Cliente
@@ -649,12 +722,11 @@ export function FindingsPage() {
                     />
                   </div>
                 </div>
-              </div>
-              <div className="mt-3">
                 <FindingDateFilter
                   range={dateRange}
                   today={today}
                   onChange={onDateRangeChange}
+                  className="xl:justify-end"
                 />
               </div>
               {loadingSources ? (
@@ -676,11 +748,26 @@ export function FindingsPage() {
           <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,42%)_minmax(0,1fr)] lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,1fr)] lg:grid-rows-none">
             <section className="flex min-h-0 min-w-0 flex-col border-b-2 border-norma-border lg:border-r-2 lg:border-b-0">
             <div className="shrink-0 border-b border-norma-border px-4 py-2.5 md:px-5">
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-norma-subtle">
-                  Impacto
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                <ImpactFilter
+                  counts={counts}
+                  selected={impactFilter}
+                  loading={loadingList}
+                  excludedOnly={excludedOnly}
+                  onSelect={(impact) =>
+                    patchSearch({
+                      impacto: impact ?? null,
+                      pagina: null,
+                    })
+                  }
+                  onExcludedChange={(next) =>
+                    patchSearch({
+                      excluido: next ? 'true' : null,
+                      pagina: null,
+                    })
+                  }
+                />
+                <div className="ml-auto flex flex-wrap items-center gap-2">
                   {paged ? (
                     <FindingPageNav
                       page={page}
@@ -719,17 +806,6 @@ export function FindingsPage() {
                   </div>
                 </div>
               </div>
-              <ImpactFilter
-                counts={counts}
-                selected={impactFilter}
-                loading={loadingList}
-                onSelect={(impact) =>
-                  patchSearch({
-                    impacto: impact ?? null,
-                    pagina: null,
-                  })
-                }
-              />
             </div>
             <FindingListPanel
               items={findingRows}
@@ -751,10 +827,11 @@ export function FindingsPage() {
           <section
             aria-labelledby="finding-classification-heading"
             className={cn(
-              'min-h-0 overflow-y-auto overscroll-contain p-5 md:p-7',
+              'relative flex min-h-0 flex-col overflow-hidden',
               dossierWash ?? 'bg-norma-bg/60',
             )}
           >
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 md:p-7">
             <h2 id="finding-classification-heading" className="sr-only">
               Clasificación
             </h2>
@@ -775,8 +852,12 @@ export function FindingsPage() {
               />
             ) : emptyImpact ? (
               <EmptyState
-                title="Nada con ese impacto"
-                description="No hay hallazgos abiertos de ese color con los filtros actuales."
+                title={
+                  excludedOnly
+                    ? 'Nada fuera del informe'
+                    : 'Nada con ese impacto'
+                }
+                description="No hay hallazgos abiertos con los filtros actuales."
               />
             ) : !findingId ? (
               <p className="max-w-sm text-sm leading-relaxed text-norma-muted">
@@ -815,8 +896,17 @@ export function FindingsPage() {
                 }}
               />
             ) : detail ? (
-              <FindingDetailCard finding={detail} />
+              <FindingDetailCard
+                finding={detail}
+                excludedFilterOn={excludedOnly}
+                onUpdated={applyFindingUpdate}
+              />
             ) : null}
+            </div>
+            <div
+              id={FINDING_REWRITE_HINT_HOST_ID}
+              className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-5 md:px-7"
+            />
           </section>
           </div>
         </div>

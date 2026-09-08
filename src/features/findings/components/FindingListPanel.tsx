@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ChevronRight, Sparkles } from 'lucide-react'
 import type { FindingListItem } from '@/features/findings/types/finding'
 import { FINDING_IMPACT_LABELS } from '@/features/findings/types/finding'
+import { FindingExcludedBadge } from '@/features/findings/components/FindingExcludedBadge'
 import { formatFindingWhen } from '@/features/findings/lib/format'
 import { IMPACT_LAMP } from '@/features/findings/lib/impact'
 import { cn } from '@/shared/lib/utils'
@@ -70,7 +71,7 @@ export function FindingListPanel({
         </div>
       ) : !Array.isArray(items) || items.length === 0 ? (
         <p className="text-sm leading-relaxed text-norma-subtle">
-          Nada con ese impacto en esta ronda.
+          Nada con esos filtros en esta ronda.
         </p>
       ) : (
         <div>
@@ -120,9 +121,9 @@ export function FindingListPanel({
                             {item.source.code}
                           </span>
                         ) : null}
-                        <span className="font-mono text-[10px] uppercase tracking-wide text-norma-subtle">
-                          {item.status}
-                        </span>
+                        {item.excludedFromNextReport ? (
+                          <FindingExcludedBadge className="font-sans normal-case tracking-wide" />
+                        ) : null}
                       </span>
                       <span className="mt-2 block font-display text-[0.95rem] font-semibold tracking-tight text-pretty">
                         {item.title}

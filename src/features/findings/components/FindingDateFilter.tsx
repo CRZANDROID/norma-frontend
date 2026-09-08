@@ -15,10 +15,12 @@ export function FindingDateFilter({
   range,
   today,
   onChange,
+  className,
 }: {
   range: DateRangeFilter
   today: string
   onChange: (next: DateRangeFilter) => void
+  className?: string
 }) {
   const hasRange = Boolean(range.dateFrom || range.dateTo)
   const isToday =
@@ -39,7 +41,7 @@ export function FindingDateFilter({
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-2">
+    <div className={cn('flex flex-wrap items-end gap-2', className)}>
       <div className="min-w-[10.5rem] flex-1 space-y-1 sm:max-w-[13rem]">
         <Label htmlFor="finding-date-from" className="text-white/50">
           Desde

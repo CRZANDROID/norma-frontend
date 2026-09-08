@@ -56,6 +56,7 @@ export type FindingListItem = {
   impact: FindingImpact
   status: FindingStatus
   suggestedAction: string | null
+  excludedFromNextReport: boolean
   justificationShort: string
   client: FindingRef
   source: FindingRef | null
@@ -64,10 +65,20 @@ export type FindingListItem = {
   updatedAt: string
 }
 
+export type FindingAiRewrite = {
+  at: string
+  model: string | null
+  promptVersion: string | null
+  prompt: string | null
+  note: string | null
+  changed: boolean | null
+}
+
 export type FindingAiMeta = {
   model: string | null
   promptVersion: string | null
   relevant: boolean | null
+  lastRewrite: FindingAiRewrite | null
 }
 
 export type FindingDetail = FindingListItem & {
@@ -76,12 +87,26 @@ export type FindingDetail = FindingListItem & {
   aiMeta: FindingAiMeta | null
 }
 
+export type PatchFindingBody = {
+  title?: string
+  justification?: string
+  impact?: FindingImpact
+}
+
+/** `POST /findings/:id/rewrite`. `rewriteNote` / `rewriteChanged` no viven en GET. */
+export type FindingRewriteResult = FindingDetail & {
+  rewriteNote: string | null
+  rewriteChanged: boolean
+}
+
 export type ListFindingsParams = {
   clientId?: string
   sourceId?: string
   documentId?: string
   impact?: FindingImpact
   status?: FindingStatus
+  /** Recorta items/total. No recorta counts. */
+  excluded?: boolean
   limit?: number
   page?: number
   /** Inicio de rango YYYY-MM-DD. Omitir = sin piso. */

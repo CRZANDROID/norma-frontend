@@ -1,14 +1,32 @@
+import { AxiosError } from 'axios'
 import { civilDateFromIso, civilDateToday } from '@/features/findings/lib/civil-date'
+import {
+  shortJustification,
+  toFindingListItem,
+} from '@/features/findings/lib/finding-row'
+import { canExcludeFromReport } from '@/features/findings/lib/impact'
 import type {
   FindingDetail,
-  FindingListItem,
+  FindingRewriteResult,
   FindingsListPage,
   FindingsProgress,
   ListFindingsParams,
+  PatchFindingBody,
 } from '@/features/findings/types/finding'
+import { FINDING_IMPACTS } from '@/features/findings/types/finding'
 
 function delay(ms = 180) {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function unprocessable(message: string): never {
+  throw new AxiosError(message, AxiosError.ERR_BAD_REQUEST, undefined, undefined, {
+    status: 422,
+    statusText: 'Unprocessable Entity',
+    headers: {},
+    config: {} as never,
+    data: { message },
+  })
 }
 
 const now = '2026-09-07T18:00:00.000Z'
@@ -20,10 +38,11 @@ const rows: FindingDetail[] = [
     impact: 'ORANGE',
     status: 'OPEN',
     suggestedAction: 'Elaborar nota y monitorear avance',
+    excludedFromNextReport: false,
     justificationShort:
       'El decreto toca etiquetado de bebidas, alineado al perfil de Arca Continental.',
     justification:
-      'El decreto toca etiquetado de bebidas, alineado al perfil de Arca Continental. Conviene elaborar una nota y dar seguimiento al calendario de entrada en vigor.',
+      '## NOM-051\n\nEl decreto toca etiquetado de bebidas, alineado al perfil de Arca Continental.\n\n- Conviene elaborar una nota\n- Dar seguimiento al calendario de entrada en vigor',
     description: 'El decreto toca etiquetado de bebidas, alineado al perfil de Arca Continental.',
     client: {
       id: 'client_arca',
@@ -43,8 +62,9 @@ const rows: FindingDetail[] = [
     },
     aiMeta: {
       model: 'gpt-4o-mini',
-      promptVersion: 'classify-v1',
+      promptVersion: 'classify-v2',
       relevant: true,
+      lastRewrite: null,
     },
     createdAt: now,
     updatedAt: now,
@@ -55,10 +75,11 @@ const rows: FindingDetail[] = [
     impact: 'RED',
     status: 'OPEN',
     suggestedAction: 'Alertar de inmediato y preparar nota ejecutiva',
+    excludedFromNextReport: false,
     justificationShort:
       'La iniciativa modifica el tratamiento fiscal de bebidas azucaradas en el ámbito federal.',
     justification:
-      'La iniciativa modifica el tratamiento fiscal de bebidas azucaradas en el ámbito federal. El impacto es alto para el portafolio del cliente; conviene una nota ejecutiva.',
+      '## Impuesto especial\n\nLa iniciativa modifica el tratamiento fiscal de bebidas azucaradas en el ámbito federal. El impacto es alto para el portafolio del cliente; conviene una nota ejecutiva.',
     description: null,
     client: {
       id: 'client_arca',
@@ -78,8 +99,9 @@ const rows: FindingDetail[] = [
     },
     aiMeta: {
       model: 'gpt-4o-mini',
-      promptVersion: 'classify-v1',
+      promptVersion: 'classify-v2',
       relevant: true,
+      lastRewrite: null,
     },
     createdAt: '2026-09-07T16:40:00.000Z',
     updatedAt: '2026-09-07T16:40:00.000Z',
@@ -90,6 +112,7 @@ const rows: FindingDetail[] = [
     impact: 'GREEN',
     status: 'OPEN',
     suggestedAction: 'Registrar como contexto',
+    excludedFromNextReport: false,
     justificationShort:
       'La consulta no altera obligaciones inmediatas del portafolio; queda como contexto.',
     justification:
@@ -113,31 +136,45 @@ const rows: FindingDetail[] = [
     },
     aiMeta: {
       model: 'gpt-4o-mini',
-      promptVersion: 'classify-v1',
+      promptVersion: 'classify-v2',
       relevant: false,
+      lastRewrite: null,
     },
     createdAt: '2026-09-02T12:00:00.000Z',
     updatedAt: '2026-09-02T12:00:00.000Z',
   },
 ]
 
-function toListItem(row: FindingDetail): FindingListItem {
-  return {
-    id: row.id,
-    title: row.title,
-    impact: row.impact,
-    status: row.status,
-    suggestedAction: row.suggestedAction,
-    justificationShort: row.justificationShort,
-    client: row.client,
-    source: row.source,
-    document: row.document,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
+const emptyCounts = { red: 0, orange: 0, yellow: 0, green: 0 }
+
+function requireRow(id: string): FindingDetail {
+  const row = rows.find((item) => item.id === id)
+  if (!row) {
+    throw new Error('Hallazgo no encontrado.')
   }
+  return row
 }
 
-const emptyCounts = { red: 0, orange: 0, yellow: 0, green: 0 }
+function stamp(row: FindingDetail) {
+  row.updatedAt = new Date().toISOString()
+}
+
+function clone(row: FindingDetail): FindingDetail {
+  return {
+    ...row,
+    client: { ...row.client },
+    source: row.source ? { ...row.source } : null,
+    document: { ...row.document },
+    aiMeta: row.aiMeta
+      ? {
+          ...row.aiMeta,
+          lastRewrite: row.aiMeta.lastRewrite
+            ? { ...row.aiMeta.lastRewrite }
+            : null,
+        }
+      : null,
+  }
+}
 
 export const findingsMockApi = {
   async progress(params?: { date?: string }): Promise<FindingsProgress> {
@@ -228,7 +265,7 @@ export const findingsMockApi = {
 
   async list(params?: ListFindingsParams): Promise<FindingsListPage> {
     await delay()
-    let scoped = rows.map(toListItem)
+    let scoped = rows.map(toFindingListItem)
     if (params?.clientId) {
       scoped = scoped.filter((row) => row.client.id === params.clientId)
     }
@@ -259,6 +296,11 @@ export const findingsMockApi = {
     if (params?.impact) {
       next = next.filter((row) => row.impact === params.impact)
     }
+    if (params?.excluded === true) {
+      next = next.filter((row) => row.excludedFromNextReport)
+    } else if (params?.excluded === false) {
+      next = next.filter((row) => !row.excludedFromNextReport)
+    }
     const limit = params?.limit ?? 50
     const page = Math.max(1, params?.page ?? 1)
     const total = next.length
@@ -279,10 +321,111 @@ export const findingsMockApi = {
 
   async get(id: string): Promise<FindingDetail> {
     await delay()
-    const row = rows.find((item) => item.id === id)
-    if (!row) {
-      throw new Error('Hallazgo no encontrado.')
+    return clone(requireRow(id))
+  },
+
+  async patch(id: string, body: PatchFindingBody): Promise<FindingDetail> {
+    await delay()
+    const title = body.title?.trim()
+    const justification = body.justification
+    const impact = body.impact
+    if (!title && justification == null && impact == null) {
+      throw new Error('El body no puede estar vacío.')
     }
-    return row
+    const row = requireRow(id)
+    if (title !== undefined) {
+      if (!title || title.length > 160) {
+        throw new Error('El título debe tener entre 1 y 160 caracteres.')
+      }
+      row.title = title
+    }
+    if (justification !== undefined) {
+      const text = justification.trim()
+      if (!text || justification.length > 20_000) {
+        throw new Error('La justificación debe tener entre 1 y 20000 caracteres.')
+      }
+      row.justification = justification
+      row.justificationShort = shortJustification(text)
+    }
+    if (impact !== undefined) {
+      if (!FINDING_IMPACTS.includes(impact)) {
+        throw new Error('Impacto inválido.')
+      }
+      row.impact = impact
+      if (impact === 'GREEN') {
+        row.excludedFromNextReport = false
+      }
+    }
+    stamp(row)
+    return clone(row)
+  },
+
+  async exclude(id: string): Promise<FindingDetail> {
+    await delay()
+    const row = requireRow(id)
+    if (!canExcludeFromReport(row.impact)) {
+      throw new Error(
+        'Los hallazgos informativos (GREEN) no entran al informe.',
+      )
+    }
+    row.excludedFromNextReport = true
+    stamp(row)
+    return clone(row)
+  },
+
+  async include(id: string): Promise<FindingDetail> {
+    await delay()
+    const row = requireRow(id)
+    row.excludedFromNextReport = false
+    stamp(row)
+    return clone(row)
+  },
+
+  async rewrite(id: string, prompt: string): Promise<FindingRewriteResult> {
+    await delay(900)
+    const instruction = prompt.trim()
+    if (!instruction || instruction.length > 2000) {
+      throw new Error('El prompt debe tener entre 1 y 2000 caracteres.')
+    }
+    const row = requireRow(id)
+    const idle = /^(ok|okay|okey|gracias|thanks|thx|[¿?]+)\.?$/i.test(
+      instruction,
+    )
+    const asksImpact =
+      /sem[aá]foro|reclasific|impacto|el color/i.test(instruction)
+    if (idle) {
+      unprocessable(
+        'Ese pedido no alcanza para reescribir el briefing. Indica qué debe cambiar.',
+      )
+    }
+    let rewriteNote: string | null = null
+    let rewriteChanged = true
+    if (asksImpact) {
+      rewriteNote =
+        'El semáforo no se cambia por IA; usa el selector de impacto.'
+      rewriteChanged = false
+    } else {
+      row.justification = `${row.justification.trim()}\n\n*Reescritura (mock):* ${instruction}`
+      row.justificationShort = shortJustification(row.justification)
+    }
+    row.aiMeta = {
+      model: row.aiMeta?.model ?? 'gpt-4o-mini',
+      promptVersion: row.aiMeta?.promptVersion ?? 'classify-v2',
+      relevant: row.aiMeta?.relevant ?? true,
+      lastRewrite: {
+        at: new Date().toISOString(),
+        model: 'gpt-4o-mini',
+        promptVersion: 'rewrite-v4',
+        prompt: instruction,
+        note: rewriteNote,
+        changed: rewriteChanged,
+      },
+    }
+    stamp(row)
+    return {
+      ...clone(row),
+      rewriteNote,
+      rewriteChanged,
+    }
   },
 }

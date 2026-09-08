@@ -79,3 +79,23 @@ export const IMPACT_LAMP: Record<
 export function needsAttention(impact: FindingImpact): boolean {
   return impact === 'RED' || impact === 'ORANGE'
 }
+
+/** GREEN nunca entra al PDF; exclude → 400. */
+export function canExcludeFromReport(impact: FindingImpact): boolean {
+  return impact === 'YELLOW' || impact === 'ORANGE' || impact === 'RED'
+}
+
+export function shiftListCounts(
+  counts: FindingsListCounts,
+  from: FindingImpact,
+  to: FindingImpact,
+): FindingsListCounts {
+  if (from === to) return counts
+  const fromKey = IMPACT_COUNT_KEY[from]
+  const toKey = IMPACT_COUNT_KEY[to]
+  return {
+    ...counts,
+    [fromKey]: Math.max(0, counts[fromKey] - 1),
+    [toKey]: counts[toKey] + 1,
+  }
+}

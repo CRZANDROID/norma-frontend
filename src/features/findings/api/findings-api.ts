@@ -3,6 +3,7 @@ import { useApiMock } from '@/shared/lib/utils'
 import { findingsMockApi } from '@/features/findings/api/findings-mock'
 import type {
   FindingAiMeta,
+  FindingAiRewrite,
   FindingDetail,
   FindingDocumentRef,
   FindingImpact,
@@ -13,8 +14,10 @@ import type {
   FindingStatus,
   FindingsListCounts,
   FindingsListPage,
+  FindingRewriteResult,
   FindingsProgress,
   ListFindingsParams,
+  PatchFindingBody,
 } from '@/features/findings/types/finding'
 import { FINDING_IMPACTS } from '@/features/findings/types/finding'
 
@@ -73,6 +76,40 @@ function asDocument(value: unknown): FindingDocumentRef | null {
   }
 }
 
+function asNote(value: unknown): string | null {
+  const raw = text(value)
+  if (!raw) return null
+  return raw.length > 240 ? raw.slice(0, 240) : raw
+}
+
+function asLastRewrite(value: unknown): FindingAiRewrite | null {
+  if (!isRecord(value)) return null
+  const at = text(value.at)
+  if (!at) return null
+  const changed = value.changed
+  return {
+    at,
+    model: text(value.model),
+    promptVersion: text(value.promptVersion),
+    prompt: text(value.prompt),
+    note: asNote(value.note),
+    changed: typeof changed === 'boolean' ? changed : null,
+  }
+}
+
+function unwrapRewrite(data: unknown): FindingRewriteResult {
+  const detail = unwrapDetail(data)
+  if (!isRecord(data)) {
+    return { ...detail, rewriteNote: null, rewriteChanged: true }
+  }
+  const changed = data.rewriteChanged
+  return {
+    ...detail,
+    rewriteNote: asNote(data.rewriteNote),
+    rewriteChanged: typeof changed === 'boolean' ? changed : true,
+  }
+}
+
 function asAiMeta(value: unknown): FindingAiMeta | null {
   if (!isRecord(value)) return null
   const relevantRaw = value.relevant
@@ -80,6 +117,7 @@ function asAiMeta(value: unknown): FindingAiMeta | null {
     model: text(value.model),
     promptVersion: text(value.promptVersion),
     relevant: typeof relevantRaw === 'boolean' ? relevantRaw : null,
+    lastRewrite: asLastRewrite(value.lastRewrite),
   }
 }
 
@@ -97,6 +135,7 @@ function normalizeListItem(raw: unknown): FindingListItem | null {
     impact,
     status: asStatus(raw.status),
     suggestedAction: text(raw.suggestedAction),
+    excludedFromNextReport: raw.excludedFromNextReport === true,
     justificationShort: text(raw.justificationShort) ?? '',
     client,
     source: asRef(raw.source),
@@ -104,6 +143,14 @@ function normalizeListItem(raw: unknown): FindingListItem | null {
     createdAt: text(raw.createdAt) ?? '',
     updatedAt: text(raw.updatedAt) ?? '',
   }
+}
+
+function unwrapDetail(data: unknown): FindingDetail {
+  const detail = normalizeDetail(data)
+  if (!detail) {
+    throw new Error('Hallazgo inválido')
+  }
+  return detail
 }
 
 function normalizeDetail(raw: unknown): FindingDetail | null {
@@ -247,6 +294,11 @@ export const findingsApi = {
           ...(params?.sourceId ? { sourceId: params.sourceId } : {}),
           ...(params?.documentId ? { documentId: params.documentId } : {}),
           ...(params?.impact ? { impact: params.impact } : {}),
+          ...(params?.excluded === true
+            ? { excluded: true }
+            : params?.excluded === false
+              ? { excluded: false }
+              : {}),
           ...(params?.dateFrom && !params?.documentId
             ? { dateFrom: params.dateFrom }
             : {}),
@@ -261,14 +313,40 @@ export const findingsApi = {
       .then((r) => unwrapListPage(r.data))
   },
 
+  exclude(id: string): Promise<FindingDetail> {
+    if (useApiMock) return findingsMockApi.exclude(id)
+    return api
+      .post<unknown>(`/findings/${id}/exclude`)
+      .then((r) => unwrapDetail(r.data))
+  },
+
+  include(id: string): Promise<FindingDetail> {
+    if (useApiMock) return findingsMockApi.include(id)
+    return api
+      .post<unknown>(`/findings/${id}/include`)
+      .then((r) => unwrapDetail(r.data))
+  },
+
+  rewrite(id: string, prompt: string): Promise<FindingRewriteResult> {
+    if (useApiMock) return findingsMockApi.rewrite(id, prompt)
+    return api
+      .post<unknown>(
+        `/findings/${id}/rewrite`,
+        { prompt },
+        { timeout: 35_000 },
+      )
+      .then((r) => unwrapRewrite(r.data))
+  },
+
+  patch(id: string, body: PatchFindingBody): Promise<FindingDetail> {
+    if (useApiMock) return findingsMockApi.patch(id, body)
+    return api
+      .patch<unknown>(`/findings/${id}`, body)
+      .then((r) => unwrapDetail(r.data))
+  },
+
   get(id: string): Promise<FindingDetail> {
     if (useApiMock) return findingsMockApi.get(id)
-    return api.get<unknown>(`/findings/${id}`).then((r) => {
-      const detail = normalizeDetail(r.data)
-      if (!detail) {
-        throw new Error('Hallazgo inválido')
-      }
-      return detail
-    })
+    return api.get<unknown>(`/findings/${id}`).then((r) => unwrapDetail(r.data))
   },
 }
