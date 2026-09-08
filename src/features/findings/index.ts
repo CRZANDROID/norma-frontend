@@ -6,5 +6,7 @@ export type {
   FindingImpactCounts,
   FindingListItem,
   FindingProgressSource,
+  FindingsListCounts,
+  FindingsListPage,
   FindingsProgress,
 } from '@/features/findings/types/finding'

@@ -27,7 +27,7 @@ Si en deploy (Vercel/Netlify) un refresh en `/login` o `/clientes` da `404`, hac
 ```
 src/
   app/           # providers, router, layouts
-  features/      # auth, clients, sources, users, jobs, documents, dashboard, ai
+  features/      # auth, clients, sources, users, jobs, documents, dashboard, ai, findings
   shared/        # ui, lib (axios, auth-token, cn)
   store/         # Zustand (sesión)
 ```
@@ -38,7 +38,7 @@ src/
 |------|--------|
 | `/login` | Login |
 | `/dashboard` | Dashboard |
-| `/alertas` | Alertas |
+| `/alertas` | Clasificación (hallazgos; S8 loop VCGA) |
 | `/clientes` | Clientes |
 | `/fuentes` | Fuentes |
 | `/usuarios` | Usuarios |

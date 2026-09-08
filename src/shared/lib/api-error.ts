@@ -28,7 +28,7 @@ export function mapApiError(
     if (status === 404) {
       return message || 'No encontramos ese recurso.'
     }
-    if (status === 400 || status === 409) {
+    if (status === 400 || status === 409 || status === 422) {
       return message || 'Revisa los datos e inténtalo de nuevo.'
     }
     if (status === 429) {

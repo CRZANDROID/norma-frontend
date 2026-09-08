@@ -4,7 +4,7 @@
 **Alcance:** CRUD Sprint 3 (clients + regulatory profiles) + rediseño del shell autenticado  
 **Inspiración:** deck `Norma — Presentación.html` (MAIA / VCGA)  
 **Skills:** frontend-design, ui-ux-pro-max, emil-design-eng, web-design-guidelines  
-**Contrato API:** backend `docs/postman-pruebas.md` + `docs/FRONTEND-CLIENT-FISCAL-CONTACTS.md` / `docs/FRONTEND-CLIENT-DELIVERY.md`  
+**Contrato API:** backend `docs/FRONTEND-ADMIN.md`. Swagger `/docs`.  
 
 ---
 

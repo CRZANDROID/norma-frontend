@@ -1,4 +1,42 @@
-import type { FindingImpact } from '@/features/findings/types/finding'
+import type {
+  FindingImpact,
+  FindingImpactCounts,
+  FindingsListCounts,
+} from '@/features/findings/types/finding'
+
+export const IMPACT_COUNT_KEY: Record<FindingImpact, keyof FindingImpactCounts> =
+  {
+    RED: 'red',
+    ORANGE: 'orange',
+    YELLOW: 'yellow',
+    GREEN: 'green',
+  }
+
+export function emptyImpactCounts(): FindingImpactCounts {
+  return { red: 0, orange: 0, yellow: 0, green: 0 }
+}
+
+export function emptyListCounts(): FindingsListCounts {
+  return { total: 0, red: 0, orange: 0, yellow: 0, green: 0 }
+}
+
+export function totalImpactCounts(counts: FindingImpactCounts): number {
+  return counts.red + counts.orange + counts.yellow + counts.green
+}
+
+export function sumImpactCounts(
+  rows: FindingImpactCounts[],
+): FindingImpactCounts {
+  return rows.reduce(
+    (acc, row) => ({
+      red: acc.red + row.red,
+      orange: acc.orange + row.orange,
+      yellow: acc.yellow + row.yellow,
+      green: acc.green + row.green,
+    }),
+    emptyImpactCounts(),
+  )
+}
 
 export const IMPACT_LAMP: Record<
   FindingImpact,
@@ -40,4 +78,24 @@ export const IMPACT_LAMP: Record<
 
 export function needsAttention(impact: FindingImpact): boolean {
   return impact === 'RED' || impact === 'ORANGE'
+}
+
+/** GREEN nunca entra al PDF; exclude → 400. */
+export function canExcludeFromReport(impact: FindingImpact): boolean {
+  return impact === 'YELLOW' || impact === 'ORANGE' || impact === 'RED'
+}
+
+export function shiftListCounts(
+  counts: FindingsListCounts,
+  from: FindingImpact,
+  to: FindingImpact,
+): FindingsListCounts {
+  if (from === to) return counts
+  const fromKey = IMPACT_COUNT_KEY[from]
+  const toKey = IMPACT_COUNT_KEY[to]
+  return {
+    ...counts,
+    [fromKey]: Math.max(0, counts[fromKey] - 1),
+    [toKey]: counts[toKey] + 1,
+  }
 }

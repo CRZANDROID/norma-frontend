@@ -1,26 +1,22 @@
 # Docs NORMA — Frontend
 
-Este repo **no** copia contratos de API. Esos viven en `norma-backend/docs/`.
+Este repo **no** copia contratos de API. Viven en `norma-backend/docs/`.
 
-## Qué leer aquí
+## Aquí
 
 | Doc | Para qué |
 |-----|----------|
-| [PRODUCT.md](./PRODUCT.md) | Límites del frontend |
+| [PRODUCT.md](./PRODUCT.md) | Límites (apunta al backend) |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | `app/` + `features/` + `shared/` |
 | [SPRINTS.md](./SPRINTS.md) | Qué hace el front por sprint |
 | [DESIGN-CLIENTS-PROFILES.md](./DESIGN-CLIENTS-PROFILES.md) | Shell, tokens, clientes |
 | [DESIGN-SOURCES.md](./DESIGN-SOURCES.md) | UX fuentes |
 | [DESIGN-USERS.md](./DESIGN-USERS.md) | UX usuarios |
 
-## Contratos de API / UI (backend)
+## Briefs (backend)
 
-En el repo `norma-backend`, empezando por `docs/README.md` y `docs/HANDOFF.md`:
-
-- `docs/FRONTEND-SOURCES-V2.md`
-- `docs/FRONTEND-CLIENT-SOURCES.md`
-- `docs/FRONTEND-CLIENT-FISCAL-CONTACTS.md`
-- `docs/FRONTEND-CLIENT-DELIVERY.md`
-- `docs/FRONTEND-AI-ASK.md`
+- `docs/HANDOFF.md` + `docs/README.md`
+- `docs/FRONTEND-ADMIN.md`
 - `docs/FRONTEND-TRACKING.md`
-- `docs/postman-pruebas.md` (o Swagger `http://localhost:3000/docs`)
+- `docs/FRONTEND-ALERTAS.md`
+- Swagger `http://localhost:3000/docs`

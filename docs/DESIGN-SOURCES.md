@@ -3,7 +3,7 @@
 **Estado:** CRUD conectado a Nest (`VITE_USE_API_MOCK=false`); mock solo para preview UI  
 **Alcance:** CRUD Sources v2 (categoría / plataforma / secciones / URL)  
 **Firma visual:** misma shell que Clientes (aurora navy, chips de señal, master-detail)  
-**Contrato API:** repo backend `docs/FRONTEND-SOURCES-V2.md` (y `docs/postman-pruebas.md`). **No** `frequency`.
+**Contrato API:** backend `docs/FRONTEND-ADMIN.md`. **No** `frequency`. Swagger `/docs`.
 
 Tokens, tipografía y motion: heredar de [DESIGN-CLIENTS-PROFILES.md](./DESIGN-CLIENTS-PROFILES.md).
 
