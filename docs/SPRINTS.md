@@ -10,8 +10,8 @@ El piloto son **10 semanas** (S1–S10).
 | 1–4 | Scaffold, login, admin CRUD | Hecho |
 | 5–6 | Panel de rastreo + registro documental | Hecho |
 | 7 | Semáforo en `/alertas` | Hecho |
-| 8 | Editar / IA / excluir en `/alertas` | Pendiente |
-| 9 | Generar PDF + envío | Pendiente |
+| 8 | Editar / IA / excluir en `/alertas` | Hecho |
+| 9 | Generar PDF + mesa `/informes` (sin correo) | En curso (lote + Informes) |
 | 10 | Portal `CLIENT_USER` | Pendiente |
 
 S8–S10: backend `docs/FRONTEND-ALERTAS.md`. No inbox, no `/hallazgos`.

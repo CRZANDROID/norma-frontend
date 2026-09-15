@@ -107,6 +107,8 @@ export type ListFindingsParams = {
   status?: FindingStatus
   /** Recorta items/total. No recorta counts. */
   excluded?: boolean
+  /** Cubeta del próximo informe. Gana sobre excluded. */
+  lote?: FindingLote
   limit?: number
   page?: number
   /** Inicio de rango YYYY-MM-DD. Omitir = sin piso. */
@@ -121,7 +123,18 @@ export type FindingsListCounts = {
   orange: number
   yellow: number
   green: number
+  included: number
+  excluded: number
+  sent: number
 }
+
+export type FindingLote = 'incluidos' | 'excluidos' | 'enviados'
+
+export const FINDING_LOTES: FindingLote[] = [
+  'incluidos',
+  'excluidos',
+  'enviados',
+]
 
 export type FindingsListPage = {
   dateFrom: string | null

@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import {
   Building2,
+  FileText,
   LogOut,
   Menu,
   Radar,
@@ -26,6 +27,7 @@ import { NormaMark } from '@/shared/ui/norma-mark'
 const navItems = [
   { to: '/dashboard', label: 'Agentes', icon: Radar },
   { to: '/alertas', label: 'Clasificación', icon: ScanSearch },
+  { to: '/informes', label: 'Informes', icon: FileText },
   { to: '/clientes', label: 'Clientes', icon: Building2 },
   { to: '/fuentes', label: 'Fuentes', icon: Radio },
   { to: '/usuarios', label: 'Usuarios', icon: Users },
@@ -236,7 +238,7 @@ export function AppLayout() {
         <main
           id="contenido-principal"
           tabIndex={-1}
-          className="min-h-0 flex-1 overflow-auto p-4 md:p-8"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 md:px-8 md:py-5 xl:p-8"
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
@@ -245,7 +247,7 @@ export function AppLayout() {
               animate={pageTransition.animate}
               exit={reduceMotion ? undefined : pageTransition.exit}
               transition={{ duration: duration.page, ease: easeOut }}
-              className="min-h-full"
+              className="flex min-h-0 flex-1 flex-col overflow-auto"
             >
               <Outlet />
             </motion.div>

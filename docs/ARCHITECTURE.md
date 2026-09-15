@@ -44,8 +44,8 @@ src/
     jobs/
     documents/              # registro documental (S6; listado en panel de rastreo)
     ai/                     # asistente de catálogo
-    findings/               # /alertas — semáforo; S8 edita / excluye
-    reports/                # S9–S10: PDF, envío, portal cliente (aún no)
+    findings/               # /alertas — semáforo, lote, generar PDF
+    reports/                # /informes — PDF draft/enviados (envío pendiente)
     <feature>/
       api/                  # llamadas Axios de ESTE dominio
       types/                # contratos de ESTE dominio

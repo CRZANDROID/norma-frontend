@@ -37,6 +37,12 @@ const FindingsPage = lazy(() =>
   })),
 )
 
+const ReportsPage = lazy(() =>
+  import('@/features/reports/pages/ReportsPage').then((m) => ({
+    default: m.ReportsPage,
+  })),
+)
+
 function RouteFallback() {
   return (
     <div className="flex min-h-[40vh] items-center justify-center text-sm text-norma-muted">
@@ -101,6 +107,22 @@ const router = createBrowserRouter([
                 element: (
                   <SuspensePage>
                     <FindingsPage />
+                  </SuspensePage>
+                ),
+              },
+              {
+                path: '/informes',
+                element: (
+                  <SuspensePage>
+                    <ReportsPage />
+                  </SuspensePage>
+                ),
+              },
+              {
+                path: '/informes/:reportId',
+                element: (
+                  <SuspensePage>
+                    <ReportsPage />
                   </SuspensePage>
                 ),
               },

@@ -5,6 +5,7 @@ export type {
   FindingImpact,
   FindingImpactCounts,
   FindingListItem,
+  FindingLote,
   FindingProgressSource,
   FindingsListCounts,
   FindingsListPage,
