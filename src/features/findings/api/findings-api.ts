@@ -209,6 +209,9 @@ function asListCounts(value: unknown): FindingsListCounts {
   return {
     ...colors,
     total: asInt(row.total, colors.red + colors.orange + colors.yellow + colors.green),
+    included: asInt(row.included, 0),
+    excluded: asInt(row.excluded, 0),
+    sent: asInt(row.sent, 0),
   }
 }
 
@@ -294,11 +297,13 @@ export const findingsApi = {
           ...(params?.sourceId ? { sourceId: params.sourceId } : {}),
           ...(params?.documentId ? { documentId: params.documentId } : {}),
           ...(params?.impact ? { impact: params.impact } : {}),
-          ...(params?.excluded === true
-            ? { excluded: true }
-            : params?.excluded === false
-              ? { excluded: false }
-              : {}),
+          ...(params?.lote
+            ? { lote: params.lote }
+            : params?.excluded === true
+              ? { excluded: true }
+              : params?.excluded === false
+                ? { excluded: false }
+                : {}),
           ...(params?.dateFrom && !params?.documentId
             ? { dateFrom: params.dateFrom }
             : {}),

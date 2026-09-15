@@ -17,7 +17,16 @@ export function emptyImpactCounts(): FindingImpactCounts {
 }
 
 export function emptyListCounts(): FindingsListCounts {
-  return { total: 0, red: 0, orange: 0, yellow: 0, green: 0 }
+  return {
+    total: 0,
+    red: 0,
+    orange: 0,
+    yellow: 0,
+    green: 0,
+    included: 0,
+    excluded: 0,
+    sent: 0,
+  }
 }
 
 export function totalImpactCounts(counts: FindingImpactCounts): number {

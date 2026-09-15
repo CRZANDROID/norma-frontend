@@ -13,15 +13,17 @@ import {
 import { FindingDetailCard } from '@/features/findings/components/FindingDetailCard'
 import { FindingListPanel } from '@/features/findings/components/FindingListPanel'
 import { FindingPageNav } from '@/features/findings/components/FindingPageNav'
+import { FindingReportBar } from '@/features/findings/components/FindingReportBar'
 import { FINDING_REWRITE_HINT_HOST_ID } from '@/features/findings/components/FindingRewriteNotice'
 import { ImpactFilter } from '@/features/findings/components/ImpactFilter'
 import type {
   FindingDetail,
   FindingImpact,
   FindingListItem,
+  FindingLote,
   FindingsListCounts,
 } from '@/features/findings/types/finding'
-import { FINDING_IMPACTS } from '@/features/findings/types/finding'
+import { FINDING_IMPACTS, FINDING_LOTES } from '@/features/findings/types/finding'
 import {
   civilDateToday,
   formatCivilDateLabel,
@@ -64,6 +66,13 @@ function PulseDot({ live }: { live: boolean }) {
       />
     </span>
   )
+}
+
+function asLoteParam(value: string | null): FindingLote | null {
+  if (!value) return null
+  return FINDING_LOTES.includes(value as FindingLote)
+    ? (value as FindingLote)
+    : null
 }
 
 function asImpactParam(value: string | null): FindingImpact | null {
@@ -130,11 +139,11 @@ export function FindingsPage() {
   const impactFilter = asImpactParam(searchParams.get('impacto'))
   const dateFrom = parseCivilParam(searchParams.get('desde'))
   const dateTo = parseCivilParam(searchParams.get('hasta'))
+  const lote = asLoteParam(searchParams.get('lote'))
   const dateRange = useMemo(
     () => orderedRange(dateFrom, dateTo),
     [dateFrom, dateTo],
   )
-  const excludedOnly = searchParams.get('excluido') === 'true'
   const pageSize = parsePageSize(searchParams.get('tamano'))
   const paged = pageSize !== 'all'
   const requestedPage = paged
@@ -184,13 +193,13 @@ export function FindingsPage() {
       clientId,
       sourceId: sourceId || undefined,
       impact: impactFilter ?? undefined,
-      excluded: excludedOnly ? true : undefined,
+      lote: lote ?? undefined,
       status: 'OPEN' as const,
       limit: apiLimit,
       dateFrom: dateRange.dateFrom ?? undefined,
       dateTo: dateRange.dateTo ?? undefined,
     }),
-    [clientId, sourceId, impactFilter, excludedOnly, apiLimit, dateRange],
+    [clientId, sourceId, impactFilter, lote, apiLimit, dateRange],
   )
 
   const patchSearch = useCallback(
@@ -218,7 +227,7 @@ export function FindingsPage() {
       desde?: string | null
       hasta?: string | null
       tamano?: string | null
-      excluido?: string | null
+      lote?: FindingLote | null
     }) => {
       const cliente = overrides.cliente ?? clientId
       const fuente =
@@ -233,12 +242,8 @@ export function FindingsPage() {
         overrides.tamano === undefined
           ? tamanoQueryValue(pageSize)
           : overrides.tamano
-      const excluido =
-        overrides.excluido === undefined
-          ? excludedOnly
-            ? 'true'
-            : null
-          : overrides.excluido
+      const loteValue =
+        overrides.lote === undefined ? lote : overrides.lote
       const next = new URLSearchParams()
       if (cliente) next.set('cliente', cliente)
       if (fuente) next.set('fuente', fuente)
@@ -246,11 +251,11 @@ export function FindingsPage() {
       if (desde) next.set('desde', desde)
       if (hasta) next.set('hasta', hasta)
       if (tamano) next.set('tamano', tamano)
-      if (excluido) next.set('excluido', excluido)
+      if (loteValue) next.set('lote', loteValue)
       const qs = next.toString()
       return qs ? `?${qs}` : ''
     },
-    [clientId, sourceId, impactFilter, excludedOnly, dateRange, pageSize],
+    [clientId, sourceId, impactFilter, lote, dateRange, pageSize],
   )
 
   useEffect(() => {
@@ -454,10 +459,18 @@ export function FindingsPage() {
     if (findingRows.length === 0) return
     if (findingId && findingRows.some((row) => row.id === findingId)) return
     if (
-      excludedOnly &&
+      lote === 'excluidos' &&
       findingId &&
       detail?.id === findingId &&
       !detail.excludedFromNextReport
+    ) {
+      return
+    }
+    if (
+      lote === 'incluidos' &&
+      findingId &&
+      detail?.id === findingId &&
+      detail.excludedFromNextReport
     ) {
       return
     }
@@ -478,7 +491,7 @@ export function FindingsPage() {
     loadingList,
     navigate,
     findingRows,
-    excludedOnly,
+    lote,
     impactFilter,
     detail,
   ])
@@ -494,14 +507,29 @@ export function FindingsPage() {
             shiftListCounts(counts, previous.impact, next.impact),
           )
         }
-        const leavesExcluded =
-          excludedOnly && !next.excludedFromNextReport
+        const leavesLote =
+          (lote === 'excluidos' && !next.excludedFromNextReport) ||
+          (lote === 'incluidos' && next.excludedFromNextReport)
         const leavesImpact =
           Boolean(impactFilter) && next.impact !== impactFilter
-        if (leavesExcluded || leavesImpact) {
+        if (leavesLote || leavesImpact) {
           const remaining = rows.filter((row) => row.id !== next.id)
           if (remaining.length !== rows.length) {
             setTotal((n) => Math.max(0, n - 1))
+            if (lote === 'incluidos' && next.excludedFromNextReport) {
+              setCounts((counts) => ({
+                ...counts,
+                included: Math.max(0, counts.included - 1),
+                excluded: counts.excluded + 1,
+              }))
+            }
+            if (lote === 'excluidos' && !next.excludedFromNextReport) {
+              setCounts((counts) => ({
+                ...counts,
+                excluded: Math.max(0, counts.excluded - 1),
+                included: counts.included + 1,
+              }))
+            }
           }
           return remaining
         }
@@ -510,7 +538,7 @@ export function FindingsPage() {
         )
       })
     },
-    [excludedOnly, impactFilter],
+    [lote, impactFilter],
   )
 
   function onClientChange(id: string) {
@@ -593,11 +621,11 @@ export function FindingsPage() {
     !loadingList &&
     findingRows.length === 0 &&
     !impactFilter &&
-    !excludedOnly
+    !lote
   const emptyImpact =
     !loadingList &&
     findingRows.length === 0 &&
-    Boolean(impactFilter || excludedOnly)
+    Boolean(impactFilter || lote)
   const dossierWash = detail ? IMPACT_LAMP[detail.impact].wash : null
   const shiftLabel = loadingList
     ? 'Leyendo'
@@ -624,19 +652,23 @@ export function FindingsPage() {
       : 'Cuando el agente clasifique documentos de este cliente, aparecerán aquí.'
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
+    <div className="flex min-h-0 flex-1 flex-col gap-3 lg:gap-4">
+      <div className="shrink-0">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-norma-accent">
           Sala de agentes
         </p>
-        <h1 className="mt-1 font-display text-[2rem] font-semibold tracking-tight text-balance md:text-[2.35rem]">
+        <h1 className="mt-1 font-display text-[1.75rem] font-semibold tracking-tight text-balance [@media(min-height:50rem)]:text-[2.35rem]">
           Clasificación
         </h1>
       </div>
 
       {loadingClients ? (
-        <div aria-busy="true" aria-label="Cargando clientes">
-          <Skeleton className="h-[min(calc(100dvh-13rem),52rem)] min-h-[28rem] w-full rounded-3xl" />
+        <div
+          className="flex min-h-0 flex-1 flex-col"
+          aria-busy="true"
+          aria-label="Cargando clientes"
+        >
+          <Skeleton className="min-h-0 w-full flex-1 rounded-3xl" />
         </div>
       ) : clientsError && clients.length === 0 ? (
         <ErrorState
@@ -654,9 +686,9 @@ export function FindingsPage() {
           onRetry={() => setListEpoch((n) => n + 1)}
         />
       ) : (
-        <div className="flex h-[min(calc(100dvh-13rem),52rem)] min-h-[28rem] flex-col overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface shadow-[0_22px_48px_-24px_rgba(13,27,42,0.4)]">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border-2 border-norma-border bg-norma-surface shadow-[0_22px_48px_-24px_rgba(13,27,42,0.4)]">
           <header className="shrink-0 overflow-hidden bg-norma-navy text-white">
-            <div className="bg-[radial-gradient(ellipse_80%_60%_at_12%_-20%,rgba(0,190,208,0.28),transparent_55%),radial-gradient(ellipse_at_90%_0%,rgba(105,88,248,0.32),transparent_50%)] px-5 py-4">
+            <div className="bg-[radial-gradient(ellipse_80%_60%_at_12%_-20%,rgba(0,190,208,0.28),transparent_55%),radial-gradient(ellipse_at_90%_0%,rgba(105,88,248,0.32),transparent_50%)] px-5 py-3 [@media(min-height:50rem)]:py-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-norma-accent-soft">
@@ -692,7 +724,7 @@ export function FindingsPage() {
                         .join(' · ')}
                 </p>
               </div>
-              <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+              <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between [@media(min-height:50rem)]:mt-4">
                 <div className="grid min-w-0 w-full gap-3 sm:grid-cols-2 xl:max-w-md">
                   <div className="space-y-1">
                     <Label htmlFor="finding-client" className="text-white/50">
@@ -729,6 +761,11 @@ export function FindingsPage() {
                   className="xl:justify-end"
                 />
               </div>
+              <FindingReportBar
+                clientId={clientId}
+                dateFrom={dateRange.dateFrom}
+                dateTo={dateRange.dateTo}
+              />
               {loadingSources ? (
                 <p className="mt-2 text-[11px] text-white/40">
                   Cargando fuentes…
@@ -753,16 +790,16 @@ export function FindingsPage() {
                   counts={counts}
                   selected={impactFilter}
                   loading={loadingList}
-                  excludedOnly={excludedOnly}
+                  lote={lote}
                   onSelect={(impact) =>
                     patchSearch({
                       impacto: impact ?? null,
                       pagina: null,
                     })
                   }
-                  onExcludedChange={(next) =>
+                  onLoteChange={(next) =>
                     patchSearch({
-                      excluido: next ? 'true' : null,
+                      lote: next,
                       pagina: null,
                     })
                   }
@@ -853,9 +890,13 @@ export function FindingsPage() {
             ) : emptyImpact ? (
               <EmptyState
                 title={
-                  excludedOnly
-                    ? 'Nada fuera del informe'
-                    : 'Nada con ese impacto'
+                  lote === 'incluidos'
+                    ? 'Nada en el próximo informe'
+                    : lote === 'excluidos'
+                      ? 'Nada excluido'
+                      : lote === 'enviados'
+                        ? 'Nada enviado'
+                        : 'Nada con ese impacto'
                 }
                 description="No hay hallazgos abiertos con los filtros actuales."
               />
@@ -898,7 +939,7 @@ export function FindingsPage() {
             ) : detail ? (
               <FindingDetailCard
                 finding={detail}
-                excludedFilterOn={excludedOnly}
+                excludedFilterOn={lote === 'excluidos'}
                 onUpdated={applyFindingUpdate}
               />
             ) : null}

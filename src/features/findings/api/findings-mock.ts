@@ -7,6 +7,8 @@ import {
 import { canExcludeFromReport } from '@/features/findings/lib/impact'
 import type {
   FindingDetail,
+  FindingListItem,
+  FindingLote,
   FindingRewriteResult,
   FindingsListPage,
   FindingsProgress,
@@ -17,6 +19,14 @@ import { FINDING_IMPACTS } from '@/features/findings/types/finding'
 
 function delay(ms = 180) {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function matchesLote(row: FindingListItem, lote: FindingLote): boolean {
+  if (lote === 'enviados') return false
+  if (lote === 'excluidos') return row.excludedFromNextReport
+  return (
+    canExcludeFromReport(row.impact) && !row.excludedFromNextReport
+  )
 }
 
 function unprocessable(message: string): never {
@@ -291,12 +301,17 @@ export const findingsMockApi = {
       orange: scoped.filter((row) => row.impact === 'ORANGE').length,
       yellow: scoped.filter((row) => row.impact === 'YELLOW').length,
       green: scoped.filter((row) => row.impact === 'GREEN').length,
+      included: scoped.filter((row) => matchesLote(row, 'incluidos')).length,
+      excluded: scoped.filter((row) => matchesLote(row, 'excluidos')).length,
+      sent: scoped.filter((row) => matchesLote(row, 'enviados')).length,
     }
     let next = scoped
     if (params?.impact) {
       next = next.filter((row) => row.impact === params.impact)
     }
-    if (params?.excluded === true) {
+    if (params?.lote) {
+      next = next.filter((row) => matchesLote(row, params.lote!))
+    } else if (params?.excluded === true) {
       next = next.filter((row) => row.excludedFromNextReport)
     } else if (params?.excluded === false) {
       next = next.filter((row) => !row.excludedFromNextReport)
