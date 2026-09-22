@@ -162,6 +162,18 @@ export const jobsApi = {
     return api.post('/jobs/crawl/all').then((r) => r.data)
   },
 
+  extractAll(date?: string): Promise<unknown> {
+    const body = date ? { date } : {}
+    if (useApiMock) return jobsMockApi.extractAll(body)
+    return api.post('/jobs/extract/all', body).then((r) => r.data)
+  },
+
+  classifyAll(date?: string): Promise<unknown> {
+    const body = date ? { date } : {}
+    if (useApiMock) return jobsMockApi.classifyAll(body)
+    return api.post('/jobs/classify/all', body).then((r) => r.data)
+  },
+
   progress(): Promise<JobsProgress> {
     const raw = useApiMock
       ? jobsMockApi.progress()

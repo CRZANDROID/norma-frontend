@@ -125,6 +125,20 @@ export const jobsMockApi = {
     return { enqueued }
   },
 
+  async extractAll(_input?: { date?: string }) {
+    await delay()
+    return {
+      date: '2026-08-25',
+      extract: { enqueued: 2, skipped: 1 },
+      classify: { enqueued: 1, skipped: 2 },
+    }
+  },
+
+  async classifyAll(_input?: { date?: string }) {
+    await delay()
+    return { date: '2026-08-25', enqueued: 1, skipped: 2 }
+  },
+
   async progress(): Promise<JobsProgress> {
     await delay()
     return {

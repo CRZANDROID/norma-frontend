@@ -26,6 +26,22 @@ import { ErrorState } from '@/shared/ui/page'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { NormaThinkingOrb } from '@/shared/ui/thinking-orb'
 
+function ThinkingLabel({ children }: { children: string }) {
+  const reduceMotion = useReducedMotion()
+  return (
+    <p
+      className={cn(
+        'text-[10px] font-semibold uppercase tracking-[0.14em]',
+        reduceMotion
+          ? 'text-white/50'
+          : 'animate-think-sheen bg-[length:200%_100%] bg-[position:100%_50%] bg-clip-text text-transparent [background-image:linear-gradient(90deg,rgb(255_255_255_/_0.38)_0%,rgb(255_255_255_/_0.38)_38%,rgb(255_255_255_/_0.98)_50%,rgb(255_255_255_/_0.38)_62%,rgb(255_255_255_/_0.38)_100%)]',
+      )}
+    >
+      {children}
+    </p>
+  )
+}
+
 function PulseDot({ live }: { live: boolean }) {
   const reduceMotion = useReducedMotion()
   return (
@@ -102,56 +118,83 @@ function PhaseMeter({
   total,
   accent,
   orb,
+  live = false,
+  action,
 }: {
   label: string
   done: number
   total: number
   accent: 'signal' | 'accent'
   orb?: 'searching' | 'weaving' | 'solving' | 'working'
+  live?: boolean
+  action?: {
+    label: string
+    busyLabel: string
+    busy: boolean
+    onClick: () => void
+  }
 }) {
   const reduceMotion = useReducedMotion()
   const ratio = total === 0 ? 0 : done / total
   return (
-    <div className="flex min-h-[5.5rem] items-center gap-3 rounded-2xl border border-white/12 bg-white/6 px-3.5 py-3">
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
-          {label}
-        </p>
-        <p className="mt-1 font-display text-lg font-semibold tabular-nums">
-          {done}
-          <span className="text-white/45"> / {total || '—'}</span>
-        </p>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/12">
-          <motion.span
-            className={cn(
-              'block h-full w-full origin-left rounded-full',
-              accent === 'signal' ? 'bg-norma-signal' : 'bg-norma-accent-soft',
-            )}
-            initial={false}
-            animate={{ scaleX: ratio }}
-            transition={
-              reduceMotion
-                ? { duration: 0 }
-                : { duration: duration.modal, ease: easeOut }
+    <div className="flex min-h-[5.5rem] flex-col gap-2.5 rounded-2xl border border-white/12 bg-white/6 px-3.5 py-3">
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          {live ? (
+            <ThinkingLabel>{label}</ThinkingLabel>
+          ) : (
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
+              {label}
+            </p>
+          )}
+          <p className="mt-1 font-display text-lg font-semibold tabular-nums">
+            {done}
+            <span className="text-white/45"> / {total || '—'}</span>
+          </p>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/12">
+            <motion.span
+              className={cn(
+                'block h-full w-full origin-left rounded-full',
+                accent === 'signal' ? 'bg-norma-signal' : 'bg-norma-accent-soft',
+              )}
+              initial={false}
+              animate={{ scaleX: ratio }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : { duration: duration.modal, ease: easeOut }
+              }
+            />
+          </div>
+        </div>
+        {orb ? (
+          <NormaThinkingOrb
+            state={orb}
+            size={64}
+            className="shrink-0"
+            aria-label={
+              orb === 'searching'
+                ? 'Rastreando fuentes'
+                : orb === 'solving'
+                  ? 'Extrayendo documentos'
+                  : orb === 'working'
+                    ? 'Analizando hallazgos'
+                    : 'Agente en mesa'
             }
           />
-        </div>
+        ) : null}
       </div>
-      {orb ? (
-        <NormaThinkingOrb
-          state={orb}
-          size={64}
-          className="shrink-0"
-          aria-label={
-            orb === 'searching'
-              ? 'Rastreando fuentes'
-              : orb === 'solving'
-                ? 'Extrayendo documentos'
-                : orb === 'working'
-                  ? 'Analizando hallazgos'
-                  : 'Agente en mesa'
-          }
-        />
+      {action ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="w-full border-white/20 bg-white/8 text-white hover:bg-white/14"
+          disabled={action.busy}
+          onClick={action.onClick}
+        >
+          {action.busy ? action.busyLabel : action.label}
+        </Button>
       ) : null}
     </div>
   )
@@ -454,8 +497,12 @@ export function AgentWatch({
   loading,
   pagesLoading,
   crawling,
+  extracting,
+  classifying,
   onRetry,
   onCrawl,
+  onExtract,
+  onClassify,
   onDetailChange,
 }: {
   canRead: boolean
@@ -475,8 +522,12 @@ export function AgentWatch({
   loading: boolean
   pagesLoading: boolean
   crawling: boolean
+  extracting: boolean
+  classifying: boolean
   onRetry: () => void
   onCrawl: () => void
+  onExtract: () => void
+  onClassify: () => void
   onDetailChange?: (sourceId: string | null) => void
 }) {
   const [openDoc, setOpenDoc] = useState<DocumentListItem | null>(null)
@@ -490,12 +541,14 @@ export function AgentWatch({
   const crawlLive =
     crawling ||
     journeys.some((row) => stepTone('crawl', row.crawl?.status) === 'live')
-  const extractLive = journeys.some(
-    (row) => stepTone('extract', row.extract?.status) === 'live',
-  )
-  const analysisLive = journeys.some(
-    (row) => stepTone('analysis', row.analysis?.status) === 'live',
-  )
+  const extractLive =
+    extracting ||
+    journeys.some((row) => stepTone('extract', row.extract?.status) === 'live')
+  const analysisLive =
+    classifying ||
+    journeys.some(
+      (row) => stepTone('analysis', row.analysis?.status) === 'live',
+    )
   const fatal = Boolean(
     crawlError && extractError && analysisError && journeys.length === 0,
   )
@@ -566,7 +619,7 @@ export function AgentWatch({
             selected ? 'py-3' : 'py-4',
           )}
         >
-          <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-norma-accent-soft">
@@ -574,7 +627,9 @@ export function AgentWatch({
                 </p>
                 <PulseDot live={live} />
                 <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/80">
-                  {live || crawling ? 'Trabajando' : 'En mesa'}
+                  {live || crawling || extracting || classifying
+                    ? 'Trabajando'
+                    : 'En mesa'}
                 </span>
               </div>
               {selected ? null : day ? (
@@ -591,48 +646,69 @@ export function AgentWatch({
                 </p>
               )}
             </div>
-            {canCrawl ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="border-white/20 bg-white/8 text-white hover:bg-white/14"
-                disabled={crawling}
-                onClick={onCrawl}
-              >
-                {crawling ? 'Saliendo…' : 'Poner a rastrear'}
-              </Button>
-            ) : null}
           </div>
 
           {selected || !canRead ? null : loading ? (
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
-              <Skeleton className="h-[4.75rem] w-full bg-white/10" />
-              <Skeleton className="h-[4.75rem] w-full bg-white/10" />
-              <Skeleton className="h-[4.75rem] w-full bg-white/10" />
+              <Skeleton className="h-[7.25rem] w-full bg-white/10" />
+              <Skeleton className="h-[7.25rem] w-full bg-white/10" />
+              <Skeleton className="h-[7.25rem] w-full bg-white/10" />
             </div>
           ) : (
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
               <PhaseMeter
-                label="Agente de rastreo"
+                label={crawlLive ? 'Rastreando' : 'Rastreo'}
+                live={crawlLive}
                 done={crawledCount}
                 total={total}
                 accent="signal"
                 orb={crawlLive ? 'searching' : 'weaving'}
+                action={
+                  canCrawl
+                    ? {
+                        label: 'Rastrear',
+                        busyLabel: 'Saliendo…',
+                        busy: crawling,
+                        onClick: onCrawl,
+                      }
+                    : undefined
+                }
               />
               <PhaseMeter
-                label="Agente de extracción"
+                label={extractLive ? 'Extrayendo' : 'Extracción'}
+                live={extractLive}
                 done={extractCount}
                 total={total}
                 accent="accent"
                 orb={extractLive ? 'solving' : 'weaving'}
+                action={
+                  canCrawl
+                    ? {
+                        label: 'Extraer',
+                        busyLabel: 'Extrayendo…',
+                        busy: extracting,
+                        onClick: onExtract,
+                      }
+                    : undefined
+                }
               />
               <PhaseMeter
-                label="Agente de análisis"
+                label={analysisLive ? 'Analizando' : 'Análisis'}
+                live={analysisLive}
                 done={analysisCount}
                 total={total}
                 accent="accent"
                 orb={analysisLive ? 'working' : 'weaving'}
+                action={
+                  canCrawl
+                    ? {
+                        label: 'Analizar',
+                        busyLabel: 'Analizando…',
+                        busy: classifying,
+                        onClick: onClassify,
+                      }
+                    : undefined
+                }
               />
             </div>
           )}

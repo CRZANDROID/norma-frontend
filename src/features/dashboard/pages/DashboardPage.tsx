@@ -77,8 +77,12 @@ export function DashboardPage() {
                 loading={watch.loading}
                 pagesLoading={watch.pagesLoading}
                 crawling={watch.crawling}
+                extracting={watch.extracting}
+                classifying={watch.classifying}
                 onRetry={() => void watch.load()}
                 onCrawl={() => void watch.crawlAll()}
+                onExtract={() => void watch.extractAll()}
+                onClassify={() => void watch.classifyAll()}
                 onDetailChange={onDetailChange}
               />
             </motion.div>

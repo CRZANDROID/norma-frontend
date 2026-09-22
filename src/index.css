@@ -25,6 +25,13 @@
 
   --ease-norma-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-norma-inout: cubic-bezier(0.77, 0, 0.175, 1);
+  --animate-think-sheen: think-sheen 1.45s linear infinite;
+}
+
+@keyframes think-sheen {
+  to {
+    background-position: -100% 50%;
+  }
 }
 
 @layer base {

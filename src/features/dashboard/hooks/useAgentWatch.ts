@@ -33,6 +33,8 @@ export function useAgentWatch(canRead: boolean) {
   const [loading, setLoading] = useState(true)
   const [pagesLoading, setPagesLoading] = useState(true)
   const [crawling, setCrawling] = useState(false)
+  const [extracting, setExtracting] = useState(false)
+  const [classifying, setClassifying] = useState(false)
   const [updatedAt, setUpdatedAt] = useState<number | null>(null)
   const inFlight = useRef(false)
   const backoffMs = useRef(0)
@@ -210,11 +212,8 @@ export function useAgentWatch(canRead: boolean) {
 
     const tick = async () => {
       if (cancelled) return
+      if (document.hidden) return
       followUp.current = false
-      if (document.hidden) {
-        schedule(POLL_IDLE_MS)
-        return
-      }
       const wait = backoffUntil.current - Date.now()
       if (wait > 0) {
         schedule(wait)
@@ -229,29 +228,76 @@ export function useAgentWatch(canRead: boolean) {
         await loadProgress(true)
       } finally {
         inFlight.current = false
-        if (!cancelled) schedule(nextDelay())
+        if (!cancelled && !document.hidden) schedule(nextDelay())
       }
     }
 
+    const onVisible = () => {
+      if (document.hidden || cancelled) return
+      window.clearTimeout(timer)
+      void tick()
+    }
+
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
     schedule(nextDelay())
     return () => {
       cancelled = true
       window.clearTimeout(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
     }
   }, [canRead, live, loadProgress])
 
-  const crawlAll = useCallback(async () => {
-    setCrawling(true)
-    try {
-      await jobsApi.crawlAll()
-      toast.success('El agente de rastreo ya salió a las fuentes.')
-      await load(true)
-    } catch (err) {
-      toast.error(mapApiError(err, 'No se pudo poner a rastrear.'))
-    } finally {
-      setCrawling(false)
-    }
-  }, [load])
+  const civilDate = crawl?.date || extract?.date || analysis?.date || ''
+
+  const runAgent = useCallback(
+    async (
+      setBusy: (value: boolean) => void,
+      action: () => Promise<unknown>,
+      ok: string,
+      fail: string,
+    ) => {
+      setBusy(true)
+      try {
+        await action()
+        toast.success(ok)
+        await load(true)
+      } catch (err) {
+        toast.error(mapApiError(err, fail))
+      } finally {
+        setBusy(false)
+      }
+    },
+    [load],
+  )
+
+  const crawlAll = useCallback(() => {
+    return runAgent(
+      setCrawling,
+      () => jobsApi.crawlAll(),
+      'El agente de rastreo ya salió a las fuentes.',
+      'No se pudo rastrear.',
+    )
+  }, [runAgent])
+
+  const extractAll = useCallback(() => {
+    return runAgent(
+      setExtracting,
+      () => jobsApi.extractAll(civilDate || undefined),
+      'El agente de extracción ya tomó los documentos.',
+      'No se pudo extraer.',
+    )
+  }, [civilDate, runAgent])
+
+  const classifyAll = useCallback(() => {
+    return runAgent(
+      setClassifying,
+      () => jobsApi.classifyAll(civilDate || undefined),
+      'El agente de análisis ya empezó a clasificar.',
+      'No se pudo analizar.',
+    )
+  }, [civilDate, runAgent])
 
   const pagesBySource = useMemo(() => groupPagesBySource(pages), [pages])
 
@@ -272,7 +318,7 @@ export function useAgentWatch(canRead: boolean) {
     journeys,
     pagesBySource,
     pageCount: pages.length,
-    date: crawl?.date || extract?.date || analysis?.date || '',
+    date: civilDate,
     crawledCount,
     extractCount,
     analysisCount,
@@ -284,8 +330,12 @@ export function useAgentWatch(canRead: boolean) {
     loading,
     pagesLoading,
     crawling,
+    extracting,
+    classifying,
     updatedAt,
     load,
     crawlAll,
+    extractAll,
+    classifyAll,
   }
 }
