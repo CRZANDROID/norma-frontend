@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { designPreview, useApiMock } from '@/shared/lib/utils'
-import { useAuthStore } from '@/store/auth-store'
+import { useAuthStore } from '@/features/auth'
 
 export function ProtectedRoute() {
   const loading = useAuthStore((s) => s.loading)

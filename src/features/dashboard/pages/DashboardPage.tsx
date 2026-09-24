@@ -13,7 +13,7 @@ import {
   catalogChatCoverReduced,
   dashboardCoverLayout,
 } from '@/shared/lib/motion'
-import { useAuthStore } from '@/store/auth-store'
+import { useAuthStore } from '@/features/auth'
 
 function greetingForHour(hour: number) {
   if (hour < 12) return 'Buenos días'

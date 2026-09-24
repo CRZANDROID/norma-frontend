@@ -13,7 +13,7 @@ import { useDebouncedValue } from '@/features/users/hooks/useDebouncedValue'
 import type { NormaUser } from '@/features/users/types/user'
 import { detailCrossfade, duration, easeOut } from '@/shared/lib/motion'
 import { mapApiError } from '@/shared/lib/api-error'
-import { useAuthStore } from '@/store/auth-store'
+import { useAuthStore } from '@/features/auth'
 import { EmptyState, ErrorState, PageHeader } from '@/shared/ui/page'
 import { Skeleton } from '@/shared/ui/skeleton'
 

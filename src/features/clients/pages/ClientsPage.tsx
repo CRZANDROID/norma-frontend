@@ -21,7 +21,7 @@ import {
   ProfileList,
 } from '@/features/clients/components/ProfileList'
 import { useDebouncedValue } from '@/features/clients/hooks/useDebouncedValue'
-import { useAuthStore } from '@/store/auth-store'
+import { useAuthStore } from '@/features/auth'
 import { mapApiError } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/utils'
 import { EmptyState, ErrorState, PageHeader } from '@/shared/ui/page'

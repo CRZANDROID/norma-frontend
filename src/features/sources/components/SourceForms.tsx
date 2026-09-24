@@ -2,8 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
-import { clientsApi } from '@/features/clients/api/clients-api'
-import type { Client } from '@/features/clients/types/client'
+import { clientsApi, type Client } from '@/features/clients'
 import { sourcesApi } from '@/features/sources/api/sources-api'
 import {
   ChipInput,
@@ -12,7 +11,7 @@ import {
 } from '@/features/sources/components/chips'
 import { SectionPathsEditor } from '@/features/sources/components/SectionPathsEditor'
 import { FrequencyFields } from '@/features/sources/components/FrequencyFields'
-import { SourceCrawlButton } from '@/features/jobs/components/SourceCrawlButton'
+import { SourceCrawlButton } from '@/features/jobs'
 import type {
   Source,
   SourceCategory,

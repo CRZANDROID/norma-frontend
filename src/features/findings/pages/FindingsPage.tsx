@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { motion, useReducedMotion } from 'motion/react'
-import { clientsApi } from '@/features/clients/api/clients-api'
-import type { Client } from '@/features/clients/types/client'
+import { clientsApi, type Client } from '@/features/clients'
 import { findingsApi } from '@/features/findings/api/findings-api'
-import { sourcesApi } from '@/features/sources/api/sources-api'
-import type { Source } from '@/features/sources/types/source'
+import { sourcesApi, type Source } from '@/features/sources'
 import {
   FindingDateFilter,
   type DateRangeFilter,

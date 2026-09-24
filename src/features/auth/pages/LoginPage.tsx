@@ -11,7 +11,7 @@ import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { NormaMark } from '@/shared/ui/norma-mark'
-import { useAuthStore } from '@/store/auth-store'
+import { useAuthStore } from '@/features/auth/lib/auth-store'
 
 const enter = {
   initial: { opacity: 0, y: 10 },

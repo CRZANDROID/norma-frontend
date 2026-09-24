@@ -1,9 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
-import { fetchMe } from '@/features/auth/api/auth-api'
-import { previewProfile } from '@/features/auth/lib/preview-profile'
+import { fetchMe, previewProfile, useAuthStore } from '@/features/auth'
 import { getAccessToken } from '@/shared/lib/auth-token'
 import { designPreview, useApiMock } from '@/shared/lib/utils'
-import { useAuthStore } from '@/store/auth-store'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const setAccessToken = useAuthStore((s) => s.setAccessToken)

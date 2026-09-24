@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" class="min-h-full [color-scheme:light]">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -13,8 +13,10 @@
     />
     <title>NORMA</title>
   </head>
-  <body>
-    <div id="root"></div>
+  <body
+    class="min-h-full bg-norma-bg font-sans text-norma-fg antialiased [padding-left:env(safe-area-inset-left)] [padding-right:env(safe-area-inset-right)] [padding-bottom:env(safe-area-inset-bottom)] [&_a]:touch-manipulation [&_button]:touch-manipulation [&_[role=button]]:touch-manipulation"
+  >
+    <div id="root" class="min-h-full"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

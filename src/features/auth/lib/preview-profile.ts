@@ -1,4 +1,4 @@
-import type { NormaProfile } from '@/store/auth-store'
+import type { NormaProfile } from '@/features/auth/lib/auth-store'
 
 /** Perfil local para VITE_DESIGN_PREVIEW / VITE_USE_API_MOCK. */
 export const previewProfile: NormaProfile = {

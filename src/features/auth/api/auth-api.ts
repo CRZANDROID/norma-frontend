@@ -1,5 +1,5 @@
 import { api } from '@/shared/lib/axios'
-import type { NormaProfile } from '@/store/auth-store'
+import type { NormaProfile } from '@/features/auth/lib/auth-store'
 
 export type LoginResponse = {
   accessToken: string

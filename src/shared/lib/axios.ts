@@ -33,7 +33,7 @@ api.interceptors.response.use(
       if (!isLogin && getAccessToken()) {
         clearAccessToken()
         // Lazy import to avoid circular init with the store.
-        void import('@/store/auth-store').then(({ useAuthStore }) => {
+        void import('@/features/auth').then(({ useAuthStore }) => {
           useAuthStore.getState().clear()
         })
       }

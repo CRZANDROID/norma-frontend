@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { clientsApi } from '@/features/clients/api/clients-api'
-import type { Client } from '@/features/clients/types/client'
+import { clientsApi, type Client } from '@/features/clients'
 import { ReportDetailPanel } from '@/features/reports/components/ReportDetailPanel'
 import { ReportListPanel } from '@/features/reports/components/ReportListPanel'
 import { reportsApi } from '@/features/reports/api/reports-api'

@@ -26,19 +26,30 @@ import { ErrorState } from '@/shared/ui/page'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { NormaThinkingOrb } from '@/shared/ui/thinking-orb'
 
+const thinkSheenClass =
+  'bg-[length:200%_100%] bg-clip-text text-transparent [background-image:linear-gradient(90deg,rgb(255_255_255_/_0.38)_0%,rgb(255_255_255_/_0.38)_38%,rgb(255_255_255_/_0.98)_50%,rgb(255_255_255_/_0.38)_62%,rgb(255_255_255_/_0.38)_100%)]'
+
 function ThinkingLabel({ children }: { children: string }) {
   const reduceMotion = useReducedMotion()
+  if (reduceMotion) {
+    return (
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
+        {children}
+      </p>
+    )
+  }
   return (
-    <p
+    <motion.p
       className={cn(
         'text-[10px] font-semibold uppercase tracking-[0.14em]',
-        reduceMotion
-          ? 'text-white/50'
-          : 'animate-think-sheen bg-[length:200%_100%] bg-[position:100%_50%] bg-clip-text text-transparent [background-image:linear-gradient(90deg,rgb(255_255_255_/_0.38)_0%,rgb(255_255_255_/_0.38)_38%,rgb(255_255_255_/_0.98)_50%,rgb(255_255_255_/_0.38)_62%,rgb(255_255_255_/_0.38)_100%)]',
+        thinkSheenClass,
       )}
+      initial={{ backgroundPosition: '100% 50%' }}
+      animate={{ backgroundPosition: '-100% 50%' }}
+      transition={{ duration: 1.45, repeat: Infinity, ease: 'linear' }}
     >
       {children}
-    </p>
+    </motion.p>
   )
 }
 

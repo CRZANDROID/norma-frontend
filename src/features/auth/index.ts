@@ -1,3 +1,6 @@
 export { LoginPage } from '@/features/auth/pages/LoginPage'
 export { fetchMe, login } from '@/features/auth/api/auth-api'
 export { mapAuthError } from '@/features/auth/lib/auth-errors'
+export { previewProfile } from '@/features/auth/lib/preview-profile'
+export { useAuthStore } from '@/features/auth/lib/auth-store'
+export type { NormaMembership, NormaProfile } from '@/features/auth/lib/auth-store'

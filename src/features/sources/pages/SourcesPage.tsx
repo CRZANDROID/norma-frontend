@@ -24,7 +24,7 @@ import {
 } from '@/features/sources/lib/mexican-states'
 import { detailCrossfade, duration, easeOut } from '@/shared/lib/motion'
 import { mapApiError } from '@/shared/lib/api-error'
-import { useAuthStore } from '@/store/auth-store'
+import { useAuthStore } from '@/features/auth'
 import { EmptyState, ErrorState, PageHeader } from '@/shared/ui/page'
 import { Skeleton } from '@/shared/ui/skeleton'
 

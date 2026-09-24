@@ -20,7 +20,7 @@ import {
 } from '@/shared/lib/motion'
 import { APP_VERSION } from '@/shared/lib/app-version'
 import { cn } from '@/shared/lib/utils'
-import { useAuthStore } from '@/store/auth-store'
+import { useAuthStore } from '@/features/auth'
 import { Button } from '@/shared/ui/button'
 import { NormaMark } from '@/shared/ui/norma-mark'
 

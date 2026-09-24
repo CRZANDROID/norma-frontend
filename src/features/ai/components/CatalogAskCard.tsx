@@ -16,7 +16,7 @@ import { duration, easeOut } from '@/shared/lib/motion'
 import { mapApiError } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/utils'
 import { NormaMark } from '@/shared/ui/norma-mark'
-import { useAuthStore } from '@/store/auth-store'
+import { useAuthStore } from '@/features/auth'
 
 const STARTERS = [
   '¿Qué fuentes tiene Arca vinculadas?',

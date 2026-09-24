@@ -10,14 +10,14 @@ import type {
   ClientFiscalInput,
 } from '@/features/clients/types/client'
 import { clientsApi } from '@/features/clients/api/clients-api'
-import { sourcesApi } from '@/features/sources/api/sources-api'
 import {
   SOURCE_CATEGORY_LABELS,
   SOURCE_PLATFORM_LABELS,
+  sourcesApi,
   type Source,
   type SourceCategory,
   type SourcePlatform,
-} from '@/features/sources/types/source'
+} from '@/features/sources'
 import { UnsavedChangesGuard } from '@/shared/hooks/unsaved-changes-guard'
 import { mapApiError } from '@/shared/lib/api-error'
 import { focusFirstInvalid } from '@/shared/lib/form'
