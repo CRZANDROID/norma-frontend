@@ -9,6 +9,7 @@ import {
   easeOut,
   tabPanel,
 } from '@/shared/lib/motion'
+import { canOperate } from '@/shared/lib/roles'
 import type { Client, ClientDetail } from '@/features/clients/types/client'
 import { ClientListPanel } from '@/features/clients/components/ClientListPanel'
 import {
@@ -42,9 +43,9 @@ export function ClientsPage() {
 
   const profile = useAuthStore((s) => s.profile)
   const role = profile?.role ?? 'ADMIN'
-  const canManageClients = role === 'ADMIN'
-  const canManageProfiles = role === 'ADMIN' || role === 'ANALYST'
-  const canToggleProfiles = role === 'ADMIN'
+  const canManageClients = canOperate(role)
+  const canManageProfiles = canOperate(role)
+  const canToggleProfiles = canOperate(role)
 
   const [clients, setClients] = useState<Client[]>([])
   const [listLoading, setListLoading] = useState(true)

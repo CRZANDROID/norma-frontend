@@ -63,7 +63,7 @@ Tokens, tipografía y motion: heredar de [DESIGN-CLIENTS-PROFILES.md](./DESIGN-C
 | Guardar | `PATCH /sources/:id` |
 | Pausar / Reanudar | `PATCH .../deactivate` / `.../activate` |
 
-Roles: mutaciones solo `ADMIN`; lectura `ADMIN` \| `ANALYST` \| `VIEWER`.
+Roles: mutaciones `ADMIN` \| `ANALYST`; lectura `ADMIN` \| `ANALYST` \| `VIEWER`. El catálogo es global (no se filtra por dueño). Un analista vincula fuentes solo a sus clientes.
 
 `code` de solo lectura tras crear. Soft-status; sin hard-delete.  
 Secciones: `string[][]` (paths). Relación N:N con clientes (`clientIds` al crear / `sourceIds` en cliente).  

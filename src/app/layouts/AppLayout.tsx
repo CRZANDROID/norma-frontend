@@ -30,7 +30,7 @@ const navItems = [
   { to: '/informes', label: 'Informes', icon: FileText },
   { to: '/clientes', label: 'Clientes', icon: Building2 },
   { to: '/fuentes', label: 'Fuentes', icon: Radio },
-  { to: '/usuarios', label: 'Usuarios', icon: Users },
+  { to: '/usuarios', label: 'Usuarios', icon: Users, adminOnly: true },
 ]
 
 const navFocus =
@@ -39,11 +39,14 @@ const navFocus =
 function SidebarChrome({
   onLogout,
   onNavigate,
+  role,
 }: {
   onLogout: () => void
   onNavigate?: () => void
+  role: string
 }) {
   const reduceMotion = useReducedMotion()
+  const items = navItems.filter((item) => !item.adminOnly || role === 'ADMIN')
 
   return (
     <>
@@ -51,7 +54,7 @@ function SidebarChrome({
         className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain p-3"
         aria-label="Principal"
       >
-        {navItems.map(({ to, label, icon: Icon }) => (
+        {items.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -131,6 +134,7 @@ export function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const profile = useAuthStore((s) => s.profile)
+  const role = profile?.role ?? 'ADMIN'
   const clear = useAuthStore((s) => s.clear)
   const reduceMotion = useReducedMotion()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -179,7 +183,10 @@ export function AppLayout() {
             </div>
           </div>
         </div>
-        <SidebarChrome onLogout={() => void handleLogout()} />
+        <SidebarChrome
+          role={role}
+          onLogout={() => void handleLogout()}
+        />
       </aside>
 
       <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col">
@@ -228,6 +235,7 @@ export function AppLayout() {
               className="flex max-h-[min(70dvh,28rem)] flex-col border-b-2 border-norma-border bg-norma-surface md:hidden"
             >
               <SidebarChrome
+                role={role}
                 onLogout={() => void handleLogout()}
                 onNavigate={() => setMobileOpen(false)}
               />

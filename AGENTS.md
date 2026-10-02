@@ -17,6 +17,7 @@
 - Código nuevo solo en `features/<dominio>` o `shared/`.
 - `VITE_DESIGN_PREVIEW=true` salta login (solo diseño local).
 - Fuentes: `jurisdiction` + `stateCode` + `schedule`. **No** `frequency`.
+- `ANALYST` abre clientes, fuentes, agentes, alertas e informes y puede crear/editar en ese flujo. Ocultar solo Usuarios (`ADMIN`).
 
 ## Auth real (default)
 

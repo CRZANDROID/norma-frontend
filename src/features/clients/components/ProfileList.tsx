@@ -27,7 +27,7 @@ export function ProfileList({
   profiles: RegulatoryProfile[]
   /** Crear / editar — ADMIN | ANALYST */
   canEdit: boolean
-  /** Activar / desactivar — solo ADMIN (contrato Nest) */
+  /** Activar / desactivar — ADMIN | ANALYST */
   canToggleStatus: boolean
   onChanged: () => void
   onCreate: () => void

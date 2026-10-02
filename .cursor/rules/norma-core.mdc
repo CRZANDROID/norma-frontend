@@ -28,5 +28,6 @@ No agregar pantallas nuevas en `src/pages/` plano. Ver `ARCHITECTURE.md`.
 ## Sprint actual
 
 Siguiente: S8 loop en `/alertas` (editar / IA / excluir; **sin PDF**). Contrato: backend `docs/FRONTEND-ALERTAS.md`.
+`ANALYST` usa el mismo flujo operativo que `ADMIN` (clientes, fuentes, agentes, alertas, informes). Ocultar solo la administración de usuarios. El catálogo de fuentes es global; un analista solo ve sus clientes.
 YouTube / X / Facebook = **MVP después de S10**: backend `docs/PRODUCT.md`.
 Admin: `docs/DESIGN-CLIENTS-PROFILES.md`. Contrato API: backend `docs/FRONTEND-ADMIN.md`.

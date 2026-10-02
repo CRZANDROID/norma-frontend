@@ -13,6 +13,7 @@ import {
   catalogChatCoverReduced,
   dashboardCoverLayout,
 } from '@/shared/lib/motion'
+import { canOperate } from '@/shared/lib/roles'
 import { useAuthStore } from '@/store/auth-store'
 
 function greetingForHour(hour: number) {
@@ -24,8 +25,8 @@ function greetingForHour(hour: number) {
 export function DashboardPage() {
   const profile = useAuthStore((s) => s.profile)
   const role = profile?.role ?? 'VIEWER'
-  const canCrawl = role === 'ADMIN'
-  const canRead = role === 'ADMIN' || role === 'ANALYST'
+  const canCrawl = canOperate(role)
+  const canRead = canOperate(role)
   const firstName = profile?.name?.split(' ')[0]
   const hello = greetingForHour(new Date().getHours())
   const watch = useAgentWatch(canRead)

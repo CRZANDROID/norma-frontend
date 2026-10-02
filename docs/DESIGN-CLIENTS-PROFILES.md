@@ -155,7 +155,7 @@ Estado en URL (web-design-guidelines): selección y tab deep-linkeables.
 3. Loading: skeleton de filas (reserva altura, sin CLS).  
 4. Empty: “Aún no hay clientes. Crea el primero para el piloto.” + CTA.
 
-### Crear cliente (ADMIN)
+### Crear cliente (ADMIN y ANALYST)
 
 - Dialog “Nuevo cliente”  
 - Campos: Nombre*, Slug* (auto desde nombre, editable), Email, Teléfono  
@@ -163,14 +163,14 @@ Estado en URL (web-design-guidelines): selección y tab deep-linkeables.
 - Errores: inline; `409` slug → “Ese slug ya está en uso. Prueba otro.”  
 - Éxito: cierra dialog, selecciona el nuevo, toast “Cliente creado.”
 
-### Editar cliente (ADMIN)
+### Editar cliente (ADMIN y ANALYST)
 
 - Tab Datos, form controlled barato o uncontrolled + submit  
 - Slug **solo lectura** (recomendación S3)  
 - **Guardar cambios** deshabilitado hasta dirty; spinner solo tras click  
 - Warn unsaved al cambiar de cliente/tab (`beforeunload` + confirm in-app)
 
-### Activar / desactivar cliente (ADMIN)
+### Activar / desactivar cliente (ADMIN y ANALYST)
 
 - Desactivar: Dialog confirmación “Desactivar {nombre}? El histórico se conserva.” → `PATCH .../deactivate`  
 - Activar: acción directa + toast (reversible, menos destructivo)
@@ -180,8 +180,8 @@ Estado en URL (web-design-guidelines): selección y tab deep-linkeables.
 - Lista desde `GET /clients/:id` (incluye `profiles`) o `GET .../profiles`  
 - **Nuevo perfil** / **Editar**: Dialog  
   - Nombre*, Descripción, Keywords (chip input), Categorías (chip input), Products JSON simplificado: textarea JSON opcional o chips de categorías de producto  
-- Desactivar perfil: confirmación corta → `PATCH /profiles/:id/deactivate` (solo ADMIN)
-- ANALYST: puede crear/editar perfiles; no crear cliente ni activate/deactivate perfil (ocultar [+] cliente y botones Off/On perfil)
+- Desactivar perfil: confirmación corta → `PATCH /profiles/:id/deactivate` (`ADMIN` | `ANALYST`)
+- ANALYST recorre el mismo flujo que ADMIN en esta pantalla (crear y editar cliente, perfiles, activar/desactivar). Solo ve sus clientes. El alta de usuarios no está aquí.
 
 ### Estados de pantalla (obligatorios)
 
@@ -322,7 +322,7 @@ API mock: solo con `VITE_USE_API_MOCK=true` si Nest aún no expone endpoints; mi
 | Nuevo/editar perfil | `POST /clients/:id/profiles` / `PATCH /profiles/:id` |
 | Off/On perfil | `PATCH /profiles/:id/deactivate` / `activate` |
 
-Roles UI: mutaciones de cliente solo `ADMIN`; perfiles create/edit `ADMIN` | `ANALYST`; activate/deactivate perfil solo `ADMIN`.
+Roles UI: mutaciones de cliente y de perfil (crear, editar, activar, desactivar) `ADMIN` | `ANALYST`. ANALYST solo sus clientes. Usuarios sigue siendo solo `ADMIN`.
 
 ---
 

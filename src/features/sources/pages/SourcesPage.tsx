@@ -23,6 +23,7 @@ import {
   MEXICAN_STATES,
 } from '@/features/sources/lib/mexican-states'
 import { detailCrossfade, duration, easeOut } from '@/shared/lib/motion'
+import { canOperate } from '@/shared/lib/roles'
 import { mapApiError } from '@/shared/lib/api-error'
 import { useAuthStore } from '@/store/auth-store'
 import { EmptyState, ErrorState, PageHeader } from '@/shared/ui/page'
@@ -63,9 +64,8 @@ export function SourcesPage() {
 
   const profile = useAuthStore((s) => s.profile)
   const role = profile?.role ?? 'ADMIN'
-  const canManage = role === 'ADMIN'
-  const canRead =
-    role === 'ADMIN' || role === 'ANALYST' || role === 'VIEWER'
+  const canManage = canOperate(role)
+  const canRead = canManage || role === 'VIEWER'
 
   const [sources, setSources] = useState<Source[]>([])
   const [listLoading, setListLoading] = useState(true)
