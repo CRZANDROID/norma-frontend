@@ -14,4 +14,4 @@ El piloto son **10 semanas** (S1–S10).
 | 9 | Generar PDF + mesa `/informes` (sin correo) | En curso (lote + Informes) |
 | 10 | Portal `CLIENT_USER` | Pendiente |
 
-S8–S10: backend `docs/FRONTEND-ALERTAS.md`. No inbox, no `/hallazgos`.
+S8–S10: backend `docs/FRONTEND-ALERTAS.md`. No inbox, no `/hallazgos`. El HUD de tres botones llegó con el PR #22; el contrato sigue en `norma-backend/docs/FRONTEND-TRACKING.md`.
