@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useSourceDraftBridge } from '@/features/ai'
 import { Link } from 'react-router-dom'
 import { ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
@@ -511,6 +512,16 @@ export function CreateSourceDialog({
   const [loadingClients, setLoadingClients] = useState(false)
   const [codeTouched, setCodeTouched] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const urlRef = useRef(url)
+  urlRef.current = url
+
+  useSourceDraftBridge(open, {
+    getUrl: () => urlRef.current.trim(),
+    apply: (draft) => {
+      if (draft.keywordsGuide?.length) setKeywordsGuide(draft.keywordsGuide)
+      if (draft.searchFocus?.length) setSearchFocus(draft.searchFocus)
+    },
+  })
 
   useEffect(() => {
     if (!open) {
@@ -590,6 +601,7 @@ export function CreateSourceDialog({
   return (
     <Modal
       open={open}
+      modal={false}
       onOpenChange={onOpenChange}
       title="Nueva fuente"
       description="Catálogo de origen y, opcionalmente, clientes que la usarán."

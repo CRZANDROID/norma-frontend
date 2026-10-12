@@ -14,8 +14,14 @@ export const aiMockApi = {
     await delay()
     return {
       answer: `Consulta de prueba sobre el catálogo del piloto: «${input.question.trim()}». El asistente real responde con lo ya guardado en clientes, perfiles y fuentes.`,
-      catalog: { clients: 2, sources: 3, profiles: 1 },
+      catalog: {
+        clientCount: 2,
+        profileCount: 1,
+        sourceCount: 3,
+        scopedToClientId: null,
+      },
       model: 'gpt-4o-mini',
+      draft: null,
     }
   },
 }

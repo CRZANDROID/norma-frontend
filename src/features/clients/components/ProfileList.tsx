@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useProfileDraftBridge } from '@/features/ai'
 import { toast } from 'sonner'
 import type { RegulatoryProfile } from '@/features/clients/types/client'
 import { mapApiError } from '@/shared/lib/api-error'
@@ -208,6 +209,9 @@ export function ProfileFormDialog({
   const [submitting, setSubmitting] = useState(false)
   const [discardOpen, setDiscardOpen] = useState(false)
 
+  const fieldsRef = useRef({ name, description })
+  fieldsRef.current = { name, description }
+
   useEffect(() => {
     if (!open) return
     setName(initial?.name ?? '')
@@ -217,6 +221,20 @@ export function ProfileFormDialog({
     setProductCats(initial?.products?.categories ?? [])
     setDiscardOpen(false)
   }, [open, initial])
+
+  useProfileDraftBridge(open, {
+    getSeed: () => ({
+      companyName: fieldsRef.current.name.trim(),
+      description: fieldsRef.current.description.trim(),
+    }),
+    apply: (draft) => {
+      if (draft.name?.trim()) setName(draft.name)
+      if (draft.description?.trim()) setDescription(draft.description)
+      if (draft.keywords?.length) setKeywords(draft.keywords)
+      if (draft.categories?.length) setCategories(draft.categories)
+      if (draft.products?.length) setProductCats(draft.products)
+    },
+  })
 
   const baselineName = initial?.name ?? ''
   const baselineDescription = initial?.description ?? ''
@@ -286,6 +304,7 @@ export function ProfileFormDialog({
       />
       <Modal
         open={open}
+        modal={false}
         onOpenChange={handleOpenChange}
         title={initial ? 'Editar perfil' : 'Nuevo perfil'}
         description="Define qué señales escucha el agente para este cliente."

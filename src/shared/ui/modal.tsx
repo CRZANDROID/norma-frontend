@@ -6,6 +6,10 @@ import { duration, easeOut, fadeScale } from '@/shared/lib/motion'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 
+function isNormaChatTarget(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest('[data-norma-chat]'))
+}
+
 export function Modal({
   open,
   onOpenChange,
@@ -14,6 +18,7 @@ export function Modal({
   children,
   className,
   overlayClassName,
+  modal = true,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -22,11 +27,13 @@ export function Modal({
   children: ReactNode
   className?: string
   overlayClassName?: string
+  /** false deja usable el chat flotante mientras el formulario sigue abierto. */
+  modal?: boolean
 }) {
   const reduceMotion = useReducedMotion()
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={onOpenChange} modal={modal}>
       <AnimatePresence>
         {open ? (
           <Dialog.Portal forceMount>
@@ -42,7 +49,18 @@ export function Modal({
                 transition={{ duration: duration.fast, ease: easeOut }}
               />
             </Dialog.Overlay>
-            <Dialog.Content asChild>
+            <Dialog.Content
+              asChild
+              onPointerDownOutside={(event) => {
+                if (isNormaChatTarget(event.target)) event.preventDefault()
+              }}
+              onInteractOutside={(event) => {
+                if (isNormaChatTarget(event.target)) event.preventDefault()
+              }}
+              onFocusOutside={(event) => {
+                if (isNormaChatTarget(event.target)) event.preventDefault()
+              }}
+            >
               <motion.div
                 initial={reduceMotion ? false : fadeScale.initial}
                 animate={fadeScale.animate}

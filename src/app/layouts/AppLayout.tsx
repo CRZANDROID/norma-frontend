@@ -12,6 +12,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
+import { NormaChat } from '@/features/ai'
 import {
   duration,
   easeOut,
@@ -262,6 +263,7 @@ export function AppLayout() {
           </AnimatePresence>
         </main>
       </div>
+      <NormaChat />
     </div>
   )
 }
