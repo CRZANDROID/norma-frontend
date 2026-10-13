@@ -99,6 +99,7 @@ function askBody(input: AiAskInput) {
     ...(input.draftTarget ? { draftTarget: input.draftTarget } : {}),
     ...(input.profileSeed ? { profileSeed: input.profileSeed } : {}),
     ...(input.sourceUrl ? { sourceUrl: input.sourceUrl } : {}),
+    ...(input.screen ? { screen: input.screen } : {}),
   }
 }
 

@@ -25,12 +25,21 @@ export type AiDraft =
   | { target: 'profile'; profile: AiProfileDraft }
   | { target: 'source'; source: AiSourceDraft }
 
+export type AskScreen =
+  | 'agentes'
+  | 'clasificacion'
+  | 'informes'
+  | 'clientes'
+  | 'fuentes'
+  | 'usuarios'
+
 export type AiAskInput = {
   question: string
   messages?: AiAskMessage[]
   draftTarget?: 'profile' | 'source'
   profileSeed?: { companyName: string; description?: string }
   sourceUrl?: string
+  screen?: AskScreen
 }
 
 export type AiCatalogStats = {

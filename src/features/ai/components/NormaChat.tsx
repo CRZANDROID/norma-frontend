@@ -5,6 +5,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react'
+import { useLocation } from 'react-router-dom'
 import { ArrowUp, Check, Copy, Sparkles, X } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { toast } from 'sonner'
@@ -15,6 +16,7 @@ import {
   useProfileDraftSlot,
   useSourceDraftSlot,
 } from '@/features/ai/draft-bridge'
+import { screenFromPath } from '@/features/ai/screen'
 import type { AiAskInput, AiAskResult, AiStatus } from '@/features/ai/types/ai'
 import { NormaThinkingOrb } from '@/shared/ui/thinking-orb'
 import { duration, easeOut } from '@/shared/lib/motion'
@@ -139,6 +141,8 @@ function CopyAnswer({ text }: { text: string }) {
 }
 
 export function NormaChat() {
+  const location = useLocation()
+  const screen = screenFromPath(location.pathname)
   const reduceMotion = useReducedMotion()
   const profileName = useAuthStore((s) => s.profile?.name)
   const profileId = useAuthStore((s) => s.profile?.id)
@@ -248,6 +252,7 @@ export function NormaChat() {
     try {
       const data = await aiApi.ask({
         question: trimmed,
+        screen,
         ...(history.length ? { messages: history } : {}),
         ...draft,
       })
