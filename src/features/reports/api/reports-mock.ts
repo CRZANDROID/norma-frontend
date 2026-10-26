@@ -21,6 +21,7 @@ const MOCK_REPORT: ReportDetail = {
   fileUrl: '/reports/mock-report/file',
   generatedAt: new Date().toISOString(),
   generatedBy: { id: 'mock-user', name: 'Admin NORMA' },
+  email: null,
   findings: [
     {
       id: 'mock-finding',
@@ -30,6 +31,7 @@ const MOCK_REPORT: ReportDetail = {
       justification: 'Hallazgo de prueba.',
       source: null,
       document: null,
+      changeNote: null,
       createdAt: new Date().toISOString(),
     },
   ],
@@ -55,6 +57,23 @@ export const reportsMockApi = {
   },
   regenerate(id: string): Promise<ReportDetail> {
     return Promise.resolve({ ...MOCK_REPORT, id })
+  },
+  send(id: string): Promise<ReportDetail> {
+    return Promise.resolve({
+      ...MOCK_REPORT,
+      id,
+      status: 'sent',
+      email: {
+        sent: false,
+        reason: 'missing_api_key',
+        message:
+          'Falta RESEND_API_KEY. El informe quedó enviado y no se mandó correo.',
+        recipients: [],
+      },
+    })
+  },
+  discard(id: string): Promise<ReportDetail> {
+    return Promise.resolve({ ...MOCK_REPORT, id, status: 'discarded' })
   },
   file(): Promise<{ blob: Blob; filename: string }> {
     return Promise.resolve({

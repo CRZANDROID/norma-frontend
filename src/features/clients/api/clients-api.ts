@@ -4,6 +4,7 @@ import { useApiMock } from '@/shared/lib/utils'
 import { clientsMockApi } from '@/features/clients/api/clients-mock'
 import {
   normalizeClientDelivery,
+  readAutoSend,
 } from '@/features/clients/lib/delivery'
 import type {
   Client,
@@ -26,6 +27,7 @@ function normalizeClient<T extends Client>(client: T): T {
     sources: asList(client.sources ?? []),
     fiscalData: client.fiscalData ?? null,
     contacts: asList(client.contacts ?? []),
+    deliveryConfig: { autoSend: readAutoSend(client) },
   }
 }
 
@@ -47,6 +49,7 @@ function createClientBody(input: CreateClientInput) {
     ...(input.sourceIds !== undefined ? { sourceIds: input.sourceIds } : {}),
     ...(input.fiscal ? { fiscal: input.fiscal } : {}),
     ...(input.contacts !== undefined ? { contacts: input.contacts } : {}),
+    ...(input.delivery ? { delivery: input.delivery } : {}),
   }
 }
 
@@ -58,6 +61,7 @@ function updateClientBody(input: UpdateClientInput) {
   if (input.sourceIds !== undefined) body.sourceIds = input.sourceIds
   if (input.fiscal !== undefined) body.fiscal = input.fiscal
   if (input.contacts !== undefined) body.contacts = input.contacts
+  if (input.delivery !== undefined) body.delivery = input.delivery
   return body
 }
 

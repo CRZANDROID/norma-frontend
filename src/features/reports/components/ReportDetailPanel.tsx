@@ -9,6 +9,7 @@ import {
 import { mapApiError } from '@/shared/lib/api-error'
 import { reportsApi } from '@/features/reports/api/reports-api'
 import { Button } from '@/shared/ui/button'
+import { Modal } from '@/shared/ui/modal'
 
 const IMPACT_LABEL: Record<string, string> = {
   RED: 'Crítico',
@@ -24,7 +25,10 @@ export function ReportDetailPanel({
   report: ReportDetail
   onUpdated: (next: ReportDetail) => void
 }) {
-  const [busy, setBusy] = useState<'view' | 'download' | 'regen' | null>(null)
+  const [busy, setBusy] = useState<
+    'view' | 'download' | 'regen' | 'send' | 'discard' | null
+  >(null)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
   const draft = report.status === 'draft'
 
   async function viewOrDownload(mode: 'view' | 'download') {
@@ -40,6 +44,43 @@ export function ReportDetailPanel({
             : 'No se pudo abrir el PDF.',
         ),
       )
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  function announceEmail(next: ReportDetail) {
+    if (!next.email) return
+    if (next.email.sent) {
+      toast.success(next.email.message)
+      return
+    }
+    toast.warning(next.email.message)
+  }
+
+  async function send() {
+    setBusy('send')
+    try {
+      const next = await reportsApi.send(report.id)
+      onUpdated(next)
+      toast.success('Informe enviado.')
+      announceEmail(next)
+    } catch (err) {
+      toast.error(mapApiError(err, 'No se pudo enviar el informe.'))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function discard() {
+    setBusy('discard')
+    try {
+      const next = await reportsApi.discard(report.id)
+      setConfirmDiscard(false)
+      onUpdated(next)
+      toast.success('Informe descartado. Los hallazgos volvieron a candidatos.')
+    } catch (err) {
+      toast.error(mapApiError(err, 'No se pudo descartar el informe.'))
     } finally {
       setBusy(null)
     }
@@ -75,6 +116,17 @@ export function ReportDetailPanel({
           {report.generatedBy ? ` · ${report.generatedBy.name}` : ''}
         </p>
       </div>
+      {report.email && !report.email.sent ? (
+        <div
+          role="status"
+          className="rounded-2xl border border-norma-coral/40 bg-norma-coral/10 px-4 py-3 text-sm leading-relaxed text-norma-fg"
+        >
+          {report.email.message}
+        </div>
+      ) : null}
+      {report.email?.sent ? (
+        <p className="text-sm text-norma-muted">{report.email.message}</p>
+      ) : null}
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
@@ -97,11 +149,32 @@ export function ReportDetailPanel({
           <Button
             type="button"
             size="sm"
+            disabled={busy !== null}
+            onClick={() => void send()}
+          >
+            {busy === 'send' ? 'Enviando…' : 'Enviar'}
+          </Button>
+        ) : null}
+        {draft ? (
+          <Button
+            type="button"
+            size="sm"
             variant="ghost"
             disabled={busy !== null}
             onClick={() => void regenerate()}
           >
             {busy === 'regen' ? 'Regenerando…' : 'Regenerar'}
+          </Button>
+        ) : null}
+        {draft ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="danger"
+            disabled={busy !== null}
+            onClick={() => setConfirmDiscard(true)}
+          >
+            Descartar
           </Button>
         ) : null}
       </div>
@@ -122,9 +195,40 @@ export function ReportDetailPanel({
                 {item.suggestedAction}
               </p>
             ) : null}
+            {item.changeNote ? (
+              <p className="mt-2 text-xs leading-relaxed text-norma-fg">
+                <span className="font-semibold">Qué cambió. </span>
+                {item.changeNote}
+              </p>
+            ) : null}
           </li>
         ))}
       </ul>
+      <Modal
+        open={confirmDiscard}
+        onOpenChange={setConfirmDiscard}
+        title="Descartar informe"
+        description="Los hallazgos vuelven a candidatos. Un informe enviado no se puede descartar."
+      >
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={busy === 'discard'}
+            onClick={() => setConfirmDiscard(false)}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            disabled={busy === 'discard'}
+            onClick={() => void discard()}
+          >
+            {busy === 'discard' ? 'Descartando…' : 'Descartar'}
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }

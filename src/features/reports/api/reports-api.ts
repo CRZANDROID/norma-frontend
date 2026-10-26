@@ -6,6 +6,8 @@ import type {
   CreateReportBody,
   ListReportsParams,
   ReportDetail,
+  ReportEmailDelivery,
+  ReportEmailReason,
   ReportFindingItem,
   ReportListItem,
   ReportPerson,
@@ -72,6 +74,7 @@ function normalizeItem(raw: unknown): ReportListItem | null {
     fileUrl: text(raw.fileUrl),
     generatedAt: text(raw.generatedAt) ?? '',
     generatedBy: asPerson(raw.generatedBy),
+    email: asEmail(raw.email),
   }
 }
 
@@ -103,7 +106,34 @@ function normalizeFinding(raw: unknown): ReportFindingItem | null {
           url: text(documentRaw.url),
         }
       : null,
+    changeNote: text(raw.changeNote),
     createdAt: text(raw.createdAt),
+  }
+}
+
+const EMAIL_REASONS: ReportEmailReason[] = [
+  'sent',
+  'missing_api_key',
+  'missing_from',
+  'no_recipients',
+  'provider_error',
+]
+
+function asEmail(value: unknown): ReportEmailDelivery | null {
+  if (!isRecord(value) || typeof value.sent !== 'boolean') return null
+  const message = text(value.message)
+  const reason = text(value.reason)
+  if (!message || !reason || !EMAIL_REASONS.includes(reason as ReportEmailReason)) {
+    return null
+  }
+  const recipients = Array.isArray(value.recipients)
+    ? value.recipients.filter((item): item is string => typeof item === 'string')
+    : []
+  return {
+    sent: value.sent,
+    reason: reason as ReportEmailReason,
+    message,
+    recipients,
   }
 }
 
@@ -183,6 +213,20 @@ export const reportsApi = {
     if (useApiMock) return reportsMockApi.regenerate(id)
     return api
       .post<unknown>(`/reports/${id}/regenerate`)
+      .then((r) => unwrapDetail(r.data))
+  },
+
+  send(id: string): Promise<ReportDetail> {
+    if (useApiMock) return reportsMockApi.send(id)
+    return api
+      .post<unknown>(`/reports/${id}/send`)
+      .then((r) => unwrapDetail(r.data))
+  },
+
+  discard(id: string): Promise<ReportDetail> {
+    if (useApiMock) return reportsMockApi.discard(id)
+    return api
+      .post<unknown>(`/reports/${id}/discard`)
       .then((r) => unwrapDetail(r.data))
   },
 

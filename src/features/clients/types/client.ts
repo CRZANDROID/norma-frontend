@@ -83,6 +83,8 @@ export type Client = {
   sources?: ClientSourceRef[]
   fiscalData?: ClientFiscalData | null
   contacts?: ClientContact[]
+  /** Ficha del cliente. `true`: Generar PDF también envía. */
+  deliveryConfig?: { autoSend: boolean } | null
 }
 
 export type RegulatoryProfile = {
@@ -113,6 +115,8 @@ export type CreateClientInput = {
   sourceIds?: string[]
   fiscal?: ClientFiscalInput
   contacts?: ClientContactInput[]
+  /** Cliente automático. Omitir = false. */
+  delivery?: { autoSend?: boolean }
 }
 
 export type UpdateClientInput = {
@@ -125,6 +129,8 @@ export type UpdateClientInput = {
   fiscal?: ClientFiscalInput
   /** Si se envía, reemplaza el set completo de contactos. */
   contacts?: ClientContactInput[]
+  /** Si se envía, actualiza autoSend sin tocar el resto de la entrega. */
+  delivery?: { autoSend?: boolean }
 }
 
 export type CreateProfileInput = {

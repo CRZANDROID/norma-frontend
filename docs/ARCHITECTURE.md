@@ -45,7 +45,7 @@ src/
     documents/              # registro documental (S6; listado en panel de rastreo)
     ai/                     # asistente de catálogo
     findings/               # /alertas — semáforo, lote, generar PDF
-    reports/                # /informes — PDF draft/enviados (envío pendiente)
+    reports/                # /informes — borrador, enviar, descartar, enviados
     <feature>/
       api/                  # llamadas Axios de ESTE dominio
       types/                # contratos de ESTE dominio

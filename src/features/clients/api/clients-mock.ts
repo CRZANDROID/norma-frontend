@@ -130,12 +130,15 @@ function mapContactInputs(inputs: ClientContactInput[]): ClientContact[] {
   }))
 }
 
+const autoSendByClient: Record<string, boolean> = {}
+
 function withClientExtras(client: Client): Client {
   return {
     ...client,
     sources: asSourceRefs(client.id),
     fiscalData: fiscalDataFor(client.id),
     contacts: contactsFor(client.id),
+    deliveryConfig: { autoSend: autoSendByClient[client.id] === true },
   }
 }
 
@@ -146,6 +149,7 @@ function withRelations(client: Client): ClientDetail {
     sources: asSourceRefs(client.id),
     fiscalData: fiscalDataFor(client.id),
     contacts: contactsFor(client.id),
+    deliveryConfig: { autoSend: autoSendByClient[client.id] === true },
   }
 }
 
@@ -207,6 +211,9 @@ export const clientsMockApi = {
     if (input.contacts) {
       contactsByClient[client.id] = mapContactInputs(input.contacts)
     }
+    if (input.delivery?.autoSend !== undefined) {
+      autoSendByClient[client.id] = input.delivery.autoSend
+    }
     return withClientExtras(client)
   },
 
@@ -214,7 +221,10 @@ export const clientsMockApi = {
     await delay()
     const idx = clients.findIndex((c) => c.id === clientId)
     if (idx < 0) throw new Error('Cliente no encontrado')
-    const { sourceIds, fiscal, contacts, ...rest } = input
+    const { sourceIds, fiscal, contacts, delivery, ...rest } = input
+    if (delivery?.autoSend !== undefined) {
+      autoSendByClient[clientId] = delivery.autoSend
+    }
     const next = {
       ...clients[idx],
       ...rest,

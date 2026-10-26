@@ -29,8 +29,11 @@ export function FindingReportBar({
         ...(dateFrom ? { dateFrom } : {}),
         ...(dateTo ? { dateTo } : {}),
       })
+      const count = `${next.findingCount} hallazgo${next.findingCount === 1 ? '' : 's'}`
       toast.success(
-        `Informe listo (${next.findingCount} hallazgo${next.findingCount === 1 ? '' : 's'}).`,
+        next.status === 'sent'
+          ? `Informe generado y enviado (${count}).`
+          : `Borrador listo (${count}). Confírmalo en Informes.`,
         {
           action: {
             label: 'Ver informe',
@@ -38,6 +41,9 @@ export function FindingReportBar({
           },
         },
       )
+      if (next.email && !next.email.sent) {
+        toast.warning(next.email.message)
+      }
     } catch (err) {
       toast.error(mapApiError(err, 'No se pudo generar el informe.'))
     } finally {
