@@ -8,8 +8,9 @@ import {
 import type { ReportDetail } from '@/features/reports/types/report'
 import { openReportPdf } from '@/features/reports/lib/open-pdf'
 import {
-  formatReportMark,
   formatReportPeriod,
+  reportGeneratedLine,
+  reportSentLine,
   reportStatusLabel,
 } from '@/features/reports/lib/period'
 import { mapApiError } from '@/shared/lib/api-error'
@@ -122,13 +123,11 @@ export function ReportDetailPanel({
           {report.findingCount === 1 ? '' : 's'}
         </p>
         <p className="mt-1 text-xs text-norma-subtle">
-          Generó {formatReportMark(report.generatedAt) ?? '—'}
-          {report.generatedBy ? ` · ${report.generatedBy.name}` : ''}
+          {reportGeneratedLine(report.generatedAt, report.generatedBy?.name)}
         </p>
-        {report.sentAt ? (
+        {report.status === 'sent' ? (
           <p className="mt-0.5 text-xs text-norma-subtle">
-            Envió {formatReportMark(report.sentAt)}
-            {report.sentBy ? ` · ${report.sentBy.name}` : ''}
+            {reportSentLine(report.sentAt, report.sentBy?.name)}
           </p>
         ) : null}
       </div>

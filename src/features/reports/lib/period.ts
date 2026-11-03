@@ -23,6 +23,20 @@ export function formatReportMark(iso: string | null): string | null {
   }).format(date)
 }
 
+export function reportGeneratedLine(
+  at: string | null,
+  name: string | null | undefined,
+): string {
+  return `Generado el ${formatReportMark(at) ?? '—'} por ${name?.trim() || '—'}`
+}
+
+export function reportSentLine(
+  at: string | null,
+  name: string | null | undefined,
+): string {
+  return `Enviado el ${formatReportMark(at) ?? '—'} por ${name?.trim() || '—'}`
+}
+
 export function reportStatusLabel(status: string): string {
   if (status === 'sent') return 'Enviado'
   if (status === 'discarded') return 'Descartado'
