@@ -46,9 +46,14 @@ export function useReportRecipientSelection(recipients: ReportRecipient[]) {
     )
   }
 
+  function reset() {
+    setSelected(recipients.map((row) => row.id))
+  }
+
   return {
     selected,
     toggle,
+    reset,
     noneChosen: selected.length === 0,
   }
 }

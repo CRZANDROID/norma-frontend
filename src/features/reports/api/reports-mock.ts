@@ -38,7 +38,19 @@ const MOCK_REPORT: ReportDetail = {
 }
 
 export const reportsMockApi = {
-  create(_body: CreateReportBody): Promise<ReportDetail> {
+  create(body: CreateReportBody): Promise<ReportDetail> {
+    if (body.contactIds && body.contactIds.length > 0) {
+      return Promise.resolve({
+        ...MOCK_REPORT,
+        status: 'sent',
+        email: {
+          sent: true,
+          reason: 'sent',
+          message: `Correo enviado a ${body.contactIds.length} contactos.`,
+          recipients: [],
+        },
+      })
+    }
     return Promise.resolve(MOCK_REPORT)
   },
   list(params?: ListReportsParams): Promise<ReportsListPage> {
