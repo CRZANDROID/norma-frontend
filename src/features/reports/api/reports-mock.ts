@@ -62,12 +62,12 @@ export const reportsMockApi = {
     return Promise.resolve({
       ...MOCK_REPORT,
       id,
-      status: 'sent',
+      status: 'draft',
       email: {
         sent: false,
         reason: 'missing_api_key',
         message:
-          'Falta RESEND_API_KEY. El informe quedó enviado y no se mandó correo.',
+          'Falta RESEND_API_KEY. No se envió el correo. El informe sigue en borrador.',
         recipients: [],
       },
     })

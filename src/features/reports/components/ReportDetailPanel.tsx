@@ -49,22 +49,19 @@ export function ReportDetailPanel({
     }
   }
 
-  function announceEmail(next: ReportDetail) {
-    if (!next.email) return
-    if (next.email.sent) {
-      toast.success(next.email.message)
-      return
-    }
-    toast.warning(next.email.message)
-  }
-
   async function send() {
     setBusy('send')
     try {
       const next = await reportsApi.send(report.id)
       onUpdated(next)
-      toast.success('Informe enviado.')
-      announceEmail(next)
+      if (next.status === 'sent') {
+        toast.success(next.email?.message || 'Informe enviado.')
+        return
+      }
+      toast.warning(
+        next.email?.message ||
+          'No se envió el correo. El informe sigue en borrador.',
+      )
     } catch (err) {
       toast.error(mapApiError(err, 'No se pudo enviar el informe.'))
     } finally {
