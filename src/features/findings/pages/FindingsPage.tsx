@@ -32,7 +32,13 @@ import {
 } from '@/features/findings/lib/civil-date'
 import { toFindingListItem } from '@/features/findings/lib/finding-row'
 import { countLabel } from '@/features/findings/lib/format'
-import { emptyListCounts, IMPACT_LAMP, shiftListCounts } from '@/features/findings/lib/impact'
+import {
+  belongsToLoteFilter,
+  emptyListCounts,
+  IMPACT_LAMP,
+  shiftListCounts,
+  shiftLoteCounts,
+} from '@/features/findings/lib/impact'
 import { mapApiError } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/utils'
 import { Label } from '@/shared/ui/label'
@@ -459,87 +465,69 @@ export function FindingsPage() {
     if (loadingList) return
     if (findingRows.length === 0) return
     if (findingId && findingRows.some((row) => row.id === findingId)) return
-    if (
-      lote === 'excluidos' &&
-      findingId &&
-      detail?.id === findingId &&
-      !detail.excludedFromNextReport
-    ) {
-      return
-    }
-    if (
-      lote === 'incluidos' &&
-      findingId &&
-      detail?.id === findingId &&
-      detail.excludedFromNextReport
-    ) {
-      return
-    }
-    if (
-      impactFilter &&
-      findingId &&
-      detail?.id === findingId &&
-      detail.impact !== impactFilter
-    ) {
-      return
-    }
     const first = findingRows[0]
     if (!first) return
     navigate(`/alertas/${first.id}${listQueryString}`, { replace: true })
-  }, [
-    findingId,
-    listQueryString,
-    loadingList,
-    navigate,
-    findingRows,
-    lote,
-    impactFilter,
-    detail,
-  ])
+  }, [findingId, listQueryString, loadingList, navigate, findingRows])
 
   const applyFindingUpdate = useCallback(
     (next: FindingDetail) => {
+      const previous =
+        detail?.id === next.id
+          ? detail
+          : findingRows.find((row) => row.id === next.id) ?? null
+      const buckets = {
+        excluded: next.excludedFromNextReport,
+        impact: next.impact,
+      }
+      const belongs =
+        belongsToLoteFilter(buckets, lote) &&
+        (!impactFilter || next.impact === impactFilter)
+      const existed = findingRows.some((row) => row.id === next.id)
+      const reenter = Boolean(lote && lote !== 'enviados' && !existed && belongs)
+
       setDetail(next)
       setItems((prev) => {
         const rows = asFindingRows(prev)
-        const previous = rows.find((row) => row.id === next.id)
-        if (previous && previous.impact !== next.impact) {
-          setCounts((counts) =>
-            shiftListCounts(counts, previous.impact, next.impact),
-          )
+        const inList = rows.some((row) => row.id === next.id)
+        if (inList && !belongs) {
+          return rows.filter((row) => row.id !== next.id)
         }
-        const leavesLote =
-          (lote === 'excluidos' && !next.excludedFromNextReport) ||
-          (lote === 'incluidos' && next.excludedFromNextReport)
-        const leavesImpact =
-          Boolean(impactFilter) && next.impact !== impactFilter
-        if (leavesLote || leavesImpact) {
-          const remaining = rows.filter((row) => row.id !== next.id)
-          if (remaining.length !== rows.length) {
-            setTotal((n) => Math.max(0, n - 1))
-            if (lote === 'incluidos' && next.excludedFromNextReport) {
-              setCounts((counts) => ({
-                ...counts,
-                included: Math.max(0, counts.included - 1),
-                excluded: counts.excluded + 1,
-              }))
-            }
-            if (lote === 'excluidos' && !next.excludedFromNextReport) {
-              setCounts((counts) => ({
-                ...counts,
-                excluded: Math.max(0, counts.excluded - 1),
-                included: counts.included + 1,
-              }))
-            }
-          }
-          return remaining
+        if (!inList && reenter) {
+          return [toFindingListItem(next), ...rows]
         }
+        if (!inList) return rows
         return rows.map((row) =>
           row.id === next.id ? toFindingListItem(next) : row,
         )
       })
+      if (existed && !belongs) {
+        setTotal((n) => Math.max(0, n - 1))
+      } else if (reenter) {
+        setTotal((n) => n + 1)
+      }
+      if (previous) {
+        setCounts((counts) => {
+          let nextCounts = counts
+          if (previous.impact !== next.impact) {
+            nextCounts = shiftListCounts(
+              nextCounts,
+              previous.impact,
+              next.impact,
+            )
+          }
+          return shiftLoteCounts(
+            nextCounts,
+            {
+              excluded: previous.excludedFromNextReport,
+              impact: previous.impact,
+            },
+            buckets,
+          )
+        })
+      }
     },
-    [lote, impactFilter],
+    [detail, findingRows, impactFilter, lote],
   )
 
   function onClientChange(id: string) {

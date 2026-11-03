@@ -97,8 +97,8 @@ export function FindingReportBar({
             if (busy) return
             setSendOpen(next)
           }}
-          title="Generar y enviar"
-          description="Este cliente envía el informe al generarlo."
+          title="Envío automático"
+          description="Este cliente tiene el envío automático activo, al generar el informe se envía inmediatamente."
           className="flex max-h-[min(90vh,40rem)] flex-col"
         >
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
@@ -122,7 +122,7 @@ export function FindingReportBar({
               disabled={busy || recipientsState.noneChosen}
               onClick={() => void generate(recipientsState.selected)}
             >
-              {busy ? 'Enviando…' : 'Enviar'}
+              {busy ? 'Generando…' : 'Generar y enviar'}
             </Button>
           </div>
         </Modal>

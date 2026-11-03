@@ -28,26 +28,24 @@ export function reportRecipients(
 }
 
 export function useReportRecipientSelection(recipients: ReportRecipient[]) {
-  const recipientKey = recipients.map((row) => row.id).join('\n')
-  const [seenKey, setSeenKey] = useState(recipientKey)
-  const [selected, setSelected] = useState<string[]>(() =>
-    recipients.map((row) => row.id),
+  const allIds = recipients.map((row) => row.id)
+  const recipientKey = allIds.join('\n')
+  const [picked, setPicked] = useState<{ key: string; ids: string[] } | null>(
+    null,
   )
-  if (seenKey !== recipientKey) {
-    setSeenKey(recipientKey)
-    setSelected(recipients.map((row) => row.id))
-  }
+  const selected = picked?.key === recipientKey ? picked.ids : allIds
 
   function toggle(id: string) {
-    setSelected((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id],
-    )
+    setPicked({
+      key: recipientKey,
+      ids: selected.includes(id)
+        ? selected.filter((item) => item !== id)
+        : [...selected, id],
+    })
   }
 
   function reset() {
-    setSelected(recipients.map((row) => row.id))
+    setPicked({ key: recipientKey, ids: allIds })
   }
 
   return {

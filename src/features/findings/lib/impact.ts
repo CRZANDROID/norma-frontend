@@ -1,6 +1,7 @@
 import type {
   FindingImpact,
   FindingImpactCounts,
+  FindingLote,
   FindingsListCounts,
 } from '@/features/findings/types/finding'
 
@@ -94,6 +95,32 @@ export function canExcludeFromReport(impact: FindingImpact): boolean {
   return impact === 'YELLOW' || impact === 'ORANGE' || impact === 'RED'
 }
 
+type LoteBuckets = {
+  excluded: boolean
+  impact: FindingImpact
+}
+
+function inIncludedPool(row: LoteBuckets): boolean {
+  return canExcludeFromReport(row.impact) && !row.excluded
+}
+
+function inExcludedPool(row: LoteBuckets): boolean {
+  return canExcludeFromReport(row.impact) && row.excluded
+}
+
+/**
+ * Pastilla Incluidos / Excluidos. `enviados` no se infiere del detalle
+ * (hace falta el informe sent); no saques la fila en ese filtro.
+ */
+export function belongsToLoteFilter(
+  row: LoteBuckets,
+  lote: FindingLote | null,
+): boolean {
+  if (!lote || lote === 'enviados') return true
+  if (lote === 'excluidos') return row.excluded
+  return inIncludedPool(row)
+}
+
 export function shiftListCounts(
   counts: FindingsListCounts,
   from: FindingImpact,
@@ -106,5 +133,28 @@ export function shiftListCounts(
     ...counts,
     [fromKey]: Math.max(0, counts[fromKey] - 1),
     [toKey]: counts[toKey] + 1,
+  }
+}
+
+export function shiftLoteCounts(
+  counts: FindingsListCounts,
+  from: LoteBuckets,
+  to: LoteBuckets,
+): FindingsListCounts {
+  const wasIncluded = inIncludedPool(from)
+  const wasExcluded = inExcludedPool(from)
+  const isIncluded = inIncludedPool(to)
+  const isExcluded = inExcludedPool(to)
+  if (wasIncluded === isIncluded && wasExcluded === isExcluded) return counts
+  return {
+    ...counts,
+    included: Math.max(
+      0,
+      counts.included + (isIncluded ? 1 : 0) - (wasIncluded ? 1 : 0),
+    ),
+    excluded: Math.max(
+      0,
+      counts.excluded + (isExcluded ? 1 : 0) - (wasExcluded ? 1 : 0),
+    ),
   }
 }

@@ -221,35 +221,44 @@ function AutoSendField({
   onChange: (next: boolean) => void
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-2xl border-2 border-norma-border bg-norma-raised/50 px-4 py-3">
-      <div className="min-w-0">
-        <Label htmlFor={id}>Cliente automático</Label>
-        <p className="mt-1 text-xs leading-relaxed text-norma-subtle">
+    <button
+      id={id}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        'flex w-full min-w-0 items-start gap-3 overflow-hidden rounded-2xl border-2 border-norma-border bg-norma-raised/50 px-4 py-3 text-left transition-[background-color,border-color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45',
+        'active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50',
+        checked ? 'border-norma-accent/35 bg-norma-accent/8' : 'hover:bg-norma-raised',
+      )}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium text-norma-fg">
+          Cliente automático
+        </span>
+        <span className="mt-1 block text-xs leading-relaxed text-norma-subtle">
           Si está activo, Generar PDF también envía el informe. Si no, queda
           en borrador y se confirma en Informes.
-        </p>
-      </div>
-      <button
-        id={id}
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        disabled={disabled}
-        onClick={() => onChange(!checked)}
+        </span>
+      </span>
+      <span
+        aria-hidden
         className={cn(
-          'relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45 disabled:opacity-50',
+          'relative mt-0.5 h-6 w-11 shrink-0 overflow-hidden rounded-full transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
           checked ? 'bg-norma-accent' : 'bg-norma-border',
         )}
       >
         <span
-          aria-hidden
           className={cn(
-            'absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform',
-            checked ? 'translate-x-5' : 'translate-x-0.5',
+            'absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow-sm transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
+            checked ? 'translate-x-5' : 'translate-x-0',
           )}
         />
-      </button>
-    </div>
+      </span>
+    </button>
   )
 }
 
@@ -832,7 +841,7 @@ export function CreateClientDialog({
       description="Nombre del cliente y las fuentes a monitorear."
     >
       <form
-        className="max-h-[70vh] space-y-4 overflow-y-auto overscroll-contain pr-1"
+        className="max-h-[70vh] min-w-0 space-y-4 overflow-y-auto overscroll-contain pr-1"
         onSubmit={onSubmit}
         noValidate
       >

@@ -107,6 +107,8 @@ export function ReportDetailPanel({
     }
   }
 
+  const findingCount = report.findings.length
+
   return (
     <div className="space-y-6">
       <div>
@@ -118,9 +120,6 @@ export function ReportDetailPanel({
         </h2>
         <p className="mt-2 text-sm text-norma-muted">
           {formatReportPeriod(report.dateFrom, report.dateTo)}
-          {' · '}
-          {report.findingCount} hallazgo
-          {report.findingCount === 1 ? '' : 's'}
         </p>
         <p className="mt-1 text-xs text-norma-subtle">
           {reportGeneratedLine(report.generatedAt, report.generatedBy?.name)}
@@ -142,10 +141,12 @@ export function ReportDetailPanel({
       {report.email?.sent ? (
         <p className="text-sm text-norma-muted">{report.email.message}</p>
       ) : null}
-      <div className="flex flex-wrap gap-2">
+
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Archivo PDF">
         <Button
           type="button"
           size="sm"
+          variant={draft ? 'outline' : 'default'}
           disabled={busy !== null || !report.fileUrl}
           onClick={() => void viewOrDownload('view')}
         >
@@ -160,7 +161,18 @@ export function ReportDetailPanel({
         >
           {busy === 'download' ? 'Descargando…' : 'Descargar'}
         </Button>
-        {draft ? (
+      </div>
+
+      {draft ? (
+        <ReportRecipientList
+          recipients={recipients}
+          selected={recipientsState.selected}
+          onToggle={recipientsState.toggle}
+        />
+      ) : null}
+
+      {draft ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-norma-border/80 pt-4">
           <Button
             type="button"
             size="sm"
@@ -169,63 +181,77 @@ export function ReportDetailPanel({
           >
             {busy === 'send' ? 'Enviando…' : 'Enviar'}
           </Button>
-        ) : null}
-        {draft ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            disabled={busy !== null}
-            onClick={() => void regenerate()}
-          >
-            {busy === 'regen' ? 'Regenerando…' : 'Regenerar'}
-          </Button>
-        ) : null}
-        {draft ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="danger"
-            disabled={busy !== null}
-            onClick={() => setConfirmDiscard(true)}
-          >
-            Descartar
-          </Button>
-        ) : null}
-      </div>
-      {draft ? (
-        <ReportRecipientList
-          recipients={recipients}
-          selected={recipientsState.selected}
-          onToggle={recipientsState.toggle}
-        />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={busy !== null}
+              onClick={() => void regenerate()}
+            >
+              {busy === 'regen' ? 'Regenerando…' : 'Regenerar'}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="danger"
+              disabled={busy !== null}
+              onClick={() => setConfirmDiscard(true)}
+            >
+              Descartar
+            </Button>
+          </div>
+        </div>
       ) : null}
-      <ul className="space-y-3">
-        {report.findings.map((item) => (
-          <li
-            key={item.id}
-            className="rounded-2xl border-2 border-norma-border bg-norma-surface px-4 py-3"
+
+      <section
+        aria-labelledby="report-findings-heading"
+        className="border-t border-norma-border/80 pt-5"
+      >
+        <div className="flex items-baseline justify-between gap-3">
+          <h3
+            id="report-findings-heading"
+            className="text-[11px] font-semibold uppercase tracking-[0.14em] text-norma-muted"
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-norma-muted">
-              {IMPACT_LABEL[item.impact] ?? item.impact}
-            </p>
-            <p className="mt-1 font-display text-sm font-semibold tracking-tight">
-              {item.title}
-            </p>
-            {item.suggestedAction ? (
-              <p className="mt-1 text-xs text-norma-accent">
-                {item.suggestedAction}
-              </p>
-            ) : null}
-            {item.changeNote ? (
-              <p className="mt-2 text-xs leading-relaxed text-norma-fg">
-                <span className="font-semibold">Qué cambió. </span>
-                {item.changeNote}
-              </p>
-            ) : null}
-          </li>
-        ))}
-      </ul>
+            Hallazgos
+          </h3>
+          <p className="text-xs tabular-nums text-norma-subtle">
+            {findingCount}
+          </p>
+        </div>
+        {findingCount === 0 ? (
+          <p className="mt-2 text-sm leading-relaxed text-norma-muted">
+            Este informe no tiene hallazgos.
+          </p>
+        ) : (
+          <ul className="mt-3 space-y-3">
+            {report.findings.map((item) => (
+              <li
+                key={item.id}
+                className="rounded-2xl border-2 border-norma-border bg-norma-surface px-4 py-3"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-norma-muted">
+                  {IMPACT_LABEL[item.impact] ?? item.impact}
+                </p>
+                <p className="mt-1 font-display text-sm font-semibold tracking-tight">
+                  {item.title}
+                </p>
+                {item.suggestedAction ? (
+                  <p className="mt-1 text-xs text-norma-accent">
+                    {item.suggestedAction}
+                  </p>
+                ) : null}
+                {item.changeNote ? (
+                  <p className="mt-2 text-xs leading-relaxed text-norma-fg">
+                    <span className="font-semibold">Qué cambió. </span>
+                    {item.changeNote}
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
       <Modal
         open={confirmDiscard}
         onOpenChange={setConfirmDiscard}
