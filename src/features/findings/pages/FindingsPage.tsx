@@ -14,6 +14,7 @@ import { FindingDetailCard } from '@/features/findings/components/FindingDetailC
 import { FindingListPanel } from '@/features/findings/components/FindingListPanel'
 import { FindingPageNav } from '@/features/findings/components/FindingPageNav'
 import { FindingReportBar } from '@/features/findings/components/FindingReportBar'
+import { reportRecipients } from '@/features/reports'
 import { FINDING_REWRITE_HINT_HOST_ID } from '@/features/findings/components/FindingRewriteNotice'
 import { ImpactFilter } from '@/features/findings/components/ImpactFilter'
 import type {
@@ -765,6 +766,8 @@ export function FindingsPage() {
                 clientId={clientId}
                 dateFrom={dateRange.dateFrom}
                 dateTo={dateRange.dateTo}
+                autoSend={selectedClient?.deliveryConfig?.autoSend === true}
+                recipients={reportRecipients(selectedClient?.contacts)}
               />
               {loadingSources ? (
                 <p className="mt-2 text-[11px] text-white/40">

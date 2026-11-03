@@ -1,7 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { reportsApi } from '@/features/reports'
+import {
+  ReportRecipientCard,
+  reportsApi,
+  type ReportRecipient,
+} from '@/features/reports'
 import { mapApiError } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
@@ -13,10 +17,14 @@ export function FindingReportBar({
   clientId,
   dateFrom,
   dateTo,
+  autoSend,
+  recipients,
 }: {
   clientId: string
   dateFrom: string | null
   dateTo: string | null
+  autoSend: boolean
+  recipients: ReportRecipient[]
 }) {
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
@@ -62,6 +70,9 @@ export function FindingReportBar({
       >
         {busy ? 'Generando…' : 'Generar PDF'}
       </Button>
+      {autoSend ? (
+        <ReportRecipientCard recipients={recipients} tone="navy" />
+      ) : null}
       <span className="hidden text-[11px] text-white/45 [@media(min-height:50rem)]:inline">
         El lote se arma con Incluidos. Ver y descargar viven en Informes.
       </span>

@@ -5,6 +5,7 @@ import type { Client } from '@/features/clients/types/client'
 import { ReportDetailPanel } from '@/features/reports/components/ReportDetailPanel'
 import { ReportListPanel } from '@/features/reports/components/ReportListPanel'
 import { reportsApi } from '@/features/reports/api/reports-api'
+import { reportRecipients } from '@/features/reports/components/ReportRecipientCard'
 import type {
   ReportDetail,
   ReportListItem,
@@ -331,6 +332,10 @@ export function ReportsPage() {
                 ) : detail ? (
                   <ReportDetailPanel
                     report={detail}
+                    recipients={reportRecipients(
+                      clients.find((row) => row.id === detail.client.id)
+                        ?.contacts,
+                    )}
                     onUpdated={(next) => {
                       if (next.status === 'discarded') {
                         setDetail(null)

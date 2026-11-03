@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import {
+  ReportRecipientCard,
+  type ReportRecipient,
+} from '@/features/reports/components/ReportRecipientCard'
 import type { ReportDetail } from '@/features/reports/types/report'
 import { openReportPdf } from '@/features/reports/lib/open-pdf'
 import {
@@ -20,9 +24,11 @@ const IMPACT_LABEL: Record<string, string> = {
 
 export function ReportDetailPanel({
   report,
+  recipients,
   onUpdated,
 }: {
   report: ReportDetail
+  recipients: ReportRecipient[]
   onUpdated: (next: ReportDetail) => void
 }) {
   const [busy, setBusy] = useState<
@@ -143,14 +149,17 @@ export function ReportDetailPanel({
           {busy === 'download' ? 'Descargando…' : 'Descargar'}
         </Button>
         {draft ? (
-          <Button
-            type="button"
-            size="sm"
-            disabled={busy !== null}
-            onClick={() => void send()}
-          >
-            {busy === 'send' ? 'Enviando…' : 'Enviar'}
-          </Button>
+          <div className="flex flex-wrap items-start gap-2">
+            <Button
+              type="button"
+              size="sm"
+              disabled={busy !== null}
+              onClick={() => void send()}
+            >
+              {busy === 'send' ? 'Enviando…' : 'Enviar'}
+            </Button>
+            <ReportRecipientCard recipients={recipients} />
+          </div>
         ) : null}
         {draft ? (
           <Button

@@ -9,7 +9,7 @@ const MOCK_REPORT: ReportDetail = {
   id: 'mock-report',
   status: 'draft',
   client: {
-    id: 'mock-client',
+    id: 'client_arca',
     name: 'Arca Continental',
     slug: 'arca-continental',
     legalName: null,
