@@ -42,6 +42,8 @@ export type ReportListItem = {
   fileUrl: string | null
   generatedAt: string
   generatedBy: ReportPerson | null
+  sentAt: string | null
+  sentBy: ReportPerson | null
   email: ReportEmailDelivery | null
 }
 

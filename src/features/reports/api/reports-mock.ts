@@ -21,6 +21,8 @@ const MOCK_REPORT: ReportDetail = {
   fileUrl: '/reports/mock-report/file',
   generatedAt: new Date().toISOString(),
   generatedBy: { id: 'mock-user', name: 'Admin NORMA' },
+  sentAt: null,
+  sentBy: null,
   email: null,
   findings: [
     {
@@ -40,9 +42,13 @@ const MOCK_REPORT: ReportDetail = {
 export const reportsMockApi = {
   create(body: CreateReportBody): Promise<ReportDetail> {
     if (body.contactIds && body.contactIds.length > 0) {
+      const at = new Date().toISOString()
       return Promise.resolve({
         ...MOCK_REPORT,
         status: 'sent',
+        generatedAt: at,
+        sentAt: at,
+        sentBy: MOCK_REPORT.generatedBy,
         email: {
           sent: true,
           reason: 'sent',

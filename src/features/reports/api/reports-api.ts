@@ -74,6 +74,8 @@ function normalizeItem(raw: unknown): ReportListItem | null {
     fileUrl: text(raw.fileUrl),
     generatedAt: text(raw.generatedAt) ?? '',
     generatedBy: asPerson(raw.generatedBy),
+    sentAt: text(raw.sentAt),
+    sentBy: asPerson(raw.sentBy),
     email: asEmail(raw.email),
   }
 }

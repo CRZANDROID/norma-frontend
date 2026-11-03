@@ -359,6 +359,9 @@ export function ReportsPage() {
                                 counts: next.counts,
                                 fileUrl: next.fileUrl,
                                 generatedAt: next.generatedAt,
+                                generatedBy: next.generatedBy,
+                                sentAt: next.sentAt,
+                                sentBy: next.sentBy,
                                 email: next.email,
                               }
                             : row,

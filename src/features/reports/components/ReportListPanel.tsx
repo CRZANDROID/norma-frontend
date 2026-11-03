@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import type { ReportListItem } from '@/features/reports/types/report'
 import {
+  formatReportMark,
   formatReportPeriod,
   reportStatusLabel,
 } from '@/features/reports/lib/period'
@@ -87,6 +88,16 @@ export function ReportListPanel({
                       {' · '}
                       {item.counts.yellow} medio
                     </span>
+                    <span className="mt-1.5 block text-[11px] leading-relaxed text-norma-subtle">
+                      Generó {formatReportMark(item.generatedAt) ?? '—'}
+                      {item.generatedBy ? ` · ${item.generatedBy.name}` : ''}
+                    </span>
+                    {item.sentAt ? (
+                      <span className="mt-0.5 block text-[11px] leading-relaxed text-norma-subtle">
+                        Envió {formatReportMark(item.sentAt)}
+                        {item.sentBy ? ` · ${item.sentBy.name}` : ''}
+                      </span>
+                    ) : null}
                   </span>
                   <ChevronRight
                     className="mt-1 size-4 shrink-0 text-norma-subtle"
