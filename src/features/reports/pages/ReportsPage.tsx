@@ -5,7 +5,7 @@ import type { Client } from '@/features/clients/types/client'
 import { ReportDetailPanel } from '@/features/reports/components/ReportDetailPanel'
 import { ReportListPanel } from '@/features/reports/components/ReportListPanel'
 import { reportsApi } from '@/features/reports/api/reports-api'
-import { reportRecipients } from '@/features/reports/components/ReportRecipientCard'
+import { reportRecipients } from '@/features/reports/components/ReportRecipientField'
 import type {
   ReportDetail,
   ReportListItem,

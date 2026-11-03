@@ -74,6 +74,7 @@ export type CreateReportBody = {
   clientId: string
   dateFrom?: string
   dateTo?: string
+  contactIds?: string[]
 }
 
 export type ListReportsParams = {

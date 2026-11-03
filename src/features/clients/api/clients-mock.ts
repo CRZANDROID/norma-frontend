@@ -94,6 +94,20 @@ const contactsByClient: Record<string, ClientContact[]> = {
       email: 'ana.regulatoria@arca.com',
       status: 'ACTIVE',
     },
+    {
+      id: 'contact_arca_2',
+      name: 'Luis Operaciones',
+      phone: '+52 81 8000 1001',
+      email: 'luis.operaciones@arca.com',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'contact_arca_off',
+      name: 'Inactivo',
+      phone: '+52 81 8000 1002',
+      email: 'inactivo@arca.com',
+      status: 'INACTIVE',
+    },
   ],
 }
 

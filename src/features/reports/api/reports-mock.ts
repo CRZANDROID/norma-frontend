@@ -58,7 +58,21 @@ export const reportsMockApi = {
   regenerate(id: string): Promise<ReportDetail> {
     return Promise.resolve({ ...MOCK_REPORT, id })
   },
-  send(id: string): Promise<ReportDetail> {
+  send(id: string, contactIds: string[] = []): Promise<ReportDetail> {
+    if (contactIds.length === 0) {
+      return Promise.resolve({
+        ...MOCK_REPORT,
+        id,
+        status: 'draft',
+        email: {
+          sent: false,
+          reason: 'no_recipients',
+          message:
+            'Elige al menos un contacto. No se envió el correo. El informe sigue en borrador.',
+          recipients: [],
+        },
+      })
+    }
     return Promise.resolve({
       ...MOCK_REPORT,
       id,

@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import {
-  ReportRecipientCard,
+  ReportRecipientField,
   reportsApi,
   type ReportRecipient,
 } from '@/features/reports'
@@ -29,13 +29,14 @@ export function FindingReportBar({
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
 
-  async function generate() {
+  async function generate(contactIds?: string[]) {
     setBusy(true)
     try {
       const next = await reportsApi.create({
         clientId,
         ...(dateFrom ? { dateFrom } : {}),
         ...(dateTo ? { dateTo } : {}),
+        ...(contactIds ? { contactIds } : {}),
       })
       const openReport = {
         label: 'Ver informe',
@@ -61,18 +62,29 @@ export function FindingReportBar({
 
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2 [@media(min-height:50rem)]:mt-4">
-      <Button
-        type="button"
-        size="sm"
-        className={cn(navyBtn)}
-        disabled={!clientId || busy}
-        onClick={() => void generate()}
-      >
-        {busy ? 'Generando…' : 'Generar PDF'}
-      </Button>
       {autoSend ? (
-        <ReportRecipientCard recipients={recipients} tone="navy" />
-      ) : null}
+        <ReportRecipientField
+          recipients={recipients}
+          tone="navy"
+          action={{
+            label: 'Generar PDF',
+            busyLabel: 'Generando…',
+            busy,
+            className: navyBtn,
+            onSend: (contactIds) => void generate(contactIds),
+          }}
+        />
+      ) : (
+        <Button
+          type="button"
+          size="sm"
+          className={cn(navyBtn)}
+          disabled={!clientId || busy}
+          onClick={() => void generate()}
+        >
+          {busy ? 'Generando…' : 'Generar PDF'}
+        </Button>
+      )}
       <span className="hidden text-[11px] text-white/45 [@media(min-height:50rem)]:inline">
         El lote se arma con Incluidos. Ver y descargar viven en Informes.
       </span>

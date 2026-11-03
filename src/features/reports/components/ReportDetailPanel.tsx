@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import {
-  ReportRecipientCard,
+  ReportRecipientField,
   type ReportRecipient,
-} from '@/features/reports/components/ReportRecipientCard'
+} from '@/features/reports/components/ReportRecipientField'
 import type { ReportDetail } from '@/features/reports/types/report'
 import { openReportPdf } from '@/features/reports/lib/open-pdf'
 import {
@@ -55,10 +55,11 @@ export function ReportDetailPanel({
     }
   }
 
-  async function send() {
+  async function send(contactIds: string[]) {
+    if (contactIds.length === 0) return
     setBusy('send')
     try {
-      const next = await reportsApi.send(report.id)
+      const next = await reportsApi.send(report.id, contactIds)
       onUpdated(next)
       if (next.status === 'sent') {
         toast.success(next.email?.message || 'Informe enviado.')
@@ -149,17 +150,15 @@ export function ReportDetailPanel({
           {busy === 'download' ? 'Descargando…' : 'Descargar'}
         </Button>
         {draft ? (
-          <div className="flex flex-wrap items-start gap-2">
-            <Button
-              type="button"
-              size="sm"
-              disabled={busy !== null}
-              onClick={() => void send()}
-            >
-              {busy === 'send' ? 'Enviando…' : 'Enviar'}
-            </Button>
-            <ReportRecipientCard recipients={recipients} />
-          </div>
+          <ReportRecipientField
+            recipients={recipients}
+            action={{
+              label: 'Enviar',
+              busyLabel: 'Enviando…',
+              busy: busy !== null,
+              onSend: (contactIds) => void send(contactIds),
+            }}
+          />
         ) : null}
         {draft ? (
           <Button

@@ -1,9 +1,9 @@
 export { reportsApi } from '@/features/reports/api/reports-api'
 export {
-  ReportRecipientCard,
+  ReportRecipientField,
   reportRecipients,
-} from '@/features/reports/components/ReportRecipientCard'
-export type { ReportRecipient } from '@/features/reports/components/ReportRecipientCard'
+} from '@/features/reports/components/ReportRecipientField'
+export type { ReportRecipient } from '@/features/reports/components/ReportRecipientField'
 export { ReportsPage } from '@/features/reports/pages/ReportsPage'
 export type {
   CreateReportBody,

@@ -216,10 +216,10 @@ export const reportsApi = {
       .then((r) => unwrapDetail(r.data))
   },
 
-  send(id: string): Promise<ReportDetail> {
-    if (useApiMock) return reportsMockApi.send(id)
+  send(id: string, contactIds: string[]): Promise<ReportDetail> {
+    if (useApiMock) return reportsMockApi.send(id, contactIds)
     return api
-      .post<unknown>(`/reports/${id}/send`)
+      .post<unknown>(`/reports/${id}/send`, { contactIds })
       .then((r) => unwrapDetail(r.data))
   },
 
