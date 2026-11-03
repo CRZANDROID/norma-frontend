@@ -3,6 +3,8 @@ import { ChevronRight } from 'lucide-react'
 import type { ReportListItem } from '@/features/reports/types/report'
 import {
   formatReportPeriod,
+  reportGeneratedLine,
+  reportSentLine,
   reportStatusLabel,
 } from '@/features/reports/lib/period'
 import { cn } from '@/shared/lib/utils'
@@ -87,6 +89,14 @@ export function ReportListPanel({
                       {' · '}
                       {item.counts.yellow} medio
                     </span>
+                    <span className="mt-1.5 block text-[11px] leading-relaxed text-norma-subtle">
+                      {reportGeneratedLine(item.generatedAt, item.generatedBy?.name)}
+                    </span>
+                    {item.status === 'sent' ? (
+                      <span className="mt-0.5 block text-[11px] leading-relaxed text-norma-subtle">
+                        {reportSentLine(item.sentAt, item.sentBy?.name)}
+                      </span>
+                    ) : null}
                   </span>
                   <ChevronRight
                     className="mt-1 size-4 shrink-0 text-norma-subtle"

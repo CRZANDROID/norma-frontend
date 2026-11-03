@@ -15,6 +15,12 @@ export function defaultImpactActions(): ImpactAction[] {
   }))
 }
 
+export function readAutoSend(raw: unknown): boolean {
+  if (!isRecord(raw)) return false
+  const root = isRecord(raw.deliveryConfig) ? raw.deliveryConfig : raw
+  return root.autoSend === true
+}
+
 export function defaultClientDelivery(clientId?: string): ClientDelivery {
   return {
     clientId,

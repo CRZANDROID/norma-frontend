@@ -84,6 +84,8 @@ export type FindingAiMeta = {
 export type FindingDetail = FindingListItem & {
   justification: string
   description: string | null
+  /** Norma ya enviada cuyo crawl nuevo trae otro hash. */
+  changeNote?: string | null
   aiMeta: FindingAiMeta | null
 }
 

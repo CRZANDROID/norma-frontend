@@ -22,6 +22,7 @@ import { UnsavedChangesGuard } from '@/shared/hooks/unsaved-changes-guard'
 import { mapApiError } from '@/shared/lib/api-error'
 import { focusFirstInvalid } from '@/shared/lib/form'
 import { duration, easeOut } from '@/shared/lib/motion'
+import { readAutoSend } from '@/features/clients/lib/delivery'
 import { cn, slugify } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import {
@@ -208,6 +209,59 @@ function FiscalFields({
   )
 }
 
+function AutoSendField({
+  id,
+  checked,
+  disabled,
+  onChange,
+}: {
+  id: string
+  checked: boolean
+  disabled?: boolean
+  onChange: (next: boolean) => void
+}) {
+  return (
+    <button
+      id={id}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        'flex w-full min-w-0 items-start gap-3 overflow-hidden rounded-2xl border-2 border-norma-border bg-norma-raised/50 px-4 py-3 text-left transition-[background-color,border-color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-norma-accent/45',
+        'active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50',
+        checked ? 'border-norma-accent/35 bg-norma-accent/8' : 'hover:bg-norma-raised',
+      )}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium text-norma-fg">
+          Cliente automático
+        </span>
+        <span className="mt-1 block text-xs leading-relaxed text-norma-subtle">
+          Si está activo, Generar PDF también envía el informe. Si no, queda
+          en borrador y se confirma en Informes.
+        </span>
+      </span>
+      <span
+        aria-hidden
+        className={cn(
+          'relative mt-0.5 h-6 w-11 shrink-0 overflow-hidden rounded-full transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
+          checked ? 'bg-norma-accent' : 'bg-norma-border',
+        )}
+      >
+        <span
+          className={cn(
+            'absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow-sm transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]',
+            checked ? 'translate-x-5' : 'translate-x-0',
+          )}
+        />
+      </span>
+    </button>
+  )
+}
+
 function sourceToOption(
   source: Pick<Source, 'id' | 'name' | 'code' | 'category' | 'platform'>,
 ): EntityLinkOption {
@@ -315,6 +369,7 @@ export function ClientDataForm({
     [client.contacts],
   )
   const [contacts, setContacts] = useState<ContactDraft[]>(baselineContacts)
+  const [autoSend, setAutoSend] = useState(readAutoSend(client))
   const [sourceOptions, setSourceOptions] = useState<EntityLinkOption[]>([])
   const [loadingSources, setLoadingSources] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -329,6 +384,7 @@ export function ClientDataForm({
     setFiscal(fiscalFromData(client.fiscalData))
     setSourceIds((client.sources ?? []).map((s) => s.id))
     setContacts(contactsFromApi(client.contacts))
+    setAutoSend(readAutoSend(client))
   }, [client])
 
   const linkedSourceKey = baselineSourceIds.slice().sort().join(',')
@@ -364,7 +420,8 @@ export function ClientDataForm({
     phone !== (client.phone ?? '') ||
     fiscalDirty(fiscal, baselineFiscal) ||
     linkIdsDirty(sourceIds, baselineSourceIds) ||
-    contactsDirty(contacts, baselineContacts)
+    contactsDirty(contacts, baselineContacts) ||
+    autoSend !== readAutoSend(client)
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -407,6 +464,9 @@ export function ClientDataForm({
         sourceIds,
         ...(fiscalChanged && fiscalPayload ? { fiscal: fiscalPayload } : {}),
         ...(contactsChanged ? { contacts: contactsToInput(contacts) } : {}),
+        ...(autoSend !== readAutoSend(client)
+          ? { delivery: { autoSend } }
+          : {}),
       })
       onSaved(updated)
       toast.success('Cambios guardados.')
@@ -515,6 +575,13 @@ export function ClientDataForm({
           disabled={!canEdit}
         />
 
+        <AutoSendField
+          id="client-autosend"
+          checked={autoSend}
+          disabled={!canEdit}
+          onChange={setAutoSend}
+        />
+
         <EntityLinkPicker
           label="Fuentes de monitoreo"
           helper="Orígenes donde el agente buscará regulaciones para este cliente."
@@ -535,7 +602,7 @@ export function ClientDataForm({
                 Guardar cambios del cliente
               </p>
               <p className="text-xs text-norma-subtle">
-                Aplica datos, fiscales, contactos y fuentes de monitoreo.
+                Aplica datos, fiscales, contactos, envío automático y fuentes.
               </p>
             </div>
             <Button
@@ -616,7 +683,7 @@ export function ClientDataForm({
                     Cambios sin guardar
                   </p>
                   <p className="text-[11px] text-norma-subtle">
-                    Datos, fiscales, contactos o fuentes.
+                    Datos, fiscales, contactos, envío o fuentes.
                   </p>
                 </div>
                 <Button
@@ -671,6 +738,7 @@ export function CreateClientDialog({
   const [phone, setPhone] = useState('')
   const [fiscal, setFiscal] = useState<FiscalFormState>({ ...emptyFiscal })
   const [contacts, setContacts] = useState<ContactDraft[]>([])
+  const [autoSend, setAutoSend] = useState(false)
   const [sourceIds, setSourceIds] = useState<string[]>([])
   const [sourceOptions, setSourceOptions] = useState<EntityLinkOption[]>([])
   const [loadingSources, setLoadingSources] = useState(false)
@@ -685,6 +753,7 @@ export function CreateClientDialog({
       setPhone('')
       setFiscal({ ...emptyFiscal })
       setContacts([])
+      setAutoSend(false)
       setSourceIds([])
       setSourceOptions([])
       setSlugTouched(false)
@@ -752,6 +821,7 @@ export function CreateClientDialog({
         sourceIds,
         ...(fiscalPayload ? { fiscal: fiscalPayload } : {}),
         ...(contacts.length > 0 ? { contacts: contactsToInput(contacts) } : {}),
+        ...(autoSend ? { delivery: { autoSend: true } } : {}),
       })
       toast.success('Cliente creado.')
       onCreated(created)
@@ -771,7 +841,7 @@ export function CreateClientDialog({
       description="Nombre del cliente y las fuentes a monitorear."
     >
       <form
-        className="max-h-[70vh] space-y-4 overflow-y-auto overscroll-contain pr-1"
+        className="max-h-[70vh] min-w-0 space-y-4 overflow-y-auto overscroll-contain pr-1"
         onSubmit={onSubmit}
         noValidate
       >
@@ -843,6 +913,12 @@ export function CreateClientDialog({
           contacts={contacts}
           onChange={setContacts}
           compact
+        />
+
+        <AutoSendField
+          id="new-client-autosend"
+          checked={autoSend}
+          onChange={setAutoSend}
         />
 
         <EntityLinkPicker

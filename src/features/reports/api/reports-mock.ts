@@ -9,7 +9,7 @@ const MOCK_REPORT: ReportDetail = {
   id: 'mock-report',
   status: 'draft',
   client: {
-    id: 'mock-client',
+    id: 'client_arca',
     name: 'Arca Continental',
     slug: 'arca-continental',
     legalName: null,
@@ -21,6 +21,9 @@ const MOCK_REPORT: ReportDetail = {
   fileUrl: '/reports/mock-report/file',
   generatedAt: new Date().toISOString(),
   generatedBy: { id: 'mock-user', name: 'Admin NORMA' },
+  sentAt: null,
+  sentBy: null,
+  email: null,
   findings: [
     {
       id: 'mock-finding',
@@ -30,13 +33,30 @@ const MOCK_REPORT: ReportDetail = {
       justification: 'Hallazgo de prueba.',
       source: null,
       document: null,
+      changeNote: null,
       createdAt: new Date().toISOString(),
     },
   ],
 }
 
 export const reportsMockApi = {
-  create(_body: CreateReportBody): Promise<ReportDetail> {
+  create(body: CreateReportBody): Promise<ReportDetail> {
+    if (body.contactIds && body.contactIds.length > 0) {
+      const at = new Date().toISOString()
+      return Promise.resolve({
+        ...MOCK_REPORT,
+        status: 'sent',
+        generatedAt: at,
+        sentAt: at,
+        sentBy: MOCK_REPORT.generatedBy,
+        email: {
+          sent: true,
+          reason: 'sent',
+          message: `Correo enviado a ${body.contactIds.length} contactos.`,
+          recipients: [],
+        },
+      })
+    }
     return Promise.resolve(MOCK_REPORT)
   },
   list(params?: ListReportsParams): Promise<ReportsListPage> {
@@ -55,6 +75,37 @@ export const reportsMockApi = {
   },
   regenerate(id: string): Promise<ReportDetail> {
     return Promise.resolve({ ...MOCK_REPORT, id })
+  },
+  send(id: string, contactIds: string[] = []): Promise<ReportDetail> {
+    if (contactIds.length === 0) {
+      return Promise.resolve({
+        ...MOCK_REPORT,
+        id,
+        status: 'draft',
+        email: {
+          sent: false,
+          reason: 'no_recipients',
+          message:
+            'Elige al menos un contacto. No se envió el correo. El informe sigue en borrador.',
+          recipients: [],
+        },
+      })
+    }
+    return Promise.resolve({
+      ...MOCK_REPORT,
+      id,
+      status: 'draft',
+      email: {
+        sent: false,
+        reason: 'missing_api_key',
+        message:
+          'Falta RESEND_API_KEY. No se envió el correo. El informe sigue en borrador.',
+        recipients: [],
+      },
+    })
+  },
+  discard(id: string): Promise<ReportDetail> {
+    return Promise.resolve({ ...MOCK_REPORT, id, status: 'discarded' })
   },
   file(): Promise<{ blob: Blob; filename: string }> {
     return Promise.resolve({

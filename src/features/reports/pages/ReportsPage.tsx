@@ -5,6 +5,7 @@ import type { Client } from '@/features/clients/types/client'
 import { ReportDetailPanel } from '@/features/reports/components/ReportDetailPanel'
 import { ReportListPanel } from '@/features/reports/components/ReportListPanel'
 import { reportsApi } from '@/features/reports/api/reports-api'
+import { reportRecipients } from '@/features/reports/components/ReportRecipientField'
 import type {
   ReportDetail,
   ReportListItem,
@@ -235,8 +236,8 @@ export function ReportsPage() {
                 PDFs de {selectedName}
               </p>
               <p className="mt-1 hidden text-[11px] text-white/45 [@media(min-height:50rem)]:block">
-                El lote se genera en Clasificación. Aquí se ve, descarga y
-                regenera.
+                El lote se genera en Clasificación. Aquí se ve, se envía o se
+                descarta.
               </p>
               <div className="mt-3 max-w-md space-y-1 [@media(min-height:50rem)]:mt-4">
                 <Label htmlFor="report-client" className="text-white/50">
@@ -331,17 +332,37 @@ export function ReportsPage() {
                 ) : detail ? (
                   <ReportDetailPanel
                     report={detail}
+                    recipients={reportRecipients(
+                      clients.find((row) => row.id === detail.client.id)
+                        ?.contacts,
+                    )}
                     onUpdated={(next) => {
+                      if (next.status === 'discarded') {
+                        setDetail(null)
+                        setListEpoch((n) => n + 1)
+                        return
+                      }
                       setDetail(next)
+                      if (next.status !== status) {
+                        patchSearch({
+                          estado: next.status === 'sent' ? 'sent' : null,
+                        })
+                        return
+                      }
                       setItems((prev) =>
                         prev.map((row) =>
                           row.id === next.id
                             ? {
                                 ...row,
+                                status: next.status,
                                 findingCount: next.findingCount,
                                 counts: next.counts,
                                 fileUrl: next.fileUrl,
                                 generatedAt: next.generatedAt,
+                                generatedBy: next.generatedBy,
+                                sentAt: next.sentAt,
+                                sentBy: next.sentBy,
+                                email: next.email,
                               }
                             : row,
                         ),

@@ -9,6 +9,34 @@ export function formatReportPeriod(
   return `Hasta ${dateTo}`
 }
 
+export function formatReportMark(iso: string | null): string | null {
+  if (!iso) return null
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return null
+  return new Intl.DateTimeFormat('es-MX', {
+    timeZone: 'America/Mexico_City',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
+export function reportGeneratedLine(
+  at: string | null,
+  name: string | null | undefined,
+): string {
+  return `Generado el ${formatReportMark(at) ?? '—'} por ${name?.trim() || '—'}`
+}
+
+export function reportSentLine(
+  at: string | null,
+  name: string | null | undefined,
+): string {
+  return `Enviado el ${formatReportMark(at) ?? '—'} por ${name?.trim() || '—'}`
+}
+
 export function reportStatusLabel(status: string): string {
   if (status === 'sent') return 'Enviado'
   if (status === 'discarded') return 'Descartado'

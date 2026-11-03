@@ -160,6 +160,7 @@ function normalizeDetail(raw: unknown): FindingDetail | null {
     ...item,
     justification: text(raw.justification) ?? item.justificationShort,
     description: text(raw.description),
+    changeNote: text(raw.changeNote),
     aiMeta: asAiMeta(raw.aiMeta),
   }
 }

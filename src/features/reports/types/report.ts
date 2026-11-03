@@ -1,5 +1,20 @@
 export type ReportStatus = 'draft' | 'sent' | 'discarded'
 
+export type ReportEmailReason =
+  | 'sent'
+  | 'missing_api_key'
+  | 'missing_from'
+  | 'no_recipients'
+  | 'provider_error'
+
+/** Null en borrador. `sent: false` significa que el correo no salió. */
+export type ReportEmailDelivery = {
+  sent: boolean
+  reason: ReportEmailReason
+  message: string
+  recipients: string[]
+}
+
 export type ReportCounts = {
   red: number
   orange: number
@@ -27,6 +42,9 @@ export type ReportListItem = {
   fileUrl: string | null
   generatedAt: string
   generatedBy: ReportPerson | null
+  sentAt: string | null
+  sentBy: ReportPerson | null
+  email: ReportEmailDelivery | null
 }
 
 export type ReportFindingItem = {
@@ -46,6 +64,7 @@ export type ReportFindingItem = {
     filename: string
     url: string | null
   } | null
+  changeNote: string | null
   createdAt: string | null
 }
 
@@ -57,6 +76,7 @@ export type CreateReportBody = {
   clientId: string
   dateFrom?: string
   dateTo?: string
+  contactIds?: string[]
 }
 
 export type ListReportsParams = {

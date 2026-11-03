@@ -390,6 +390,17 @@ export function FindingDetailCard({
         </section>
       ) : null}
 
+      {finding.changeNote ? (
+        <section className="rounded-2xl border-2 border-norma-accent/30 bg-norma-accent/5 px-4 py-3.5">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-norma-accent">
+            Qué cambió
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-norma-fg">
+            {finding.changeNote}
+          </p>
+        </section>
+      ) : null}
+
       <section>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-norma-subtle">
