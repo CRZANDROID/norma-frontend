@@ -2,8 +2,9 @@ import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import {
-  ReportRecipientField,
+  ReportRecipientList,
   reportsApi,
+  useReportRecipientSelection,
   type ReportRecipient,
 } from '@/features/reports'
 import { mapApiError } from '@/shared/lib/api-error'
@@ -28,6 +29,7 @@ export function FindingReportBar({
 }) {
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
+  const recipientsState = useReportRecipientSelection(recipients)
 
   async function generate(contactIds?: string[]) {
     setBusy(true)
@@ -61,33 +63,31 @@ export function FindingReportBar({
   }
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 [@media(min-height:50rem)]:mt-4">
-      {autoSend ? (
-        <ReportRecipientField
-          recipients={recipients}
-          tone="navy"
-          action={{
-            label: 'Generar PDF',
-            busyLabel: 'Generando…',
-            busy,
-            className: navyBtn,
-            onSend: (contactIds) => void generate(contactIds),
-          }}
-        />
-      ) : (
+    <div className="mt-3 space-y-3 [@media(min-height:50rem)]:mt-4">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           type="button"
           size="sm"
           className={cn(navyBtn)}
-          disabled={!clientId || busy}
-          onClick={() => void generate()}
+          disabled={!clientId || busy || (autoSend && recipientsState.noneChosen)}
+          onClick={() =>
+            void generate(autoSend ? recipientsState.selected : undefined)
+          }
         >
           {busy ? 'Generando…' : 'Generar PDF'}
         </Button>
-      )}
-      <span className="hidden text-[11px] text-white/45 [@media(min-height:50rem)]:inline">
-        El lote se arma con Incluidos. Ver y descargar viven en Informes.
-      </span>
+        <span className="hidden text-[11px] text-white/45 [@media(min-height:50rem)]:inline">
+          El lote se arma con Incluidos. Ver y descargar viven en Informes.
+        </span>
+      </div>
+      {autoSend ? (
+        <ReportRecipientList
+          recipients={recipients}
+          selected={recipientsState.selected}
+          onToggle={recipientsState.toggle}
+          tone="navy"
+        />
+      ) : null}
     </div>
   )
 }

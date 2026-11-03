@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import {
-  ReportRecipientField,
+  ReportRecipientList,
+  useReportRecipientSelection,
   type ReportRecipient,
 } from '@/features/reports/components/ReportRecipientField'
 import type { ReportDetail } from '@/features/reports/types/report'
@@ -36,6 +37,7 @@ export function ReportDetailPanel({
   >(null)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const draft = report.status === 'draft'
+  const recipientsState = useReportRecipientSelection(recipients)
 
   async function viewOrDownload(mode: 'view' | 'download') {
     setBusy(mode)
@@ -150,15 +152,14 @@ export function ReportDetailPanel({
           {busy === 'download' ? 'Descargando…' : 'Descargar'}
         </Button>
         {draft ? (
-          <ReportRecipientField
-            recipients={recipients}
-            action={{
-              label: 'Enviar',
-              busyLabel: 'Enviando…',
-              busy: busy !== null,
-              onSend: (contactIds) => void send(contactIds),
-            }}
-          />
+          <Button
+            type="button"
+            size="sm"
+            disabled={busy !== null || recipientsState.noneChosen}
+            onClick={() => void send(recipientsState.selected)}
+          >
+            {busy === 'send' ? 'Enviando…' : 'Enviar'}
+          </Button>
         ) : null}
         {draft ? (
           <Button
@@ -183,6 +184,13 @@ export function ReportDetailPanel({
           </Button>
         ) : null}
       </div>
+      {draft ? (
+        <ReportRecipientList
+          recipients={recipients}
+          selected={recipientsState.selected}
+          onToggle={recipientsState.toggle}
+        />
+      ) : null}
       <ul className="space-y-3">
         {report.findings.map((item) => (
           <li
