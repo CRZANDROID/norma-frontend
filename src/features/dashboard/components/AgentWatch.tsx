@@ -131,6 +131,7 @@ function PhaseMeter({
     label: string
     busyLabel: string
     busy: boolean
+    locked?: boolean
     onClick: () => void
   }
 }) {
@@ -190,7 +191,7 @@ function PhaseMeter({
           size="sm"
           variant="outline"
           className="w-full border-white/20 bg-white/8 text-white hover:bg-white/14"
-          disabled={action.busy}
+          disabled={action.locked || action.busy}
           onClick={action.onClick}
         >
           {action.busy ? action.busyLabel : action.label}
@@ -549,6 +550,7 @@ export function AgentWatch({
     journeys.some(
       (row) => stepTone('analysis', row.analysis?.status) === 'live',
     )
+  const working = crawlLive || extractLive || analysisLive
   const fatal = Boolean(
     crawlError && extractError && analysisError && journeys.length === 0,
   )
@@ -669,6 +671,7 @@ export function AgentWatch({
                         label: 'Rastrear',
                         busyLabel: 'Saliendo…',
                         busy: crawling,
+                        locked: working,
                         onClick: onCrawl,
                       }
                     : undefined
@@ -687,6 +690,7 @@ export function AgentWatch({
                         label: 'Extraer',
                         busyLabel: 'Extrayendo…',
                         busy: extracting,
+                        locked: working,
                         onClick: onExtract,
                       }
                     : undefined
@@ -705,6 +709,7 @@ export function AgentWatch({
                         label: 'Analizar',
                         busyLabel: 'Analizando…',
                         busy: classifying,
+                        locked: working,
                         onClick: onClassify,
                       }
                     : undefined
